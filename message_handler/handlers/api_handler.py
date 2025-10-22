@@ -17,8 +17,10 @@ from message_handler.exceptions import (
     UnauthorizedError, DuplicateError, ErrorCode
 )
 from message_handler.services.idempotency_service import (
-    create_idempotency_key, get_processed_message, 
-    mark_message_processed, idempotency_lock
+    create_idempotency_key,
+    get_processed_message, 
+    mark_message_processed, 
+    idempotency_lock
 )
 from message_handler.services.user_context_service import prepare_user_context
 from message_handler.services.token_service import TokenManager
@@ -85,7 +87,11 @@ def process_api_message(
     trace_id: Optional[str] = None,
     channel: str = "api"
 ) -> Dict[str, Any]:
-    """Process an incoming message from API/web/app channels."""
+    """
+    Process an incoming message from API/web/app channels.
+    
+    Uses instance-scoped idempotency keys to prevent duplicates within the same instance.
+    """
     trace_id = trace_id or str(uuid.uuid4())
     start_time = time.time()
     
@@ -102,41 +108,40 @@ def process_api_message(
     try:
         validate_message(content, instance_id, trace_id)
         
-        # CREATE IDEMPOTENCY KEY FIRST - WITHOUT session_id
+        # Create instance-scoped idempotency key
         idempotency_key = create_idempotency_key(
             request_id=request_id,
-            instance_id=instance_id,
-            session_id=None  # Don't include session_id!
+            instance_id=instance_id
         )
-        logger.info(f"Created idempotency key: {idempotency_key}")
+        logger.info(f"Created idempotency key (instance-scoped)")
         
         # Check for duplicate BEFORE creating user/session
-        cached_response = get_processed_message(db, request_id, trace_id=trace_id)
+        cached_response = get_processed_message(db, idempotency_key, trace_id=trace_id)
         if cached_response:
-            logger.info(f"Duplicate request detected for idempotency key: {idempotency_key}")
+            logger.info(f"Duplicate request detected for idempotency_key")
             raise DuplicateError(
                 "Duplicate request - response already processed",
                 error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
                 request_id=request_id,
-                details={"idempotency_key": idempotency_key, "cached_response": cached_response}
+                details={"request_id": request_id, "cached_response": cached_response}
             )
         
-        # NOW create user context (after duplicate check)
+        # Create user context (after duplicate check)
         user = prepare_user_context(db, instance_id, user_details, channel, trace_id)
         
-        # Process with idempotency lock
+        # Acquire lock with idempotency key
         with idempotency_lock(db, idempotency_key, trace_id=trace_id) as lock_result:
             if lock_result is False:
                 # Try to get the cached response again with retries
                 for retry in range(MAX_RETRY_ATTEMPTS):
-                    cached_response = get_processed_message(db, request_id, trace_id=trace_id)
+                    cached_response = get_processed_message(db, idempotency_key, trace_id=trace_id)
                     if cached_response:
                         logger.info(f"Duplicate request after lock check (retry {retry})")
                         raise DuplicateError(
                             "Duplicate request - response already processed",
                             error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
                             request_id=request_id,
-                            details={"idempotency_key": idempotency_key, "cached_response": cached_response}
+                            details={"request_id": request_id, "cached_response": cached_response}
                         )
                     
                     time.sleep(0.1 * (retry + 1))
@@ -152,18 +157,20 @@ def process_api_message(
                     except Exception as e:
                         logger.warning(f"Error initializing token plan: {str(e)}")
                 
+                # Pass idempotency key to process_core
                 result_data = process_core(
-                    tx,
-                    content,
-                    instance_id,
+                    tx, 
+                    content, 
+                    instance_id, 
                     user=user,
                     user_details=user_details,
-                    request_id=request_id,  # Use original request_id, not idempotency_key
+                    request_id=idempotency_key,
                     trace_id=trace_id,
                     channel=channel
                 )
                 
-                mark_message_processed(tx, request_id, result_data, trace_id)
+                # Mark as processed with idempotency key
+                mark_message_processed(tx, idempotency_key, result_data, trace_id)
                 
                 processing_time = time.time() - start_time
                 logger.info(f"Message processed successfully in {processing_time:.2f}s")

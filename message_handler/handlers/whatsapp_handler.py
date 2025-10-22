@@ -17,8 +17,9 @@ from message_handler.exceptions import (
     UnauthorizedError, DuplicateError, ErrorCode
 )
 from message_handler.services.idempotency_service import (
-    create_idempotency_key, get_processed_message, 
-    mark_message_processed, idempotency_lock
+    get_processed_message, 
+    mark_message_processed, 
+    idempotency_lock
 )
 from message_handler.services.token_service import TokenManager
 from message_handler.services.user_context_service import prepare_whatsapp_user_context
@@ -203,33 +204,41 @@ def extract_whatsapp_data(
     # Location message
     elif "location" in whatsapp_message and isinstance(whatsapp_message["location"], dict):
         message_type = "location"
-        loc_info = whatsapp_message["location"]
-        lat = loc_info.get("latitude", "unknown")
-        lng = loc_info.get("longitude", "unknown")
-        message_content = f"[LOCATION: {lat},{lng}]"
-        if "name" in loc_info:
-            message_content += f": {loc_info['name']}"
+        loc = whatsapp_message["location"]
+        lat = loc.get("latitude", "")
+        lon = loc.get("longitude", "")
+        name = loc.get("name", "")
+        address = loc.get("address", "")
+        
+        message_content = f"[LOCATION: lat={lat}, lon={lon}"
+        if name:
+            message_content += f", name={name}"
+        if address:
+            message_content += f", address={address}"
+        message_content += "]"
     
     # Contact message
-    elif "contact" in whatsapp_message or "contacts" in whatsapp_message:
+    elif "contacts" in whatsapp_message and isinstance(whatsapp_message["contacts"], list):
         message_type = "contact"
-        contacts = whatsapp_message.get("contacts", whatsapp_message.get("contact", []))
+        contacts = whatsapp_message["contacts"]
         contact_names = []
         for contact in contacts:
-            if isinstance(contact, dict) and "name" in contact and isinstance(contact["name"], dict):
-                name_parts = []
-                name_info = contact["name"]
-                if name_info.get("formatted_name"):
-                    name_parts.append(name_info["formatted_name"])
-                elif name_info.get("first_name"):
-                    name_parts.append(name_info["first_name"])
-                    if name_info.get("last_name"):
-                        name_parts.append(name_info["last_name"])
-                contact_names.append(" ".join(name_parts) or "Unknown contact")
+            if "name" in contact and isinstance(contact["name"], dict):
+                name = contact["name"].get("formatted_name", "")
+                if name:
+                    contact_names.append(name)
         
-        message_content = f"[CONTACT: {', '.join(contact_names or ['Unknown contact'])}]"
+        if contact_names:
+            message_content = f"[CONTACT: {', '.join(contact_names)}]"
+        else:
+            message_content = "[CONTACT]"
     
-    # Combine into result
+    # Unknown type fallback
+    else:
+        message_type = "unsupported"
+        message_content = "[UNSUPPORTED MESSAGE TYPE]"
+    
+    # Build result
     result = {
         "from": wa_from,
         "to": wa_to,
@@ -238,11 +247,7 @@ def extract_whatsapp_data(
         "message_id": message_id,
         "timestamp": timestamp,
         "metadata": {
-            "source": "whatsapp",
-            "media_url": media_url,
-            "original": {
-                "message_type": message_type,
-                # Include whitelisted fields from the original message
+            "original_message": {
                 "id": message_id,
                 "from": wa_from,
                 "to": wa_to,
@@ -266,6 +271,8 @@ def process_whatsapp_message_internal(
     """
     Process a WhatsApp message.
     
+    Uses raw client-provided request_id for idempotency (no transformation/scoping).
+    
     Args:
         db: Database session
         whatsapp_message: WhatsApp message object
@@ -288,7 +295,7 @@ def process_whatsapp_message_internal(
     trace_id = trace_id or str(uuid.uuid4())
     start_time = time.time()
     
-    logger = get_context_logger("whatsapp_handler", trace_id=trace_id)
+    logger = get_context_logger("whatsapp_handler", trace_id=trace_id, request_id=request_id)
     
     logger.info("Processing WhatsApp message")
     
@@ -296,8 +303,7 @@ def process_whatsapp_message_internal(
         # 1. Extract data from WhatsApp message
         wa_data = extract_whatsapp_data(whatsapp_message, metadata, trace_id)
         
-        # 2. For WhatsApp, resolve instance FIRST to get instance_id
-        # (needed for idempotency key generation)
+        # 2. For WhatsApp, resolve instance FIRST
         if not instance_id:
             from message_handler.services.instance_service import resolve_instance_by_channel
             instance = resolve_instance_by_channel(db, channel="whatsapp", recipient_number=wa_data["to"])
@@ -310,41 +316,43 @@ def process_whatsapp_message_internal(
                 )
             instance_id = str(instance.id)
 
-        # 3. Prepare WhatsApp user context (gets session)
+        # 3. Check for duplicate BEFORE creating user/session
+        # Uses raw request_id directly - no transformation
+        cached_response = get_processed_message(db, request_id, trace_id=trace_id)
+        if cached_response:
+            logger.info(f"Duplicate WhatsApp request detected for request_id: {request_id}")
+            raise DuplicateError(
+                "Duplicate request - response already processed",
+                error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
+                request_id=request_id,
+                details={"request_id": request_id, "cached_response": cached_response}
+            )
+        
+        # 4. Prepare WhatsApp user context (gets session)
         user = prepare_whatsapp_user_context(db, wa_data, instance_id, trace_id)
         
-        # 4. Create scoped idempotency key from client-provided request_id
-        idempotency_key = create_idempotency_key(
-            request_id=request_id,
-            instance_id=instance_id,
-            session_id=str(user.session.id) if user and hasattr(user, 'session') else None
-        )
-        logger.info(f"Created idempotency key: {idempotency_key}")
-        
-        # 5. Check for duplicate message (idempotency)
-        cached_response = get_processed_message(db, idempotency_key, trace_id=trace_id)
-        if cached_response:
-            logger.info(f"Returning cached response for idempotency key: {idempotency_key}")
-            return cached_response
-        
-        # 6. Process with idempotency lock
-        with idempotency_lock(db, idempotency_key, trace_id=trace_id) as lock_result:
+        # 5. Process with idempotency lock using raw request_id
+        with idempotency_lock(db, request_id, trace_id=trace_id) as lock_result:
             # If lock_result is False, a cached result may now be available
             if lock_result is False:
                 # Try to get the cached response again with retries
                 for retry in range(MAX_RETRY_ATTEMPTS):
-                    cached_response = get_processed_message(db, idempotency_key, trace_id=trace_id)
+                    cached_response = get_processed_message(db, request_id, trace_id=trace_id)
                     if cached_response:
                         logger.info(f"Found cached response after lock check (retry {retry})")
-                        return cached_response
+                        raise DuplicateError(
+                            "Duplicate request - response already processed",
+                            error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
+                            request_id=request_id,
+                            details={"request_id": request_id, "cached_response": cached_response}
+                        )
                     
                     # Short delay before retry
                     time.sleep(0.1 * (retry + 1))
                         
                 logger.warning("Lock manager indicated cached result but none found after retries")
-                # Continue with processing as fallback
             
-            # 7. Process within a transaction 
+            # 6. Process within a transaction 
             with transaction_scope(db, trace_id=trace_id) as tx:
                 # Initialize token management if session exists
                 if user and hasattr(user, 'session') and user.session:
@@ -354,7 +362,6 @@ def process_whatsapp_message_internal(
                         logger.debug("Token plan initialized for session")
                     except Exception as e:
                         logger.warning(f"Error initializing token plan: {str(e)}")
-                        # Continue processing even if token initialization fails
                 
                 # Prepare meta info (this will be stored in metadata_json)
                 meta_info = {
@@ -369,13 +376,13 @@ def process_whatsapp_message_internal(
                 if "metadata" in wa_data and isinstance(wa_data["metadata"], dict):
                     meta_info.update(wa_data["metadata"])
                 
-                # Process the message
+                # Process the message with raw request_id
                 result_data = process_core(
                     tx, 
                     wa_data["content"], 
                     user.instance.id if hasattr(user, 'instance') and hasattr(user.instance, 'id') else instance_id, 
                     user=user,
-                    request_id=idempotency_key,
+                    request_id=request_id,
                     trace_id=trace_id,
                     channel="whatsapp",
                     meta_info=meta_info
@@ -386,8 +393,8 @@ def process_whatsapp_message_internal(
                     result_data["whatsapp_message_id"] = wa_data["message_id"]
                     result_data["whatsapp_from"] = wa_data["from"]
                 
-                # Mark as processed for idempotency
-                mark_message_processed(tx, idempotency_key, result_data, trace_id)
+                # Mark as processed for idempotency with raw request_id
+                mark_message_processed(tx, request_id, result_data, trace_id)
                 
                 processing_time = time.time() - start_time
                 logger.info(f"WhatsApp message processed successfully in {processing_time:.2f}s")
@@ -398,29 +405,25 @@ def process_whatsapp_message_internal(
                         "processing_time_seconds": round(processing_time, 3),
                         "trace_id": trace_id,
                         "channel": "whatsapp",
-                        "message_type": wa_data["type"]
+                        "message_type": wa_data["type"],
+                        "request_id": request_id
                     }
                 
                 return result_data
                 
     except ValidationError as e:
-        # Log but re-raise validation errors
         logger.warning(f"Validation error: {str(e)}")
         raise
     except ResourceNotFoundError as e:
-        # Log but re-raise resource not found errors
         logger.warning(f"Resource not found: {str(e)}")
         raise
     except UnauthorizedError as e:
-        # Log but re-raise unauthorized errors
         logger.warning(f"Unauthorized: {str(e)}")
         raise
     except DuplicateError as e:
-        # Log but re-raise duplicate errors
         logger.warning(f"Duplicate request: {str(e)}")
         raise
     except SQLAlchemyError as e:
-        # Wrap and log database errors
         error_msg = f"Database error processing WhatsApp message: {str(e)}"
         logger.error(error_msg)
         raise DatabaseError(
@@ -430,7 +433,6 @@ def process_whatsapp_message_internal(
             operation="process_whatsapp_message"
         )
     except Exception as e:
-        # Log and wrap unexpected errors
         error_msg = f"Unexpected error processing WhatsApp message: {str(e)}"
         logger.exception(error_msg)
         raise DatabaseError(

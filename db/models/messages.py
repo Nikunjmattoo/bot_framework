@@ -1,4 +1,4 @@
-from sqlalchemy import Column, UUID, ForeignKey, String, Text, Boolean, Integer
+from sqlalchemy import Column, UUID, ForeignKey, String, Text, Boolean, Integer, Index
 from sqlalchemy.sql import func
 from sqlalchemy.types import TIMESTAMP
 from sqlalchemy.dialects.postgresql import JSONB
@@ -17,12 +17,17 @@ class MessageModel(Base):
     content = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=True)
     topic_paths = Column(JSONB, nullable=False, server_default='[]')
-    processed = Column(Boolean, nullable=True)
-    request_id = Column(Text, nullable=True)  # ← CHANGED from idempotency_key
-    turn_number = Column(Integer, nullable=True)  # ← NEW (optional, for conversation tracking)
+    processed = Column(Boolean, nullable=True, index=True)
+    request_id = Column(Text, nullable=True, index=True)
+    turn_number = Column(Integer, nullable=True)
     trace_id = Column(Text, nullable=True)
     metadata_json = Column(JSONB, nullable=False, server_default='{}')
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    
+    # Composite index for faster idempotency lookups
+    __table_args__ = (
+        Index('ix_messages_request_id_processed', 'request_id', 'processed'),
+    )
     
     # Relationships
     session = relationship("SessionModel", back_populates="messages")

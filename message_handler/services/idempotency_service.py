@@ -3,6 +3,12 @@ Idempotency service for message processing.
 
 This module provides functions for ensuring idempotent processing of messages,
 preventing duplicate processing of the same message.
+
+IDEMPOTENCY SCOPING:
+- Keys are scoped by INSTANCE (tenant boundary)
+- Same request_id in different instances = different operations (both process)
+- Same request_id in same instance = duplicate (returns cached response)
+- Session changes do NOT affect idempotency (sessions are ephemeral)
 """
 import hashlib
 import json
@@ -38,91 +44,71 @@ MAX_KEY_LENGTH = 128
 
 def create_idempotency_key(
     request_id: str,
-    instance_id: str,
-    session_id: Optional[str] = None
+    instance_id: str
 ) -> str:
-    """Create idempotency key from client-provided request_id."""
+    """
+    Create an idempotency key scoped by instance.
+    
+    IMPORTANT: Keys are scoped by INSTANCE only, NOT by session.
+    This ensures that the same request_id within the same instance is treated
+    as a duplicate, regardless of which session it occurs in.
+    
+    Args:
+        request_id: Client-provided request ID
+        instance_id: Instance ID (tenant/bot identifier)
+        
+    Returns:
+        Scoped idempotency key (deterministic hash)
+        
+    Example:
+        Instance A, request_id "abc" → hash("instance-a:abc")
+        Instance B, request_id "abc" → hash("instance-b:abc") (different!)
+        Instance A, session 1, request_id "abc" → hash("instance-a:abc")
+        Instance A, session 2, request_id "abc" → hash("instance-a:abc") (same! = duplicate)
+    """
     if not request_id:
-        raise ValidationError(
-            "request_id is required",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="request_id"
-        )
-    
-    if not isinstance(request_id, str):
-        raise ValidationError(
-            "request_id must be a string",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="request_id"
-        )
-    
-    request_id = request_id.strip()
-    
-    if not request_id:
-        raise ValidationError(
-            "request_id cannot be empty or whitespace",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="request_id"
-        )
-    
-    if len(request_id) > MAX_KEY_LENGTH:
-        raise ValidationError(
-            f"request_id too long (max {MAX_KEY_LENGTH} characters)",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="request_id",
-            details={"length": len(request_id), "max": MAX_KEY_LENGTH}
-        )
+        return None
     
     if not instance_id:
-        raise ValidationError(
-            "instance_id is required",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="instance_id"
-        )
+        # Fallback: if no instance_id, use raw request_id
+        # This shouldn't happen in production
+        return request_id
     
-    scope_parts = [str(instance_id)]
+    # Create instance-scoped key
+    scoped_key = f"{instance_id}:{request_id}"
     
-    if session_id:
-        scope_parts.append(str(session_id))
-    else:
-        scope_parts.append("")
+    # Hash to fixed length for database storage
+    key_hash = hashlib.sha256(scoped_key.encode()).hexdigest()[:32]
     
-    scope_parts.append(request_id)
-    
-    scoped_key = ":".join(scope_parts)
-    
-    if len(scoped_key) > MAX_KEY_LENGTH:
-        scoped_key = hashlib.sha256(scoped_key.encode('utf-8')).hexdigest()[:MAX_KEY_LENGTH]
-    
-    return scoped_key
+    return key_hash
 
 
 def get_processed_message(
     db: Session,
-    request_id: str,
+    idempotency_key: str,
     max_age_minutes: int = IDEMPOTENCY_CACHE_DURATION_MINUTES,
     trace_id: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
-    """Check if a message with this request_id has already been processed."""
-    logger = get_context_logger("idempotency", trace_id=trace_id, request_id=request_id)
+    """Check if a message with this idempotency key has already been processed."""
+    logger = get_context_logger("idempotency", trace_id=trace_id, idempotency_key=idempotency_key)
     
     try:
-        if not request_id:
-            logger.debug("No request_id provided, skipping cache lookup")
+        if not idempotency_key:
+            logger.debug("No idempotency_key provided, skipping cache lookup")
             return None
         
-        if not isinstance(request_id, str):
+        if not isinstance(idempotency_key, str):
             raise ValidationError(
-                "request_id must be a string",
+                "idempotency_key must be a string",
                 error_code=ErrorCode.VALIDATION_ERROR,
-                field="request_id"
+                field="idempotency_key"
             )
         
         cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=max_age_minutes)
         
         message = (db.query(MessageModel)
             .filter(
-                MessageModel.request_id == request_id,
+                MessageModel.request_id == idempotency_key,
                 MessageModel.processed == True,
                 MessageModel.created_at >= cutoff_time
             )
@@ -130,7 +116,7 @@ def get_processed_message(
             .first())
         
         if not message:
-            logger.debug("No processed message found with given request_id")
+            logger.debug("No processed message found with given idempotency key")
             return None
         
         message_time = ensure_timezone_aware(message.created_at)
@@ -173,16 +159,16 @@ def get_processed_message(
 
 def mark_message_processed(
     db: Session,
-    request_id: str,
+    idempotency_key: str,
     response_data: Dict[str, Any],
     trace_id: Optional[str] = None
 ) -> bool:
     """Mark a message as processed for idempotency and cache the response."""
-    logger = get_context_logger("idempotency", trace_id=trace_id, request_id=request_id)
+    logger = get_context_logger("idempotency", trace_id=trace_id, idempotency_key=idempotency_key)
     
     try:
-        if not request_id:
-            logger.warning("No request_id provided, cannot mark as processed")
+        if not idempotency_key:
+            logger.warning("No idempotency_key provided, cannot mark as processed")
             return False
         
         if not isinstance(response_data, dict):
@@ -193,18 +179,18 @@ def mark_message_processed(
             )
         
         message = (db.query(MessageModel)
-            .filter(MessageModel.request_id == request_id)
+            .filter(MessageModel.request_id == idempotency_key)
             .order_by(MessageModel.created_at.desc())
             .first())
             
         if not message:
-            logger.warning("Message not found for request_id")
+            logger.warning("Message not found for idempotency_key")
             return False
         
         safe_response = _sanitize_response_data(response_data)
         message.processed = True
         
-        # ✅ FIX: Merge with existing metadata instead of replacing
+        # Merge with existing metadata instead of replacing
         if hasattr(message, 'metadata_json'):
             existing_meta = message.metadata_json if message.metadata_json else {}
             existing_meta.update({
@@ -238,6 +224,7 @@ def mark_message_processed(
             original_exception=e,
             operation="mark_message_processed"
         )
+
 
 def _sanitize_response_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Sanitize response data to remove sensitive information and limit size."""
@@ -304,23 +291,19 @@ def _release_lock(db: Session, lock_id: Union[str, uuid.UUID], logger) -> bool:
         logger.error(f"Error releasing lock {lock_id}: {str(e)}")
         return False
 
+
 @contextmanager
 def idempotency_lock(
     db: Session,
-    request_id: str,
+    idempotency_key: str,
     trace_id: Optional[str] = None,
     max_retries: int = MAX_RETRIES
 ) -> Generator[bool, None, None]:
     """Context manager for idempotency lock acquisition and release."""
-    logger = get_context_logger("idempotency", trace_id=trace_id, request_id=request_id)
+    logger = get_context_logger("idempotency", trace_id=trace_id, idempotency_key=idempotency_key)
     
-    print(f"\n{'='*60}")
-    print(f"IDEMPOTENCY LOCK CALLED")
-    print(f"REQUEST_ID: {request_id}")
-    print(f"{'='*60}")
-    
-    if not request_id:
-        logger.debug("No request_id provided, skipping lock")
+    if not idempotency_key:
+        logger.debug("No idempotency_key provided, skipping lock")
         yield True
         return
     
@@ -329,37 +312,27 @@ def idempotency_lock(
     try:
         # Check if already processed
         processed_message = db.query(MessageModel).filter(
-            MessageModel.request_id == request_id,
+            MessageModel.request_id == idempotency_key,
             MessageModel.processed == True
         ).first()
         
-        print(f"PROCESSED MESSAGE FOUND: {processed_message is not None}")
         if processed_message:
-            print(f"MESSAGE ID: {processed_message.id}")
-            print(f"MESSAGE PROCESSED FLAG: {processed_message.processed}")
-        
-        if processed_message:
-            print(f"{'='*60}")
-            print(f"RAISING DUPLICATEERROR - MESSAGE ALREADY PROCESSED")
-            print(f"{'='*60}\n")
             logger.info("Duplicate request detected - message already processed")
             raise DuplicateError(
                 "Duplicate request. This message has already been processed.",
                 error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
                 resource_type="message",
-                resource_id=request_id,
+                resource_id=idempotency_key,
                 details={
-                    "request_id": request_id,
+                    "idempotency_key": idempotency_key,
                     "message": "Response has been cached",
                     "retry_after_ms": 0
                 }
             )
         
-        print(f"NO PROCESSED MESSAGE FOUND - CONTINUING TO LOCK ACQUISITION\n")
-        
         # Check for existing locks
         existing_lock = db.query(IdempotencyLockModel).filter(
-            IdempotencyLockModel.request_id == request_id
+            IdempotencyLockModel.request_id == idempotency_key
         ).first()
         
         if existing_lock:
@@ -368,14 +341,14 @@ def idempotency_lock(
                 _release_lock(db, existing_lock.id, logger)
                 db.commit()
             else:
-                logger.warning(f"Duplicate request detected: {request_id}")
+                logger.warning(f"Duplicate request detected: {idempotency_key}")
                 raise DuplicateError(
                     "Duplicate request. A request with this ID is already being processed.",
                     error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
                     resource_type="message",
-                    resource_id=request_id,
+                    resource_id=idempotency_key,
                     details={
-                        "request_id": request_id,
+                        "idempotency_key": idempotency_key,
                         "message": "Please retry with exponential backoff",
                         "retry_after_ms": 1000
                     }
@@ -387,7 +360,7 @@ def idempotency_lock(
                 lock_id = uuid.uuid4()
                 new_lock = IdempotencyLockModel(
                     id=lock_id,
-                    request_id=request_id,
+                    request_id=idempotency_key,
                     created_at=get_current_datetime()
                 )
                 
@@ -402,16 +375,16 @@ def idempotency_lock(
                 lock_id = None
                 
                 if attempt < max_retries:
-                    cached = get_processed_message(db, request_id, trace_id=trace_id)
+                    cached = get_processed_message(db, idempotency_key, trace_id=trace_id)
                     if cached:
                         logger.info(f"Found cached result after lock retry")
                         raise DuplicateError(
                             "Duplicate request. Message was processed during retry.",
                             error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
                             resource_type="message",
-                            resource_id=request_id,
+                            resource_id=idempotency_key,
                             details={
-                                "request_id": request_id,
+                                "idempotency_key": idempotency_key,
                                 "retry_after_ms": 0
                             }
                         )
@@ -424,7 +397,7 @@ def idempotency_lock(
                         f"Failed to acquire lock after {max_retries} attempts",
                         error_code=ErrorCode.RESOURCE_ALREADY_EXISTS,
                         resource_type="message",
-                        resource_id=request_id
+                        resource_id=idempotency_key
                     )
         
         yield True

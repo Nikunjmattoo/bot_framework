@@ -45,9 +45,9 @@ from .user_context_service import (
     prepare_whatsapp_user_context
 )
 
-# Idempotency services
+# Idempotency services - ADD create_idempotency_key
 from .idempotency_service import (
-    create_idempotency_key,
+    create_idempotency_key,      # ← ADD THIS
     get_processed_message,
     mark_message_processed,
     idempotency_lock
@@ -82,7 +82,7 @@ SERVICE_REGISTRY: Dict[str, Dict] = {
         "prepare_whatsapp_user_context": prepare_whatsapp_user_context,
     },
     "idempotency": {
-        "create_idempotency_key": create_idempotency_key,
+        "create_idempotency_key": create_idempotency_key,      # ← ADD THIS
         "get_processed_message": get_processed_message,
         "mark_message_processed": mark_message_processed,
         "idempotency_lock": idempotency_lock,
@@ -117,7 +117,7 @@ __all__ = [
     "prepare_whatsapp_user_context",
     
     # Idempotency
-    "create_idempotency_key",
+    "create_idempotency_key",      # ← ADD THIS
     "get_processed_message",
     "mark_message_processed",
     "idempotency_lock",
