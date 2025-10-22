@@ -338,7 +338,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
     def test_empty_functions_raises_validation_error(self, db_session, test_session, test_user, test_instance, test_brand):
         """✓ Empty functions → ValidationError"""
@@ -377,7 +377,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "functions" in str(exc_info.value).lower()
     
     def test_load_primary_template_response_compose_first(self, db_session, test_session, test_user, test_instance):
@@ -448,7 +448,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "template" in str(exc_info.value).lower()
     
     def test_missing_llm_model_raises_validation_error(self, db_session, test_session, test_user, test_instance, test_brand):
@@ -497,7 +497,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "llm_model" in str(exc_info.value).lower()
     
     def test_missing_api_model_name_raises_validation_error(self, db_session, test_session, test_user, test_instance, test_brand):
@@ -555,7 +555,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "api_model_name" in str(exc_info.value).lower()
     
     def test_missing_provider_raises_validation_error(self, db_session, test_session, test_user, test_instance, test_brand):
@@ -613,7 +613,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "provider" in str(exc_info.value).lower()
     
     @pytest.mark.parametrize("invalid_value", ["", "   ", "\t", "\n"])
@@ -674,7 +674,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "api_model_name" in str(exc_info.value).lower()
     
     @pytest.mark.parametrize("invalid_value", ["", "   ", "\t", "\n"])
@@ -735,7 +735,7 @@ class TestBuildMessageAdapter:
                 db=db_session
             )
         
-        assert exc_info.value.error_code == ErrorCode.INSTANCE_CONFIGURATION_ERROR
+        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "provider" in str(exc_info.value).lower()
     
     def test_extract_session_timestamps_timezone_aware(self, db_session, test_session, test_user, test_instance):
