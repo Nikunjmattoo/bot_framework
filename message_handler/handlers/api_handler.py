@@ -153,12 +153,12 @@ def process_api_message(
                         logger.warning(f"Error initializing token plan: {str(e)}")
                 
                 result_data = process_core(
-                    tx, 
-                    content, 
-                    instance_id, 
+                    tx,
+                    content,
+                    instance_id,
                     user=user,
                     user_details=user_details,
-                    request_id=idempotency_key,
+                    request_id=request_id,  # Use original request_id, not idempotency_key
                     trace_id=trace_id,
                     channel=channel
                 )
