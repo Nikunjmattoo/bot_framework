@@ -115,83 +115,48 @@ def parse_pytest_output(output):
     # Calculate total
     result['total'] = result['failed'] + result['passed'] + result['skipped']
 
-    # Extract failed/error test details
-    # Pattern 1: FAILED test/path/file.py::TestClass::test_name - Error message
-    # Note: Paths may use / (Linux/Mac) or \ (Windows)
-    failed_pattern = r'FAILED (.*?)::(.*?)::(.*?) - (.*?)(?:\n|$)'
-    for match in re.finditer(failed_pattern, clean_output):
-        # Extract short file name (just the filename, not full path)
-        full_file = match.group(1)
-        # Handle both / and \ path separators
-        if '/' in full_file:
-            short_file = full_file.split('/')[-1]
-        elif '\\' in full_file:
-            short_file = full_file.split('\\')[-1]
-        else:
-            short_file = full_file
+    # Extract failed/error test details from the "short test summary info" section
+    # With -rA flag, pytest shows all outcomes in a clean summary
+    # Format: FAILED test/path/file.py::TestClass::test_name - error
+    # OR: ERROR test/path/file.py::TestClass::test_name - error
 
-        # Truncate long error messages
-        error_msg = match.group(4).strip()
-        if len(error_msg) > 100:
-            error_msg = error_msg[:97] + '...'
+    # Find the short test summary section
+    summary_section_match = re.search(r'=+ short test summary info =+(.*?)(?:=+|$)', clean_output, re.DOTALL)
 
-        failure = {
-            'file': short_file,
-            'class': match.group(2),
-            'test': match.group(3),
-            'error': error_msg
-        }
-        result['failures'].append(failure)
+    if summary_section_match:
+        summary_section = summary_section_match.group(1)
 
-    # Pattern 2: ERROR test/path/file.py::TestClass::test_name
-    # Extract list of all ERROR test names
-    error_tests = []
-    error_pattern = r'^ERROR (.*?)::(.*?)::(.*?)(?:\s|$)'
-    for match in re.finditer(error_pattern, clean_output, re.MULTILINE):
-        full_file = match.group(1)
-        # Handle both / and \ path separators
-        if '/' in full_file:
-            short_file = full_file.split('/')[-1]
-        elif '\\' in full_file:
-            short_file = full_file.split('\\')[-1]
-        else:
-            short_file = full_file
-        class_name = match.group(2)
-        test_name = match.group(3)
-        error_tests.append({
-            'file': short_file,
-            'full_path': full_file,
-            'class': class_name,
-            'test': test_name,
-            'error': None
-        })
+        # Pattern: FAILED or ERROR followed by test path and optional error
+        # Handles both formats:
+        # FAILED test/path.py::Class::test - Error message
+        # ERROR test/path.py::Class::test
+        failure_pattern = r'^(?:FAILED|ERROR)\s+(.*?)::(.*?)::(.*?)(?:\s+-\s+(.*))?$'
 
-    # Now try to find error messages from the ERRORS section
-    # Look for first "E   ExceptionType:" line after each test error header
-    for test_error in error_tests:
-        # Pattern: _____ ERROR at setup of TestClass.test_name _____
-        # followed by lines with E   ErrorType: message
-        header_pattern = rf'_____ ERROR at (?:setup|teardown) of {test_error["class"]}\.{test_error["test"]} _____'
-        header_match = re.search(header_pattern, clean_output)
+        for match in re.finditer(failure_pattern, summary_section, re.MULTILINE):
+            full_file = match.group(1)
+            class_name = match.group(2)
+            test_name = match.group(3)
+            error_msg = match.group(4) if match.group(4) else "No error message provided"
 
-        if header_match:
-            # Find the first E   line with an exception after this header
-            remaining_output = clean_output[header_match.end():]
-            # Look for lines like "E   sqlalchemy.exc.OperationalError: ..."
-            error_line_match = re.search(r'^E   (\w+(?:\.\w+)*(?:Error|Exception)[^:]*:.*?)$', remaining_output, re.MULTILINE)
-            if error_line_match:
-                error_msg = error_line_match.group(1).strip()
-                # Truncate if too long
-                if len(error_msg) > 100:
-                    error_msg = error_msg[:97] + '...'
-                test_error['error'] = error_msg
+            # Handle both / and \ path separators
+            if '/' in full_file:
+                short_file = full_file.split('/')[-1]
+            elif '\\' in full_file:
+                short_file = full_file.split('\\')[-1]
+            else:
+                short_file = full_file
 
-        # If we still don't have an error, use a default
-        if not test_error['error']:
-            test_error['error'] = "Error during test setup/teardown (check logs for details)"
+            # Truncate long error messages
+            if len(error_msg) > 100:
+                error_msg = error_msg[:97] + '...'
 
-    # Add all errors to failures list
-    result['failures'].extend(error_tests)
+            failure = {
+                'file': short_file,
+                'class': class_name,
+                'test': test_name,
+                'error': error_msg.strip()
+            }
+            result['failures'].append(failure)
 
     # Extract skipped test details
     # Strategy: Parse both the test list and summary section separately, then merge
@@ -287,9 +252,9 @@ def run_test_suite(name, test_dir, description):
         sys.executable, "-m", "pytest",
         test_dir,
         "-v",                    # Verbose
-        "--tb=short",            # Short traceback
+        "--tb=line",             # One line per failure (simpler to parse)
         "--color=yes",           # Colored output
-        "-rs",                   # Show skip reasons
+        "-rA",                   # Show all test outcomes in summary
         # NO -x flag - run all tests
         "--durations=5",         # Show 5 slowest tests
         "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
