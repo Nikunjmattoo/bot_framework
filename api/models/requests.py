@@ -11,6 +11,9 @@ class UserDetails(BaseModel):
     device_id: Optional[str] = Field(None, description="Device identifier")
     auth_token: Optional[str] = Field(None, description="Authentication token")
 
+    class Config:
+        extra = "allow"  # Allow extra fields so they can be stripped by sanitize_data
+
     @field_validator('phone_e164')
     @classmethod
     def validate_phone_format(cls, v):
