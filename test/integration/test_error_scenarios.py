@@ -349,7 +349,7 @@ class TestInvalidRequestValidation:
         assert response.status_code == 422
 
     def test_missing_request_id_returns_400(self, client, test_instance):
-        """✓ Missing request_id → 400"""
+        """✓ Missing request_id → 422"""
         payload = {
             "content": "Test",
             "instance_id": str(test_instance.id)
@@ -357,7 +357,7 @@ class TestInvalidRequestValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation
 
     def test_content_too_long_returns_422(self, client, test_instance):
         """✓ Content > 10000 chars → 422"""
@@ -368,7 +368,7 @@ class TestInvalidRequestValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code == 400  # ValidationError
+        assert response.status_code == 422  # Pydantic validation
 
     def test_invalid_request_id_format_returns_400(self, client, test_instance):
         """✓ Invalid request_id format → 422"""
@@ -388,7 +388,7 @@ class TestWhatsAppErrors:
     """G2.12: WhatsApp-specific errors."""
 
     def test_missing_from_field_returns_400(self, client):
-        """✓ Missing 'from' → 400"""
+        """✓ Missing 'from' → 422"""
         payload = {
             "request_id": str(uuid.uuid4()),
             "whatsapp_message": {
@@ -400,10 +400,10 @@ class TestWhatsAppErrors:
         }
 
         response = client.post("/api/whatsapp/messages", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation
 
     def test_missing_to_field_returns_400(self, client):
-        """✓ Missing 'to' → 400"""
+        """✓ Missing 'to' → 422"""
         payload = {
             "request_id": str(uuid.uuid4()),
             "whatsapp_message": {
@@ -415,7 +415,7 @@ class TestWhatsAppErrors:
         }
 
         response = client.post("/api/whatsapp/messages", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation
 
 
 class TestBroadcastErrors:
@@ -434,7 +434,7 @@ class TestBroadcastErrors:
         assert response.status_code == 422  # Pydantic validation
 
     def test_empty_user_ids_list_returns_400(self, client, test_instance):
-        """✓ Empty user_ids list → 400"""
+        """✓ Empty user_ids list → 422"""
         payload = {
             "content": "Broadcast",
             "instance_id": str(test_instance.id),
@@ -443,10 +443,10 @@ class TestBroadcastErrors:
         }
 
         response = client.post("/api/broadcast", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation
 
     def test_too_many_user_ids_returns_400(self, client, test_instance):
-        """✓ user_ids > 100 → 400"""
+        """✓ user_ids > 100 → 422"""
         payload = {
             "content": "Broadcast",
             "instance_id": str(test_instance.id),
@@ -455,4 +455,4 @@ class TestBroadcastErrors:
         }
 
         response = client.post("/api/broadcast", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # Pydantic validation
