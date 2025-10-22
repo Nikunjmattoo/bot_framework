@@ -72,15 +72,14 @@ except ImportError:
             }
 
 def validate_content_length(content: str) -> str:
-    """Validate and normalize content length."""
-    normalized_content = content.strip() if content else ""
+    """
+    Validate and normalize content length.
 
-    if len(normalized_content) == 0:
-        raise ValidationError(
-            "Message content cannot be empty",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="content"
-        )
+    Note: This function does NOT check for empty content - that's the caller's responsibility.
+    It only validates length and normalizes whitespace. This allows it to return empty string
+    for utility/testing purposes while process_core() handles business logic validation.
+    """
+    normalized_content = content.strip() if content else ""
 
     if len(normalized_content) > MAX_CONTENT_LENGTH:
         raise ValidationError(
@@ -237,8 +236,19 @@ def process_core(
     )
     
     try:
+        # Validate content is not empty (industry standard: empty text = reject)
+        # Future: When attachments are added, check: if not content and not attachments: reject
+        if not content or not content.strip():
+            logger.error("Message content cannot be empty")
+            raise ValidationError(
+                "Message content cannot be empty",
+                error_code=ErrorCode.VALIDATION_ERROR,
+                field="content"
+            )
+
+        # Validate content length and normalize
         normalized_content = validate_content_length(content)
-        
+
         if not user:
             logger.error("User is required")
             raise ValidationError(
