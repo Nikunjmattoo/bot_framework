@@ -257,7 +257,7 @@ def build_message_adapter(
         logger.error("template_set is required in instance configuration")
         raise ValidationError(
             "template_set is required in instance configuration",
-            error_code=ErrorCode.INSTANCE_CONFIGURATION_ERROR,
+            error_code=ErrorCode.VALIDATION_ERROR,
             field="template_set"
         )
     
@@ -267,7 +267,7 @@ def build_message_adapter(
         logger.error(f"functions are required in template set {template_set.id}")
         raise ValidationError(
             "functions are required in template set",
-            error_code=ErrorCode.INSTANCE_CONFIGURATION_ERROR,
+            error_code=ErrorCode.VALIDATION_ERROR,
             field="functions"
         )
     
@@ -290,7 +290,7 @@ def build_message_adapter(
         logger.error(f"template not found: {primary_template_key}")
         raise ValidationError(
             f"template not found: {primary_template_key}",
-            error_code=ErrorCode.INSTANCE_CONFIGURATION_ERROR,
+            error_code=ErrorCode.VALIDATION_ERROR,  # Configuration error IS a validation error
             field="template",
             details={"template_key": primary_template_key}
         )
@@ -300,7 +300,7 @@ def build_message_adapter(
         logger.error(f"llm_model is required in template {primary_template.id}")
         raise ValidationError(
             "llm_model is required in template",
-            error_code=ErrorCode.INSTANCE_CONFIGURATION_ERROR,
+            error_code=ErrorCode.VALIDATION_ERROR,  # Configuration error IS a validation error
             field="llm_model",
             details={"template_id": str(primary_template.id)}
         )
@@ -313,7 +313,7 @@ def build_message_adapter(
         logger.error(f"api_model_name is required in llm_model {llm_model.id}")
         raise ValidationError(
             "api_model_name is required in llm_model",
-            error_code=ErrorCode.INSTANCE_CONFIGURATION_ERROR,
+            error_code=ErrorCode.VALIDATION_ERROR,
             field="api_model_name",
             details={"llm_model_id": str(llm_model.id)}
         )
@@ -324,7 +324,7 @@ def build_message_adapter(
         logger.error(f"provider is required in llm_model {llm_model.id}")
         raise ValidationError(
             "provider is required in llm_model",
-            error_code=ErrorCode.INSTANCE_CONFIGURATION_ERROR,
+            error_code=ErrorCode.VALIDATION_ERROR,
             field="provider",
             details={"llm_model_id": str(llm_model.id)}
         )
