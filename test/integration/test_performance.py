@@ -34,7 +34,7 @@ class TestThroughput:
                 "user": {"phone_e164": f"+1555000{i:04d}"}
             }
             start = time.time()
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
             end = time.time()
             return response.status_code, end - start
@@ -75,7 +75,7 @@ class TestThroughput:
                 "request_id": str(uuid.uuid4()),
                 "user": {"phone_e164": f"+1666000{i:04d}"}
             }
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
             return response.status_code
 
@@ -123,7 +123,7 @@ class TestLatency:
             }
 
             start = time.time()
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
             end = time.time()
 
@@ -173,7 +173,7 @@ class TestDatabaseConnectionPool:
                 "user": {"phone_e164": f"+1888000{i:04d}"}
             }
 
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
 
         # Check pool status after requests
@@ -205,7 +205,7 @@ class TestDatabaseConnectionPool:
                 "request_id": str(uuid.uuid4()),
                 "user": {"phone_e164": f"+1999000{i:04d}"}
             }
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 return client.post("/api/messages", json=payload).status_code
 
         # Send 10 concurrent requests (more than pool size)
@@ -256,7 +256,7 @@ class TestTokenPlanInitialization:
         }
 
         start = time.time()
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
         end = time.time()
 
@@ -289,7 +289,7 @@ class TestTokenPlanInitialization:
         }
 
         start = time.time()
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
         end = time.time()
 

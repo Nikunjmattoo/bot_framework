@@ -219,7 +219,7 @@ class TestOrchestratorTimeout:
             "user": {"phone_e164": "+15555555555"}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', side_effect=slow_orchestrator):
+        with patch('message_handler.core.processor.process_orchestrator_message', side_effect=slow_orchestrator):
             response = client.post("/api/messages", json=payload)
 
         # Should return default response instead of failing
@@ -245,7 +245,7 @@ class TestOrchestratorError:
             "user": {"phone_e164": "+15555555555"}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', side_effect=failing_orchestrator):
+        with patch('message_handler.core.processor.process_orchestrator_message', side_effect=failing_orchestrator):
             response = client.post("/api/messages", json=payload)
 
         # Should gracefully handle error
@@ -304,7 +304,7 @@ class TestConcurrentIdempotency:
         results = []
 
         def make_request():
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
                 results.append(response.status_code)
 

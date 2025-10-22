@@ -54,7 +54,7 @@ class TestNewUserFirstMessage:
             }
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_orchestrator_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_orchestrator_response):
             response = client.post("/api/messages", json=payload)
 
         # Assertions
@@ -149,7 +149,7 @@ class TestExistingUserNewMessage:
             }
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -181,7 +181,7 @@ class TestIdempotentRequest:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -258,7 +258,7 @@ class TestWhatsAppMessage:
             "token_usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/whatsapp/messages", json=payload)
 
         assert response.status_code == 200
@@ -350,7 +350,7 @@ class TestGuestUser:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -435,7 +435,7 @@ class TestBrandScopedIdentity:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response_a = client.post("/api/messages", json=payload_a)
 
         assert response_a.status_code == 200
@@ -449,7 +449,7 @@ class TestBrandScopedIdentity:
             "user": {"phone_e164": shared_phone}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response_b = client.post("/api/messages", json=payload_b)
 
         assert response_b.status_code == 200
@@ -493,7 +493,7 @@ class TestSessionTimeout:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -533,7 +533,7 @@ class TestTokenBudget:
             }
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200

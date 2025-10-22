@@ -35,7 +35,7 @@ class TestSQLInjection:
                 "user": {"phone_e164": "+15551234567"}
             }
 
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
 
             # Should process safely without SQL injection
@@ -90,7 +90,7 @@ class TestXSS:
                 "user": {"phone_e164": "+15559876543"}
             }
 
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+            with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
 
             assert response.status_code == 200
@@ -130,7 +130,7 @@ class TestSensitiveData:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -160,7 +160,7 @@ class TestSensitiveData:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -372,7 +372,7 @@ class TestHeaderSecurity:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         # Should have trace ID in headers
@@ -395,7 +395,7 @@ class TestHeaderSecurity:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response = client.post("/api/messages", json=payload)
 
         # Should echo request ID
