@@ -484,27 +484,32 @@ class TestIdempotencyLock:
     def test_already_processed_yields_false_use_cached(
         self, db_session, test_session, test_user, test_instance
     ):
-        """✓ Already processed → yield False (use cached)"""
-        request_id = "req-already-processed"
-        
-        # Create processed message
+        """✓ Already processed → raises DuplicateError"""
+        # Create hashed idempotency key
+        idempotency_key = create_idempotency_key(
+            request_id="req-already-processed",
+            instance_id=str(test_instance.id)
+        )
+
+        # Create processed message with hashed key
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
-            processed=True
+            request_id=idempotency_key,  # Use hashed key
+            processed=True,
+            created_at=get_current_datetime()  # Required for cache expiry check
         )
         db_session.add(message)
         db_session.commit()
-        
+
         # Should raise DuplicateError
         with pytest.raises(DuplicateError) as exc_info:
-            with idempotency_lock(db_session, request_id):
+            with idempotency_lock(db_session, idempotency_key):
                 pass
-        
+
         assert exc_info.value.error_code == ErrorCode.RESOURCE_ALREADY_EXISTS
     
     def test_lock_acquired_yields_true_process(self, db_session):
@@ -622,27 +627,32 @@ class TestIdempotencyLock:
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Check for cached result on retry"""
-        request_id = "req-cached-retry"
-        
-        # Create processed message (cached result)
+        # Create hashed idempotency key
+        idempotency_key = create_idempotency_key(
+            request_id="req-cached-retry",
+            instance_id=str(test_instance.id)
+        )
+
+        # Create processed message (cached result) with hashed key
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,  # Use hashed key
             processed=True,
+            created_at=get_current_datetime(),  # Required for cache expiry check
             metadata_json={
                 "cached_response": {"text": "Cached"}
             }
         )
         db_session.add(message)
         db_session.commit()
-        
+
         # Should detect cached result and raise DuplicateError
         with pytest.raises(DuplicateError):
-            with idempotency_lock(db_session, request_id):
+            with idempotency_lock(db_session, idempotency_key):
                 pass
     
     def test_concurrent_orphaned_lock_cleanup_handled(self, db_session):
