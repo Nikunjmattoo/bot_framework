@@ -38,13 +38,14 @@ class TestSQLInjection:
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
 
-            # Should process safely without SQL injection
-            assert response.status_code in [200, 400]
+            # Should process safely without SQL injection (not reject it)
+            # System should handle SQL chars safely (users might type "I'm happy" legitimately)
+            assert response.status_code == 200, f"Failed for payload: {payload_text}"
 
-            # Verify tables still exist
+            # Verify tables still exist (SQL injection didn't execute)
             from db.models import MessageModel
             count = db_session.query(MessageModel).count()
-            assert count >= 0  # Table exists
+            assert count >= 0, "MessageModel table was dropped - SQL injection succeeded!"
 
     def test_sql_injection_in_user_identifiers(self, client, test_instance, db_session):
         """✓ SQL injection attempts in user identifiers are safely handled"""
@@ -58,9 +59,18 @@ class TestSQLInjection:
             }
         }
 
-        # Should fail validation or process safely
+        # Should reject malformed identifiers (phone with SQL injection chars)
+        # Invalid phone format should fail validation
         response = client.post("/api/messages", json=payload)
-        assert response.status_code in [200, 400, 422]
+        assert response.status_code in [400, 422], \
+            f"Malformed identifiers should be rejected, got {response.status_code}"
+
+        # Verify no user was created with malicious identifier
+        from db.models import UserIdentifierModel
+        malicious_identifiers = db_session.query(UserIdentifierModel).filter(
+            UserIdentifierModel.identifier_value.contains("DROP TABLE")
+        ).all()
+        assert len(malicious_identifiers) == 0, "SQL injection stored in user identifier!"
 
 
 @pytest.mark.security
@@ -93,17 +103,18 @@ class TestXSS:
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
 
-            assert response.status_code == 200
+            assert response.status_code == 200, f"XSS payload rejected: {xss_payload}"
 
-            # Verify message was sanitized in DB
-            if response.status_code == 200:
-                from db.models import MessageModel
-                messages = db_session.query(MessageModel).filter(
-                    MessageModel.content.contains(xss_payload)
-                ).all()
+            # Verify response doesn't contain executable XSS
+            response_data = response.json()
+            response_str = str(response_data)
 
-                # Content should be stored (for XSS, we store but escape on output)
-                # The actual sanitization happens on output, not input for messages
+            # Response should not contain raw script tags or event handlers
+            # (either sanitized or safely escaped)
+            assert "<script>" not in response_str or "&lt;script&gt;" in response_str, \
+                "XSS script tags not escaped in response"
+            assert "onerror=" not in response_str or response_str.count("onerror=") == response_str.count("onerror=&#"), \
+                "XSS event handlers not escaped in response"
 
 
 @pytest.mark.security
@@ -248,8 +259,9 @@ class TestInputValidation:
             }
 
             response = client.post("/api/messages", json=payload)
-            # Should either reject or process without creating identifier
-            assert response.status_code in [200, 400, 422]
+            # Invalid phone format should be rejected
+            assert response.status_code in [400, 422], \
+                f"Invalid phone '{invalid_phone}' should be rejected, got {response.status_code}"
 
     def test_email_format_validation(self, client, test_instance):
         """✓ Email format validation"""
@@ -270,8 +282,9 @@ class TestInputValidation:
             }
 
             response = client.post("/api/messages", json=payload)
-            # Should either reject or process without creating identifier
-            assert response.status_code in [200, 400, 422]
+            # Invalid email format should be rejected
+            assert response.status_code in [400, 422], \
+                f"Invalid email '{invalid_email}' should be rejected, got {response.status_code}"
 
 
 @pytest.mark.security
