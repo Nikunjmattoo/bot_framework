@@ -260,7 +260,7 @@ class TestWhatsAppMessage:
 
         payload = {
             "request_id": request_id,
-            "whatsapp_message": {
+            "message": {  # Correct field name is "message", not "whatsapp_message"
                 "from": "+11234567890",
                 "to": "+9876543210",  # Matches test_whatsapp_instance.recipient_number
                 "type": "text",
@@ -285,6 +285,7 @@ class TestWhatsAppMessage:
         assert data["data"]["response"]["content"] == "WhatsApp response"
 
         # Verify WhatsApp user was created
+        user_id = data["data"]["user_id"]
         user = db_session.query(UserModel).filter(
             UserModel.id == user_id
         ).first()
@@ -375,6 +376,7 @@ class TestGuestUser:
         data = response.json()
 
         # Verify guest user created
+        user_id = data["data"]["user_id"]
         user = db_session.query(UserModel).filter(
             UserModel.id == user_id
         ).first()
@@ -518,7 +520,7 @@ class TestSessionTimeout:
         data = response.json()
 
         # Should create new session
-        new_session_id = session_id
+        new_session_id = data["data"]["session_id"]
         assert new_session_id != str(old_session.id)
 
 
@@ -558,7 +560,7 @@ class TestTokenBudget:
         data = response.json()
 
         # Verify session has token plan
-        session_id = session_id
+        session_id = data["data"]["session_id"]
         session = db_session.query(SessionModel).filter(SessionModel.id == session_id).first()
 
         # Token plan should be initialized
