@@ -79,49 +79,56 @@ def parse_pytest_output(output):
     }
 
     # Extract summary line: "1 failed, 28 passed, 3 skipped, 3 warnings in 0.99s"
-    # Try multiple patterns to catch different combinations
+    # OR: "76 errors in 27.96s"
+    # The summary line always ends with "in X.XXs" so we match that pattern
+    # Note: Color codes like \033[31m may be present, so we need to handle them
 
-    # Pattern 1: failed + passed + skipped
-    summary_match = re.search(r'(\d+) failed.*?(\d+) passed.*?(\d+) skipped', output)
-    if summary_match:
-        result['failed'] = int(summary_match.group(1))
-        result['passed'] = int(summary_match.group(2))
-        result['skipped'] = int(summary_match.group(3))
-        result['total'] = result['failed'] + result['passed'] + result['skipped']
-    else:
-        # Pattern 2: failed + passed (no skipped)
-        summary_match = re.search(r'(\d+) failed.*?(\d+) passed', output)
-        if summary_match:
-            result['failed'] = int(summary_match.group(1))
-            result['passed'] = int(summary_match.group(2))
-            result['total'] = result['failed'] + result['passed']
-        else:
-            # Pattern 3: passed + skipped (no failures)
-            summary_match = re.search(r'(\d+) passed.*?(\d+) skipped', output)
-            if summary_match:
-                result['passed'] = int(summary_match.group(1))
-                result['skipped'] = int(summary_match.group(2))
-                result['total'] = result['passed'] + result['skipped']
-            else:
-                # Pattern 4: just passed
-                passed_match = re.search(r'(\d+) passed', output)
-                if passed_match:
-                    result['passed'] = int(passed_match.group(1))
-                    result['total'] = result['passed']
+    # Strip ANSI color codes from output for easier parsing
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    clean_output = ansi_escape.sub('', output)
 
-                # Check for skipped separately
-                skipped_match = re.search(r'(\d+) skipped', output)
-                if skipped_match:
-                    result['skipped'] = int(skipped_match.group(1))
-                    result['total'] += result['skipped']
+    # Look for the summary line (ends with "in X.XXs")
+    summary_line_match = re.search(r'=+ (.+? in \d+\.\d+s) =+', clean_output)
+    if summary_line_match:
+        summary_line = summary_line_match.group(1)
 
-    # Extract failed test details
-    # Pattern: FAILED test/path/file.py::TestClass::test_name - Error message
+        # Check for errors
+        errors_match = re.search(r'(\d+) errors?', summary_line)
+        if errors_match:
+            result['failed'] = int(errors_match.group(1))
+
+        # Check for failed
+        failed_match = re.search(r'(\d+) failed', summary_line)
+        if failed_match:
+            result['failed'] = max(result['failed'], int(failed_match.group(1)))
+
+        # Check for passed
+        passed_match = re.search(r'(\d+) passed', summary_line)
+        if passed_match:
+            result['passed'] = int(passed_match.group(1))
+
+        # Check for skipped
+        skipped_match = re.search(r'(\d+) skipped', summary_line)
+        if skipped_match:
+            result['skipped'] = int(skipped_match.group(1))
+
+    # Calculate total
+    result['total'] = result['failed'] + result['passed'] + result['skipped']
+
+    # Extract failed/error test details
+    # Pattern 1: FAILED test/path/file.py::TestClass::test_name - Error message
+    # Note: Paths may use / (Linux/Mac) or \ (Windows)
     failed_pattern = r'FAILED (.*?)::(.*?)::(.*?) - (.*?)(?:\n|$)'
-    for match in re.finditer(failed_pattern, output):
+    for match in re.finditer(failed_pattern, clean_output):
         # Extract short file name (just the filename, not full path)
         full_file = match.group(1)
-        short_file = full_file.split('/')[-1] if '/' in full_file else full_file
+        # Handle both / and \ path separators
+        if '/' in full_file:
+            short_file = full_file.split('/')[-1]
+        elif '\\' in full_file:
+            short_file = full_file.split('\\')[-1]
+        else:
+            short_file = full_file
 
         # Truncate long error messages
         error_msg = match.group(4).strip()
@@ -136,16 +143,72 @@ def parse_pytest_output(output):
         }
         result['failures'].append(failure)
 
+    # Pattern 2: ERROR test/path/file.py::TestClass::test_name
+    # Extract list of all ERROR test names
+    error_tests = []
+    error_pattern = r'^ERROR (.*?)::(.*?)::(.*?)(?:\s|$)'
+    for match in re.finditer(error_pattern, clean_output, re.MULTILINE):
+        full_file = match.group(1)
+        # Handle both / and \ path separators
+        if '/' in full_file:
+            short_file = full_file.split('/')[-1]
+        elif '\\' in full_file:
+            short_file = full_file.split('\\')[-1]
+        else:
+            short_file = full_file
+        class_name = match.group(2)
+        test_name = match.group(3)
+        error_tests.append({
+            'file': short_file,
+            'full_path': full_file,
+            'class': class_name,
+            'test': test_name,
+            'error': None
+        })
+
+    # Now try to find error messages from the ERRORS section
+    # Look for first "E   ExceptionType:" line after each test error header
+    for test_error in error_tests:
+        # Pattern: _____ ERROR at setup of TestClass.test_name _____
+        # followed by lines with E   ErrorType: message
+        header_pattern = rf'_____ ERROR at (?:setup|teardown) of {test_error["class"]}\.{test_error["test"]} _____'
+        header_match = re.search(header_pattern, clean_output)
+
+        if header_match:
+            # Find the first E   line with an exception after this header
+            remaining_output = clean_output[header_match.end():]
+            # Look for lines like "E   sqlalchemy.exc.OperationalError: ..."
+            error_line_match = re.search(r'^E   (\w+(?:\.\w+)*(?:Error|Exception)[^:]*:.*?)$', remaining_output, re.MULTILINE)
+            if error_line_match:
+                error_msg = error_line_match.group(1).strip()
+                # Truncate if too long
+                if len(error_msg) > 100:
+                    error_msg = error_msg[:97] + '...'
+                test_error['error'] = error_msg
+
+        # If we still don't have an error, use a default
+        if not test_error['error']:
+            test_error['error'] = "Error during test setup/teardown (check logs for details)"
+
+    # Add all errors to failures list
+    result['failures'].extend(error_tests)
+
     # Extract skipped test details
     # Strategy: Parse both the test list and summary section separately, then merge
 
     # Step 1: Get all skipped test names from the verbose output
-    # Pattern: test/path/file.py::TestClass::test_name SKIPPED
+    # Pattern: test/path/file.py::TestClass::test_name SKIPPED or test\path\file.py::...
     skipped_tests_list = []
-    skipped_list_pattern = r'(test/.*?)::(.*?)::(.*?)\s+SKIPPED'
-    for match in re.finditer(skipped_list_pattern, output):
+    skipped_list_pattern = r'(test[/\\].*?)::(.*?)::(.*?)\s+SKIPPED'
+    for match in re.finditer(skipped_list_pattern, clean_output):
         full_path = match.group(1)
-        short_file = full_path.split('/')[-1] if '/' in full_path else full_path
+        # Handle both / and \ path separators
+        if '/' in full_path:
+            short_file = full_path.split('/')[-1]
+        elif '\\' in full_path:
+            short_file = full_path.split('\\')[-1]
+        else:
+            short_file = full_path
         skipped_tests_list.append({
             'file': short_file,
             'full_path': full_path,
@@ -158,7 +221,7 @@ def parse_pytest_output(output):
     # Pattern: SKIPPED [1] test/path/file.py:123: Reason text
     skipped_reasons = {}
     skipped_reason_pattern = r'SKIPPED \[\d+\] (test/.*?\.py):(\d+): (.+?)$'
-    for match in re.finditer(skipped_reason_pattern, output, re.MULTILINE):
+    for match in re.finditer(skipped_reason_pattern, clean_output, re.MULTILINE):
         file_path = match.group(1)
         line_num = match.group(2)
         reason = match.group(3).strip()
