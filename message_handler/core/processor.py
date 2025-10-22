@@ -392,12 +392,15 @@ def process_core(
         
         result_data = {
             "message_id": str(inbound_message.id),
+            "response_text": response_text,  # ✓ Add top-level response_text
+            "user_id": str(user.id),         # ✓ Add user_id
+            "session_id": str(user.session_id),  # ✓ Add session_id
             "response": {
                 "id": str(response_message.id),
                 "content": response_text
             }
         }
-        
+
         total_time = time.time() - start_time
         result_data["_meta"] = {
             "processing_time_seconds": round(total_time, 3),
