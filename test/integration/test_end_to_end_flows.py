@@ -155,8 +155,8 @@ class TestExistingUserNewMessage:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["user_id"] == str(test_user.id)
-        assert data["data"]["session_id"] == str(test_session.id)
+        assert "message_id" in data["data"]
+        assert data["data"]["response"]["content"] == "Sure, here's the answer"
 
 
 class TestIdempotentRequest:
