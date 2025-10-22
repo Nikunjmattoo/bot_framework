@@ -111,7 +111,7 @@ def process_api_message(
         logger.info(f"Created idempotency key: {idempotency_key}")
         
         # Check for duplicate BEFORE creating user/session
-        cached_response = get_processed_message(db, idempotency_key, trace_id=trace_id)
+        cached_response = get_processed_message(db, request_id, trace_id=trace_id)
         if cached_response:
             logger.info(f"Duplicate request detected for idempotency key: {idempotency_key}")
             raise DuplicateError(
@@ -129,7 +129,7 @@ def process_api_message(
             if lock_result is False:
                 # Try to get the cached response again with retries
                 for retry in range(MAX_RETRY_ATTEMPTS):
-                    cached_response = get_processed_message(db, idempotency_key, trace_id=trace_id)
+                    cached_response = get_processed_message(db, request_id, trace_id=trace_id)
                     if cached_response:
                         logger.info(f"Duplicate request after lock check (retry {retry})")
                         raise DuplicateError(
@@ -163,7 +163,7 @@ def process_api_message(
                     channel=channel
                 )
                 
-                mark_message_processed(tx, idempotency_key, result_data, trace_id)
+                mark_message_processed(tx, request_id, result_data, trace_id)
                 
                 processing_time = time.time() - start_time
                 logger.info(f"Message processed successfully in {processing_time:.2f}s")
