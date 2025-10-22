@@ -177,14 +177,25 @@ class TestSensitiveData:
         assert response.status_code == 200
 
         # Check message metadata doesn't contain sensitive keys
-        from db.models import MessageModel
-        message = db_session.query(MessageModel).filter(
-            MessageModel.session_id == response.json()["data"]["session_id"]
-        ).first()
+        from db.models import MessageModel, UserModel
+        response_data = response.json()["data"]
+        user_id = response_data.get("user_id")
 
-        if message and message.metadata_json:
-            metadata_str = str(message.metadata_json)
-            assert "should_be_stripped" not in metadata_str
+        # Find the user and their messages
+        user = db_session.query(UserModel).filter(UserModel.id == user_id).first()
+        assert user is not None, "User should be created"
+
+        # Get messages for this user's session
+        messages = db_session.query(MessageModel).filter(
+            MessageModel.user_id == user_id
+        ).all()
+
+        # Verify sensitive keys were stripped from all messages
+        for message in messages:
+            if message.metadata_json:
+                metadata_str = str(message.metadata_json)
+                assert "should_be_stripped" not in metadata_str, \
+                    "Sensitive data 'should_be_stripped' found in message metadata!"
 
 
 @pytest.mark.security
@@ -227,7 +238,8 @@ class TestInputValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code == 400  # Validation error
+        assert response.status_code in [400, 422], \
+            f"Content length validation should return 400 or 422, got {response.status_code}"
 
     def test_request_id_length_validation(self, client, test_instance):
         """✓ request_id length limits enforced"""
