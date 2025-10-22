@@ -31,7 +31,7 @@ class TestThroughput:
                 "content": f"Test message {i}",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": f"+1555000{i:04d}"}
+                "user": {"phone_e164": f"+1555000{i:04d}"}
             }
             start = time.time()
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
@@ -73,7 +73,7 @@ class TestThroughput:
                 "content": f"Burst test {i}",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": f"+1666000{i:04d}"}
+                "user": {"phone_e164": f"+1666000{i:04d}"}
             }
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
                 response = client.post("/api/messages", json=payload)
@@ -119,7 +119,7 @@ class TestLatency:
                 "content": f"Latency test {i}",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": f"+1777000{i:04d}"}
+                "user": {"phone_e164": f"+1777000{i:04d}"}
             }
 
             start = time.time()
@@ -170,7 +170,7 @@ class TestDatabaseConnectionPool:
                 "content": f"Pool test {i}",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": f"+1888000{i:04d}"}
+                "user": {"phone_e164": f"+1888000{i:04d}"}
             }
 
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
@@ -203,7 +203,7 @@ class TestDatabaseConnectionPool:
                 "content": f"Concurrent {i}",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": f"+1999000{i:04d}"}
+                "user": {"phone_e164": f"+1999000{i:04d}"}
             }
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
                 return client.post("/api/messages", json=payload).status_code
@@ -246,7 +246,7 @@ class TestTokenPlanInitialization:
             "content": "First message with token init",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15551112222"}
+            "user": {"phone_e164": "+15551112222"}
         }
 
         mock_response = {
@@ -279,7 +279,7 @@ class TestTokenPlanInitialization:
             "content": "Subsequent message",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+1234567890"}  # Existing user
+            "user": {"phone_e164": "+1234567890"}  # Existing user
         }
 
         mock_response = {

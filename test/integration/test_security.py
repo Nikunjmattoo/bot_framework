@@ -32,7 +32,7 @@ class TestSQLInjection:
                 "content": payload_text,
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": "+15551234567"}
+                "user": {"phone_e164": "+15551234567"}
             }
 
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
@@ -52,7 +52,7 @@ class TestSQLInjection:
             "content": "Test message",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {
+            "user": {
                 "phone_e164": "+15551234567'; DROP TABLE users; --",
                 "email": "test@example.com' OR '1'='1"
             }
@@ -87,7 +87,7 @@ class TestXSS:
                 "content": xss_payload,
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": "+15559876543"}
+                "user": {"phone_e164": "+15559876543"}
             }
 
             with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
@@ -116,7 +116,7 @@ class TestSensitiveData:
             "content": "Test message",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {
+            "user": {
                 "phone_e164": "+15551111111",
                 "password": "SuperSecret123!",  # Should be stripped
                 "token": "secret_token_123",  # Should be stripped
@@ -147,7 +147,7 @@ class TestSensitiveData:
             "content": "Test message",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {
+            "user": {
                 "phone_e164": "+15552222222",
                 "password": "should_be_stripped",
                 "auth": "should_be_stripped"
@@ -244,7 +244,7 @@ class TestInputValidation:
                 "content": "Test",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"phone_e164": invalid_phone}
+                "user": {"phone_e164": invalid_phone}
             }
 
             response = client.post("/api/messages", json=payload)
@@ -266,7 +266,7 @@ class TestInputValidation:
                 "content": "Test",
                 "instance_id": str(test_instance.id),
                 "request_id": str(uuid.uuid4()),
-                "user_details": {"email": invalid_email}
+                "user": {"email": invalid_email}
             }
 
             response = client.post("/api/messages", json=payload)
@@ -316,7 +316,7 @@ class TestAuthorizationValidation:
             "content": "Test",
             "instance_id": str(inactive_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15553333333"}
+            "user": {"phone_e164": "+15553333333"}
         }
 
         response = client.post("/api/messages", json=payload)
@@ -363,7 +363,7 @@ class TestHeaderSecurity:
             "content": "Test",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15554444444"}
+            "user": {"phone_e164": "+15554444444"}
         }
 
         mock_response = {
@@ -386,7 +386,7 @@ class TestHeaderSecurity:
             "content": "Test",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         mock_response = {

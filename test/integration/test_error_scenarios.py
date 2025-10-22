@@ -23,7 +23,7 @@ class TestInvalidInstance:
             "content": "Test message",
             "instance_id": fake_instance_id,
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         response = client.post("/api/messages", json=payload)
@@ -61,7 +61,7 @@ class TestInactiveInstance:
             "content": "Test message",
             "instance_id": str(inactive_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         response = client.post("/api/messages", json=payload)
@@ -89,7 +89,7 @@ class TestMissingConfig:
             "content": "Test message",
             "instance_id": str(instance_no_config.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         response = client.post("/api/messages", json=payload)
@@ -136,7 +136,7 @@ class TestInvalidTemplate:
             "content": "Test message",
             "instance_id": str(instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         response = client.post("/api/messages", json=payload)
@@ -192,7 +192,7 @@ class TestMissingModel:
             "content": "Test message",
             "instance_id": str(instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         response = client.post("/api/messages", json=payload)
@@ -216,7 +216,7 @@ class TestOrchestratorTimeout:
             "content": "Test timeout",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         with patch('conversation_orchestrator.orchestrator.process_message', side_effect=slow_orchestrator):
@@ -242,7 +242,7 @@ class TestOrchestratorError:
             "content": "Test error",
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": "+15555555555"}
+            "user": {"phone_e164": "+15555555555"}
         }
 
         with patch('conversation_orchestrator.orchestrator.process_message', side_effect=failing_orchestrator):
@@ -292,7 +292,7 @@ class TestConcurrentIdempotency:
             "content": "Concurrent test",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {"phone_e164": "+15551111111"}
+            "user": {"phone_e164": "+15551111111"}
         }
 
         mock_response = {

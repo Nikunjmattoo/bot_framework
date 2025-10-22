@@ -37,7 +37,7 @@ class TestNewUserFirstMessage:
             "content": "Hello, this is my first message!",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {
+            "user": {
                 "phone_e164": "+19876543210",
                 "email": "newuser@example.com"
             }
@@ -62,11 +62,19 @@ class TestNewUserFirstMessage:
         data = response.json()
         assert data["success"] is True
         assert "data" in data
-        assert data["data"]["response_text"] == "Welcome! How can I help you?"
+        assert data["data"]["response"]["content"] == "Welcome! How can I help you?"
+        assert "message_id" in data["data"]
 
-        # Verify user was created
+        # Get user from session to verify user was created
+        message_id = data["data"]["message_id"]
+        from db.models import MessageModel
+        message = db_session.query(MessageModel).filter(
+            MessageModel.id == message_id
+        ).first()
+        assert message is not None
+
         user = db_session.query(UserModel).filter(
-            UserModel.id == data["data"]["user_id"]
+            UserModel.id == message.user_id
         ).first()
         assert user is not None
         assert user.user_tier == "standard"
@@ -126,7 +134,7 @@ class TestExistingUserNewMessage:
             "content": "Follow up question",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {
+            "user": {
                 "phone_e164": "+1234567890"  # Existing user phone
             }
         }
@@ -147,8 +155,8 @@ class TestExistingUserNewMessage:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["user_id"] == str(test_user.id)
-        assert data["data"]["session_id"] == str(test_session.id)
+        assert user_id == str(test_user.id)
+        assert session_id == str(test_session.id)
 
 
 class TestIdempotentRequest:
@@ -162,7 +170,7 @@ class TestIdempotentRequest:
             "content": "Test message",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {
+            "user": {
                 "phone_e164": "+15555555555"
             }
         }
@@ -206,7 +214,7 @@ class TestIdempotentRequest:
             "content": "Test message",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {
+            "user": {
                 "phone_e164": "+1234567890"
             }
         }
@@ -256,11 +264,11 @@ class TestWhatsAppMessage:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["response_text"] == "WhatsApp response"
+        assert data["data"]["response"]["content"] == "WhatsApp response"
 
         # Verify WhatsApp user was created
         user = db_session.query(UserModel).filter(
-            UserModel.id == data["data"]["user_id"]
+            UserModel.id == user_id
         ).first()
         assert user is not None
         assert user.user_tier == "verified"  # WhatsApp users get verified tier
@@ -333,7 +341,7 @@ class TestGuestUser:
             "content": "I am a guest",
             "instance_id": str(test_instance.id),
             "request_id": request_id
-            # No user_details
+            # No user
         }
 
         mock_response = {
@@ -350,7 +358,7 @@ class TestGuestUser:
 
         # Verify guest user created
         user = db_session.query(UserModel).filter(
-            UserModel.id == data["data"]["user_id"]
+            UserModel.id == user_id
         ).first()
         assert user.user_tier == "guest"
 
@@ -419,7 +427,7 @@ class TestBrandScopedIdentity:
             "content": "Message to Brand A",
             "instance_id": str(instance_a.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": shared_phone}
+            "user": {"phone_e164": shared_phone}
         }
 
         mock_response = {
@@ -438,7 +446,7 @@ class TestBrandScopedIdentity:
             "content": "Message to Brand B",
             "instance_id": str(instance_b.id),
             "request_id": str(uuid.uuid4()),
-            "user_details": {"phone_e164": shared_phone}
+            "user": {"phone_e164": shared_phone}
         }
 
         with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
@@ -477,7 +485,7 @@ class TestSessionTimeout:
             "content": "New message after timeout",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {"phone_e164": "+1234567890"}
+            "user": {"phone_e164": "+1234567890"}
         }
 
         mock_response = {
@@ -492,7 +500,7 @@ class TestSessionTimeout:
         data = response.json()
 
         # Should create new session
-        new_session_id = data["data"]["session_id"]
+        new_session_id = session_id
         assert new_session_id != str(old_session.id)
 
 
@@ -512,7 +520,7 @@ class TestTokenBudget:
             "content": "Test token tracking",
             "instance_id": str(test_instance.id),
             "request_id": request_id,
-            "user_details": {"phone_e164": "+15559999999"}
+            "user": {"phone_e164": "+15559999999"}
         }
 
         mock_response = {
@@ -532,7 +540,7 @@ class TestTokenBudget:
         data = response.json()
 
         # Verify session has token plan
-        session_id = data["data"]["session_id"]
+        session_id = session_id
         session = db_session.query(SessionModel).filter(SessionModel.id == session_id).first()
 
         # Token plan should be initialized
