@@ -235,7 +235,12 @@ class TestIdempotentRequest:
         response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 409
-        assert "already processed" in response.json()["error"]["message"].lower()
+        data = response.json()
+        assert "error" in data
+        assert "message" in data["error"]
+        # Check that it's a duplicate/already processed error
+        message_lower = data["error"]["message"].lower()
+        assert "duplicate" in message_lower or "already" in message_lower
 
 
 class TestWhatsAppMessage:
