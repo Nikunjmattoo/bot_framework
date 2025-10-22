@@ -230,8 +230,25 @@ def process_core(
     )
     
     try:
-        normalized_content = validate_content_length(content)
-        
+        # Validate content is not empty
+        if not content or not content.strip():
+            logger.error("Content is required")
+            raise ValidationError(
+                "Content is required",
+                error_code=ErrorCode.VALIDATION_ERROR,
+                field="content"
+            )
+
+        # Validate content length
+        is_valid, error_msg, normalized_content = validate_content_length(content)
+        if not is_valid:
+            logger.error(f"Content validation failed: {error_msg}")
+            raise ValidationError(
+                error_msg,
+                error_code=ErrorCode.VALIDATION_ERROR,
+                field="content"
+            )
+
         if not user:
             logger.error("User is required")
             raise ValidationError(
