@@ -1,0 +1,100 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.2, pluggy-1.6.0 -- C:\Projects\bot_framework\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Projects\bot_framework
+plugins: anyio-4.9.0, asyncio-1.2.0, cov-7.0.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 76 items
+
+test/api_layer/test_broadcast_endpoints.py::TestBroadcastEndpoints::test_missing_user_ids PASSED [  1%]
+test/api_layer/test_broadcast_endpoints.py::TestBroadcastEndpoints::test_empty_user_ids_list PASSED [  2%]
+test/api_layer/test_broadcast_endpoints.py::TestBroadcastEndpoints::test_too_many_user_ids PASSED [  3%]
+test/api_layer/test_broadcast_endpoints.py::TestBroadcastEndpoints::test_missing_content PASSED [  5%]
+test/api_layer/test_broadcast_endpoints.py::TestBroadcastEndpoints::test_successful_broadcast PASSED [  6%]
+test/api_layer/test_exception_handling.py::TestExceptionHandling::test_validation_error_returns_400 PASSED [  7%]
+test/api_layer/test_exception_handling.py::TestExceptionHandling::test_resource_not_found_returns_404 PASSED [  9%]
+test/api_layer/test_exception_handling.py::TestExceptionHandling::test_duplicate_error_returns_409 PASSED [ 10%]
+test/api_layer/test_exception_handling.py::TestExceptionHandling::test_error_includes_trace_id PASSED [ 11%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_health_check_db_connected PASSED [ 13%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_health_check_db_disconnected PASSED [ 14%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_health_check_response_format PASSED [ 15%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_health_check_content_type PASSED [ 17%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_readiness_endpoint PASSED [ 18%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_readiness_response_format PASSED [ 19%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_liveness_endpoint PASSED [ 21%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_liveness_response_format PASSED [ 22%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_health_endpoint_case_insensitive PASSED [ 23%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_health_endpoint_no_query_params PASSED [ 25%]
+test/api_layer/test_health_endpoints.py::TestHealthEndpoints::test_multiple_health_checks_consistent PASSED [ 26%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_missing_content PASSED [ 27%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_empty_content PASSED [ 28%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_whitespace_only_content PASSED [ 30%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_missing_instance_id PASSED [ 31%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_missing_request_id PASSED [ 32%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_invalid_request_id_format PASSED [ 34%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_request_id_with_spaces PASSED [ 35%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_content_too_long PASSED [ 36%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_request_id_too_long PASSED [ 38%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_invalid_instance_id_format PASSED [ 39%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_valid_phone_resolves_user PASSED [ 40%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_invalid_phone_format PASSED [ 42%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_valid_email_resolves_user PASSED [ 43%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_no_identifiers_accept_guest PASSED [ 44%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_no_identifiers_reject_guest PASSED [ 46%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_invalid_instance_id PASSED [ 47%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_inactive_instance PASSED [ 48%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_first_request_processes PASSED [ 50%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_duplicate_request_returns_409 PASSED [ 51%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_duplicate_request_returns_cached_response PASSED [ 52%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_concurrent_requests_one_processes PASSED [ 53%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_different_sessions_same_request_id PASSED [ 55%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_web_messages_endpoint PASSED [ 56%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_app_messages_endpoint PASSED [ 57%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_api_messages_endpoint PASSED [ 59%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_success_response_format PASSED [ 60%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_success_response_includes_message_id PASSED [ 61%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_success_response_includes_response_object PASSED [ 63%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_error_response_format PASSED [ 64%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_error_response_includes_error_code PASSED [ 65%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_trace_id_in_response_header PASSED [ 67%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_request_id_echoed_back PASSED [ 68%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_trace_id_from_header_used PASSED [ 69%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_content_type_is_json PASSED [ 71%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_very_long_valid_content PASSED [ 72%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_special_characters_in_content PASSED [ 73%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_unicode_content PASSED [ 75%]
+test/api_layer/test_message_endpoints.py::TestMessageEndpoints::test_newlines_in_content PASSED [ 76%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_text_message PASSED [ 77%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_image_message PASSED [ 78%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_audio_message PASSED [ 80%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_document_message PASSED [ 81%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_location_message PASSED [ 82%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_contact_message PASSED [ 84%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_missing_from_field PASSED [ 85%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_missing_to_field FAILED [ 86%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_invalid_phone_format PASSED [ 88%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_resolve_instance_by_recipient_number FAILED [ 89%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_resolve_instance_by_instance_id PASSED [ 90%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_no_matching_instance FAILED [ 92%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_existing_whatsapp_user PASSED [ 93%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_new_whatsapp_user PASSED [ 94%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_extract_text_body PASSED [ 96%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_extract_caption_from_media PASSED [ 97%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_extract_location_coordinates PASSED [ 98%]
+test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_extract_contact_names PASSED [100%]
+
+============================== warnings summary ===============================
+venv\Lib\site-packages\pydantic\_internal\_config.py:323
+  C:\Projects\bot_framework\venv\Lib\site-packages\pydantic\_internal\_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+venv\Lib\site-packages\pydantic\fields.py:1058
+  C:\Projects\bot_framework\venv\Lib\site-packages\pydantic\fields.py:1058: PydanticDeprecatedSince20: `min_items` is deprecated and will be removed, use `min_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warn('`min_items` is deprecated and will be removed, use `min_length` instead', DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_missing_to_field
+FAILED test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_resolve_instance_by_recipient_number
+FAILED test/api_layer/test_whatsapp_endpoints.py::TestWhatsAppEndpoints::test_no_matching_instance
+================== 3 failed, 73 passed, 2 warnings in 4.58s ===================

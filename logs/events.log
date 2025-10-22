@@ -1,0 +1,619 @@
+{"ts": "2025-09-23 20:43:17", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "web", "has_instance_id": true, "has_recipient_number": false, "has_sender_number": true, "has_email": true, "has_device_id": true, "has_files": false}}
+{"ts": "2025-09-23 20:43:17", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["instance_id", "sender_number", "email", "device_id", "channel", "message"]}}
+{"ts": "2025-09-23 20:43:17", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "web"}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime"]}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "memory:skipped", "details": {"missing_session_id": true, "missing_user_id": false, "missing_instance_id": false}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": false}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 2}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 0}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": false, "sections_total": 4}}
+{"ts": "2025-09-23 20:43:18", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "success"}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime"]}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "memory:skipped", "details": {"missing_session_id": true, "missing_user_id": false, "missing_instance_id": false}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": false}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 0}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 0}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": false, "sections_total": 4}}
+{"ts": "2025-09-23 20:47:17", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "success"}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime"]}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "memory:skipped", "details": {"missing_session_id": true, "missing_user_id": false, "missing_instance_id": false}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": false}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 0}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": false, "sections_total": 4}}
+{"ts": "2025-09-23 21:07:56", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "success"}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime"]}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "memory:skipped", "details": {"missing_session_id": true, "missing_user_id": false, "missing_instance_id": false}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": false}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 0}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": false, "sections_total": 4}}
+{"ts": "2025-09-23 21:17:18", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "success"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "identity:user_created", "details": {"user_id": "e90d65ac-80eb-4380-96e0-93f0c1c85f88", "identifiers": 1}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "a9c76b66-4022-4cea-a42b-916a4b083399", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "e90d65ac-80eb-4380-96e0-93f0c1c85f88", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "bb5c6449-85de-4a24-8f3c-6e1f28d13a6a", "session_id": "a9c76b66-4022-4cea-a42b-916a4b083399"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "a9c76b66-4022-4cea-a42b-916a4b083399", "sender_user_id": "e90d65ac-80eb-4380-96e0-93f0c1c85f88"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 126}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "a9c76b66-4022-4cea-a42b-916a4b083399"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id"]}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "a9c76b66-4022-4cea-a42b-916a4b083399"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 0}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "a9c76b66-4022-4cea-a42b-916a4b083399", "duration_ms": 100}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": false}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 0}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": false, "sections_total": 4}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 237}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-23 21:29:25", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "identity:user_created", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers": 1}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "6641fc2a-d152-458c-96b6-a5fa6b6e740d", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "c1492a7d-30ad-445c-a2df-19f1bbb7773a", "session_id": "6641fc2a-d152-458c-96b6-a5fa6b6e740d"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "6641fc2a-d152-458c-96b6-a5fa6b6e740d", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 203}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "6641fc2a-d152-458c-96b6-a5fa6b6e740d"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id"]}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "6641fc2a-d152-458c-96b6-a5fa6b6e740d"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 27}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "6641fc2a-d152-458c-96b6-a5fa6b6e740d", "duration_ms": 200}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 0}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 413}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-23 22:27:42", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "01a7be3b-ba64-4614-b722-d915d29feeb3", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "bad01318-ab42-4b7a-81b9-c7a44f4fd326", "session_id": "01a7be3b-ba64-4614-b722-d915d29feeb3"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "01a7be3b-ba64-4614-b722-d915d29feeb3", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 271}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "01a7be3b-ba64-4614-b722-d915d29feeb3"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id"]}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "01a7be3b-ba64-4614-b722-d915d29feeb3"}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 25}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "01a7be3b-ba64-4614-b722-d915d29feeb3", "duration_ms": 81}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 0}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 360}}
+{"ts": "2025-09-24 12:33:37", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "No tokenizer configured for provider=local model=llama3-8b-instruct. Pass runtime_settings['tokenizer']=callable or set allow_approx_tokenizer=True for a conservative fallback."}}
+{"ts": "2025-09-24 12:33:37", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "7415f9d6-2368-4293-bca8-6151c1f1dd60", "session_id": "5b10ab14-2d32-49a9-a097-f79420055474"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 13:28:30", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 15, "sections": [{"key": "context", "tokens": 6, "type": "fixed"}, {"key": "system", "tokens": 5, "type": "fixed"}, {"key": "task", "tokens": 4, "type": "fixed"}]}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 173}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 28}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "duration_ms": 81}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 13:28:30", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"session_id": "5b10ab14-2d32-49a9-a097-f79420055474", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 18, "sections": [{"key": "context", "tokens": 6, "type": "fixed"}, {"key": "memory", "tokens": 3, "type": "fixed"}, {"key": "system", "tokens": 5, "type": "fixed"}, {"key": "task", "tokens": 4, "type": "fixed"}]}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 2}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 4}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 276}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 13:28:30", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "74803cc7-c46b-427f-af3c-0173382eecb1", "session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "token_plan:cache_hit", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 43}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "plan_key": "adc82177c9acb142f79d71c0d1485a027a1ad1641428cf2fd44741c576abba42"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 28}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "duration_ms": 9}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 16:44:52", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"session_id": "b7e0b9a6-fcb5-47d9-83bf-d1bef6af965d", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 18, "sections": [{"key": "context", "tokens": 6, "type": "fixed"}, {"key": "memory", "tokens": 3, "type": "fixed"}, {"key": "system", "tokens": 5, "type": "fixed"}, {"key": "task", "tokens": 4, "type": "fixed"}]}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan.compute:end", "details": {"duration_ms": 2}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:computed", "details": {"sections": 4}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 64}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 16:44:52", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e"}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 16:57:22", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "8f97fa7b-2f22-4196-95dc-5212a420c864", "session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 16:57:23", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 0, "type": "percent"}, {"key": "memory", "tokens": 0, "type": "percent"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 2}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 165}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 27}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "ca3ec795-5b51-478f-9013-f6d35f82770e", "duration_ms": 227}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true, "mode": "update_existing"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 401}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 16:57:23", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "3965b573-afe0-4195-9644-8e75c1493da8", "session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 17:09:04", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": []}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 0, "type": "percent"}, {"key": "memory", "tokens": 0, "type": "percent"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 2}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 142}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 28}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "a5583be8-48f9-43c6-a373-f4f731e590d4", "duration_ms": 189}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true, "mode": "update_existing"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 338}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:09:04", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "260c9076-c00e-4b94-86b2-7ba0523fada0", "session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 17:16:16", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 5}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 146}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 32}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "c7e5e389-6d6f-4461-8e6e-1aed4e531f58", "duration_ms": 77}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true, "mode": "update_existing"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 231}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:16:16", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "86132657-ea12-4859-bd3e-2b66058ffcb2", "session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-24 17:26:01", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 4}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 144}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 17:26:01", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4"}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 28}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "ae7bbec0-3a8e-4008-b6bf-ac1bb8a5d4e4", "duration_ms": 111}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true, "mode": "update_existing"}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 262}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:26:02", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "6e54eabd-b436-4586-a990-68dd2ad46918", "session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "token_plan:cache_hit", "details": {"session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 46}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 30}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "a3c5a26a-6f4d-4169-9b15-938a2fe1f6f8", "duration_ms": 9}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true, "mode": "update_existing"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 62}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 17:34:48", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "7bf14415-1b61-4011-aee0-819771edab36", "session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "token_plan:cache_hit", "details": {"session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 84}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:start", "details": {"session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory:assembled", "details": {"chars": 33}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory.assemble:end", "details": {"session_id": "f3b343b8-6b92-44c7-84da-ee8d7b070e85", "duration_ms": 12}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "memory:injected", "details": {"sections_total": 4, "has_memory": true, "mode": "update_existing"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"has_memory": true, "sections_total": 4}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 108}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-24 21:26:02", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 11:53:15", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "576a0a51-1e3f-4dd1-86ed-cbb73a26f1f0", "session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 11:53:16", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 2}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 194}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "97392a8d-f8f4-4b1e-9837-cf4dfc463e64", "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:none", "details": {}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"sections_total": 4, "filled_fetch_sections": 0}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 203}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 11:53:16", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "81a1e58e-93c9-4de2-b2ad-19d02018910e", "session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 12:03:56", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 3}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "plan_key": "1c46f23f9352fee92a07d01a3cad380d412d176d3ab5d1b3f73c252b32e9c5c9"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "plan_key": "1c46f23f9352fee92a07d01a3cad380d412d176d3ab5d1b3f73c252b32e9c5c9", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "1c46f23f9352fee92a07d01a3cad380d412d176d3ab5d1b3f73c252b32e9c5c9"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 33}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "plan_key": "1c46f23f9352fee92a07d01a3cad380d412d176d3ab5d1b3f73c252b32e9c5c9"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:start", "details": {"jobs": 1, "max_workers": 1}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.parallel:start", "details": {}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:start", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:end", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "duration_ms": 23}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "MEMORY", "event": "assembled", "details": {"session_id": "6c88d552-4e76-4f86-82c1-b619cba803bf", "chars": 29, "budgets": {"recent_pair": 0, "session_slice": 0, "rolling_summary": 0}, "slice_msg_count": 0, "source": "template_budget"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:ok", "details": {"idx": 1, "chars": 29}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.parallel:end", "details": {"duration_ms": 98}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:end", "details": {"filled": 1}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "1c46f23f9352fee92a07d01a3cad380d412d176d3ab5d1b3f73c252b32e9c5c9"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"sections_total": 4, "filled_fetch_sections": 1}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 142}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 12:03:56", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "session:created", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "23ee496f-195d-4c87-ae85-3a91239ee26a", "session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 15:17:34", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 5}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "token_plan:cache_miss", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "plan_key": "ef607d1be8cccbba684b4cddaa2038092b37ff7c9400ccec62ff398b4d8395c5"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "session_ctx:stored", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "plan_key": "ef607d1be8cccbba684b4cddaa2038092b37ff7c9400ccec62ff398b4d8395c5", "changed": false, "reason": ["initial"]}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "ef607d1be8cccbba684b4cddaa2038092b37ff7c9400ccec62ff398b4d8395c5"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 203}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "plan_key": "ef607d1be8cccbba684b4cddaa2038092b37ff7c9400ccec62ff398b4d8395c5"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "ef607d1be8cccbba684b4cddaa2038092b37ff7c9400ccec62ff398b4d8395c5"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:start", "details": {"jobs": 1, "max_workers": 4}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:start", "details": {}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:start", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:end", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "duration_ms": 66}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "MEMORY", "event": "assembled", "details": {"session_id": "bd3d1f37-0bc6-4d37-bee0-6a4f31be0729", "chars": 38, "budgets": {"recent_pair": 128, "session_slice": 1024, "rolling_summary": 256}, "slice_msg_count": 32, "source": "template_or_plan"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:ok", "details": {"idx": 1, "chars": 38}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:end", "details": {}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:injected", "details": {"key": "memory", "chars": 38, "mode": "update"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:end", "details": {"filled": 1}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"sections_total": 4, "filled_fetch_sections": 1}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 286}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 15:17:34", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "dfd6fe6e-29c7-470d-9333-36e9dfd2877a", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "476e7e32-1cef-41e5-93f9-0b967a2a718d", "session_id": "dfd6fe6e-29c7-470d-9333-36e9dfd2877a"}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 15:50:12", "level": "error", "component": "HANDLER", "event": "token_plan:error", "details": {"err": "No tokenizer configured for provider=local model=llama3-8b-instruct. Pass runtime_settings['tokenizer']=callable or set allow_approx_tokenizer=True for a conservative fallback."}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 154}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 156}}
+{"ts": "2025-09-25 15:50:12", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "No tokenizer configured for provider=local model=llama3-8b-instruct. Pass runtime_settings['tokenizer']=callable or set allow_approx_tokenizer=True for a conservative fallback."}}
+{"ts": "2025-09-25 15:50:12", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "6bb84d51-dd30-45f5-9796-b72740c24b9f", "session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 16:07:38", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 4}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "token_plan:computed", "details": {"plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c", "allocatable": 7270, "sections_count": 4}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 161}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c", "plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:start", "details": {"jobs": 1, "max_workers": 4}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:start", "details": {}}
+{"ts": "2025-09-25 16:07:38", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:start", "details": {"session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c"}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:end", "details": {"session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c", "duration_ms": 61}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "MEMORY", "event": "assembled", "details": {"session_id": "6eaab185-42e1-4ff9-b53c-b2175a09883c", "chars": 28, "budgets": {"recent_pair": 128, "session_slice": 1024, "rolling_summary": 256}, "slice_msg_count": 32, "source": "template_or_plan"}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:ok", "details": {"idx": 1, "chars": 28}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:end", "details": {}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:injected", "details": {"key": "memory", "chars": 28, "mode": "update"}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:end", "details": {"filled": 1}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"sections_total": 4, "filled_fetch_sections": 1}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 237}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 16:07:39", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 0}}
+{"ts": "2025-09-25 16:30:43", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "name '_build_adapter_payload' is not defined"}}
+{"ts": "2025-09-25 16:30:43", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "e0e11dac-e03a-44b2-9b7e-90b574ab884f", "session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3"}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 16:35:29", "level": "error", "component": "HANDLER", "event": "token_plan:error", "details": {"err": "No tokenizer configured for provider=local model=llama3-8b-instruct. Pass runtime_settings['tokenizer']=callable or set allow_approx_tokenizer=True for a conservative fallback."}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 1}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 140}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 142}}
+{"ts": "2025-09-25 16:35:29", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "No tokenizer configured for provider=local model=llama3-8b-instruct. Pass runtime_settings['tokenizer']=callable or set allow_approx_tokenizer=True for a conservative fallback."}}
+{"ts": "2025-09-25 16:35:29", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": false}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "fa04ec37-80e4-46b5-b848-ce515025e76c", "session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-25 16:38:46", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 4}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "token_plan:computed", "details": {"plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c", "allocatable": 7270, "sections_count": 4}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 142}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3", "plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:start", "details": {"jobs": 1, "max_workers": 4}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:start", "details": {}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:start", "details": {"session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "MEMORY", "event": "assemble_memory_for_llm:end", "details": {"session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3", "duration_ms": 59}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "MEMORY", "event": "assembled", "details": {"session_id": "565ef9fb-fc03-4f16-aea0-df387bcc87a3", "chars": 66, "budgets": {"recent_pair": 128, "session_slice": 1024, "rolling_summary": 256}, "slice_msg_count": 32, "source": "template_or_plan"}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:ok", "details": {"idx": 1, "chars": 66}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:end", "details": {}}
+{"ts": "2025-09-25 16:38:46", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:injected", "details": {"key": "memory", "chars": 66, "mode": "update"}}
+{"ts": "2025-09-25 16:38:47", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:end", "details": {"filled": 1}}
+{"ts": "2025-09-25 16:38:47", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"sections_total": 4, "filled_fetch_sections": 1}}
+{"ts": "2025-09-25 16:38:47", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 222}}
+{"ts": "2025-09-25 16:38:47", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-25 16:38:47", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "5470feff-c886-41ad-b9c6-cf5ca1886939", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "a1351ede-13b9-42f5-9e49-209f9682b656", "session_id": "5470feff-c886-41ad-b9c6-cf5ca1886939"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "token_plan.compute:start", "details": {}}
+{"ts": "2025-09-26 13:48:03", "level": "warn", "component": "TOKEN_MANAGER", "event": "tokenizer:approx", "details": {"provider": "local", "model": "llama3-8b-instruct"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "TOKEN_MANAGER", "event": "plan", "details": {"context_limit": 8192, "reserve_output": 512, "safety_margin": 410, "formatting_overhead": 0, "allocatable": 7270, "static_text_tokens": 0, "percent_materialized": {"base_pool_tokens": 7270, "fixed_known_before": 656, "remaining_for_percent": 6614, "assigned": [{"key": "recent", "value": 0.0, "tokens": 3307, "priority": 40}, {"key": "memory", "value": 0.0, "tokens": 3307, "priority": 50}]}, "sections": [{"key": "system", "tokens": 400, "type": "fixed"}, {"key": "recent", "tokens": 3307, "type": "fixed"}, {"key": "memory", "tokens": 3307, "type": "fixed"}, {"key": "tools", "tokens": 256, "type": "fixed"}]}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "token_plan.compute:end", "details": {"duration_ms": 3}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "token_plan:computed", "details": {"plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c", "allocatable": 7270, "sections_count": 4}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "adapter_payload:built", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "5470feff-c886-41ad-b9c6-cf5ca1886939", "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 233}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "orchestrator:call", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "session_id": "5470feff-c886-41ad-b9c6-cf5ca1886939", "plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "adapter:received", "details": {"keys": ["message", "routing", "model", "template", "llm_runtime", "session_id", "token_plan", "plan_key"]}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "token_plan:reuse", "details": {"plan_key": "c25e1badc7075dffaa0b3c0ed4b2e642b04c836f16a43e85eb62e26dc183ea8c"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:start", "details": {"jobs": 1, "max_workers": 4}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:start", "details": {}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "MEMORY", "event": "assemble_hot:start", "details": {"session_id": "5470feff-c886-41ad-b9c6-cf5ca1886939"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "MEMORY", "event": "assemble_hot:end", "details": {"session_id": "5470feff-c886-41ad-b9c6-cf5ca1886939", "duration_ms": 0}}
+{"ts": "2025-09-26 13:48:03", "level": "error", "component": "ORCHESTRATOR", "event": "fetch:error", "details": {"idx": 1, "key": "memory", "err": "MemoryWorker.__init__() missing 3 required positional arguments: 'db', 'telemetry', and 'summarizer'"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "fetch.sequential:end", "details": {}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "fetch:end", "details": {"filled": 0}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "ORCHESTRATOR", "event": "llm_payload:ready", "details": {"sections_total": 4, "filled_fetch_sections": 1}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 252}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "HANDLER", "event": "orchestrator:return", "details": {"status": "ok"}}
+{"ts": "2025-09-26 13:48:03", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "ok"}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 0}}
+{"ts": "2025-09-26 18:07:52", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "'_instance'"}}
+{"ts": "2025-09-26 18:07:52", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 0}}
+{"ts": "2025-09-26 18:10:04", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "'_instance'"}}
+{"ts": "2025-09-26 18:10:04", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "API", "event": "message:received", "details": {"channel": "whatsapp", "has_instance_id": false, "has_recipient_number": true, "has_sender_number": true, "has_email": false, "has_device_id": false, "has_files": false}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "API", "event": "payload:normalized", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "API", "event": "handler:call", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "HANDLER", "event": "handle_message:called", "details": {"channel": "whatsapp"}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:start", "details": {}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "HANDLER", "event": "api_payload:received", "details": {"keys": ["recipient_number", "sender_number", "channel", "message"]}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "HANDLER", "event": "build_adapter:start", "details": {}}
+{"ts": "2025-09-26 18:18:06", "level": "info", "component": "HANDLER", "event": "identity:user_resolved", "details": {"user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "identifiers_checked": 1}}
+{"ts": "2025-09-26 18:18:07", "level": "info", "component": "HANDLER", "event": "session:active", "details": {"session_id": "3eec1490-4e20-4a22-a1a6-2c9f493b99be", "instance_id": "aaaaaaa1-1111-1111-1111-111111111111", "user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf", "timeout_s": 300, "new": true}}
+{"ts": "2025-09-26 18:18:07", "level": "info", "component": "HANDLER", "event": "message:inbound.saved", "details": {"message_id": "52c4cba2-298b-4014-98d7-b20c6ee2f6c6", "session_id": "3eec1490-4e20-4a22-a1a6-2c9f493b99be"}}
+{"ts": "2025-09-26 18:18:07", "level": "error", "component": "HANDLER", "event": "template:not_found", "details": {"instance_id": "aaaaaaa1-1111-1111-1111-111111111111"}}
+{"ts": "2025-09-26 18:18:07", "level": "info", "component": "HANDLER", "event": "build_adapter:end", "details": {"duration_ms": 199}}
+{"ts": "2025-09-26 18:18:07", "level": "info", "component": "HANDLER", "event": "build_and_orchestrate:end", "details": {"duration_ms": 201}}
+{"ts": "2025-09-26 18:18:07", "level": "error", "component": "HANDLER", "event": "error", "details": {"message": "No templates found for instance_id=aaaaaaa1-1111-1111-1111-111111111111"}}
+{"ts": "2025-09-26 18:18:07", "level": "info", "component": "API", "event": "handler:return", "details": {"status": "error"}}

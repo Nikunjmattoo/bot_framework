@@ -1,0 +1,35 @@
+{
+    "message": {
+        "sender_user_id": "062eb90c-24b2-4a47-ac6d-68fd75233b36",
+        "content": "Test edge case - long running process",
+        "channel": "api"
+    },
+    "routing": {
+        "brand_id": "6e553efa-f4cb-4c8c-97e0-daae32524a26",
+        "instance_id": "47ed5090-08b7-4a5e-a8d9-44844a7426a3"
+    },
+    "model": {
+        "id": "075233e3-6fbe-42ca-9d22-09fc11119fb8"
+    },
+    "template": {
+        "id": "test_template_set_1",
+        "json": {
+            "functions": {
+                "intent": {
+                    "model": "075233e3-6fbe-42ca-9d22-09fc11119fb8",
+                    "template": "intent_v1"
+                },
+                "response": {
+                    "model": "78394d63-30b2-441b-b7d6-cc9185fc11d2",
+                    "template": "response_v1"
+                }
+            }
+        }
+    },
+    "llm_runtime": {
+        "channel": "api",
+        "accept_guest_users": true
+    },
+    "token_plan": null,
+    "plan_key": null
+}

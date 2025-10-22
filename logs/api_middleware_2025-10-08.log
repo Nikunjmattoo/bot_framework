@@ -1,0 +1,4 @@
+2025-10-08 11:14:24 | INFO | api_middleware | request_completed | trace_id=a3553104-793b-4674-a9cd-b01a79ba44b0 | method=GET | path=/healthz | status_code=200 | duration_ms=5.87 | success=True | client_ip=testclient
+2025-10-08 11:14:24 | INFO | api_middleware | request_completed | trace_id=81e8eebd-29f3-4222-80a3-a0144273fbb7 | method=GET | path=/healthz | status_code=200 | duration_ms=3.05 | success=True | client_ip=testclient
+2025-10-08 11:14:24 | INFO | api_middleware | request_completed | trace_id=5625b9ae-714c-4965-8d65-9e8e85678c5f | method=GET | path=/ready | status_code=200 | duration_ms=1.55 | success=True | client_ip=testclient
+2025-10-08 11:14:24 | INFO | api_middleware | request_completed | trace_id=166c89e1-4133-489e-b068-a6feaeeabaa7 | method=GET | path=/live | status_code=200 | duration_ms=2.03 | success=True | client_ip=testclient

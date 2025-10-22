@@ -1,0 +1,102 @@
+{
+    "message": {
+        "text": "",
+        "attachments": [],
+        "sender_user_id": "cd6c4630-f4ae-469d-9341-91a4a0a8c261",
+        "channel": "web",
+        "metadata": {}
+    },
+    "routing": {
+        "instance_id": "caf96fc5-2692-4010-b015-480c205ad0d1"
+    },
+    "model": "llama3.default",
+    "template": {
+        "json": {
+            "intent": {
+                "description": "Classify the user message into a coarse intent.",
+                "sections": [
+                    {
+                        "id": "intent_system",
+                        "type": "system",
+                        "text": "You are an intent classifier for a hospitality recruiting bot. Return one of: SMALLTALK, APPLY_JOB, POST_JOB, HELP, OTHER."
+                    },
+                    {
+                        "id": "intent_user",
+                        "type": "user",
+                        "text": "Message: {{message.text}}"
+                    }
+                ],
+                "output": {
+                    "format": "json",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "intent": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "intent"
+                        ]
+                    }
+                },
+                "id": "intent_v1"
+            },
+            "brain": {
+                "description": "Fetch or compute any data needed before composing a reply.",
+                "fetch": [
+                    {
+                        "id": "brand_rules",
+                        "type": "config",
+                        "source": "brand.extra_config",
+                        "fallback": {}
+                    }
+                ],
+                "sections": [
+                    {
+                        "id": "brain_notes",
+                        "type": "system",
+                        "text": "Use fetched brand rules to shape answers. If none, proceed with defaults."
+                    }
+                ],
+                "output": {
+                    "format": "json",
+                    "schema": {
+                        "type": "object"
+                    }
+                },
+                "id": "brain_v1"
+            },
+            "response": {
+                "description": "Compose the assistant message for WhatsApp.",
+                "sections": [
+                    {
+                        "id": "resp_system",
+                        "type": "system",
+                        "text": "You are a concise WhatsApp assistant for hospitality recruiting. Be brief, friendly, and action-oriented."
+                    },
+                    {
+                        "id": "resp_context",
+                        "type": "assistant",
+                        "text": "Intent: {{intent.intent}}\nChannel: {{message.channel}}\nNotes: {{brain_v1}}"
+                    },
+                    {
+                        "id": "resp_user",
+                        "type": "user",
+                        "text": "{{message.text}}"
+                    }
+                ],
+                "output": {
+                    "format": "text"
+                },
+                "id": "response_v1"
+            }
+        }
+    },
+    "llm_runtime": {
+        "temperature": 0.3,
+        "timeout_ms": 15000
+    },
+    "token_plan": {},
+    "plan_key": "retail-v1"
+}

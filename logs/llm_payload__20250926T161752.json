@@ -1,0 +1,26 @@
+{
+    "message": {
+        "text": "",
+        "attachments": [],
+        "sender_user_id": "136a730d-542b-412d-a436-189bff127768",
+        "channel": "whatsapp",
+        "metadata": {}
+    },
+    "routing": {
+        "instance_id": "caf96fc5-2692-4010-b015-480c205ad0d1"
+    },
+    "model": "llama3.default",
+    "template": {
+        "json": {
+            "intent": "intent_v1",
+            "brain": "brain_v1",
+            "response": "response_v1"
+        }
+    },
+    "llm_runtime": {
+        "temperature": 0.3,
+        "timeout_ms": 15000
+    },
+    "token_plan": {},
+    "plan_key": "retail-v1"
+}

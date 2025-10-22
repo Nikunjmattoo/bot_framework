@@ -1,0 +1,111 @@
+{
+    "message": {
+        "text": "safsd",
+        "channel": "whatsapp",
+        "sender_number": "919888888888",
+        "sender_user_id": "36b543f2-5bc0-475f-86bf-dc6caed404bf",
+        "recipient_number": "919999999999",
+        "email": null,
+        "device_id": null
+    },
+    "routing": {
+        "instance_id": "aaaaaaa1-1111-1111-1111-111111111111"
+    },
+    "model": {
+        "id": "33333333-3333-3333-3333-333333333333",
+        "name": "llama3-8b-instruct",
+        "provider": "local",
+        "max_tokens": 8192
+    },
+    "template": {
+        "id": "55555555-5555-5555-5555-555555555555",
+        "json": {
+            "version": "1.0",
+            "sections": [
+                {
+                    "key": "system",
+                    "budget": {
+                        "type": "fixed",
+                        "tokens": 400,
+                        "priority": 20,
+                        "required": true
+                    }
+                },
+                {
+                    "key": "memory",
+                    "budget": {
+                        "type": "percent",
+                        "value": 20,
+                        "priority": 50,
+                        "required": false
+                    },
+                    "text": "[memory/recent]\nuser: safsd"
+                },
+                {
+                    "key": "recent",
+                    "budget": {
+                        "type": "percent",
+                        "value": 60,
+                        "priority": 40,
+                        "required": false
+                    }
+                },
+                {
+                    "key": "tools",
+                    "budget": {
+                        "type": "fixed",
+                        "tokens": 256,
+                        "priority": 60,
+                        "required": false
+                    }
+                }
+            ]
+        }
+    },
+    "llm_runtime": {
+        "temperature": 0.7,
+        "timeout_ms": 15000,
+        "session_timeout_seconds": 300,
+        "use_rag": false,
+        "reserve_output": 512,
+        "safety_margin_tokens": null,
+        "formatting_overhead_per_leaf": 0,
+        "allow_approx_tokenizer": true
+    },
+    "token_plan": {
+        "context_limit": 8192,
+        "reserve_output": 922,
+        "allocatable": 7270,
+        "sections": [
+            {
+                "key": "system",
+                "tokens": 400,
+                "required": true,
+                "priority": 20,
+                "type": "fixed"
+            },
+            {
+                "key": "recent",
+                "tokens": 0,
+                "required": false,
+                "priority": 40,
+                "type": "percent"
+            },
+            {
+                "key": "memory",
+                "tokens": 0,
+                "required": false,
+                "priority": 50,
+                "type": "percent"
+            },
+            {
+                "key": "tools",
+                "tokens": 256,
+                "required": false,
+                "priority": 60,
+                "type": "fixed"
+            }
+        ]
+    },
+    "plan_key": "6e2d6651b2c7ca4fc64737a2315a7cc4e64e8b538c88f0f94734bb1b5c28b09f"
+}

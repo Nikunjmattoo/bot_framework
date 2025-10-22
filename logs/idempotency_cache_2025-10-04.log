@@ -1,0 +1,38 @@
+2025-10-04 12:31:49 | ERROR | idempotency_cache | Unexpected error marking message processed: name 'datetime' is not defined | idempotency_key=52e4c38c066afe6de42deffb3281722d94d2dd31f1a389cf936a46aa9351e4d1
+Traceback (most recent call last):
+  File "C:\Projects\bot_framework\message_handler\services\idempotency\cache_manager.py", line 114, in mark_message_processed
+    now_iso = datetime.now(timezone.utc).isoformat()
+              ^^^^^^^^
+NameError: name 'datetime' is not defined. Did you forget to import 'datetime'?
+2025-10-04 12:31:49 | ERROR | idempotency_cache | Unexpected error marking message processed: name 'datetime' is not defined | idempotency_key=74a9ce4209ad2811166ab89362fac8cc71009a09ea673ff0e1383de38e98d9ed
+Traceback (most recent call last):
+  File "C:\Projects\bot_framework\message_handler\services\idempotency\cache_manager.py", line 114, in mark_message_processed
+    now_iso = datetime.now(timezone.utc).isoformat()
+              ^^^^^^^^
+NameError: name 'datetime' is not defined. Did you forget to import 'datetime'?
+2025-10-04 12:34:00 | INFO | idempotency_cache | Marked message 55d3f051-41ce-43dc-ae15-f13c35f6a911 as processed | idempotency_key=5decc3fe7e529f0adde3f178ac015c87286223c18ecebd9b06124d3b42cd61e4
+2025-10-04 12:34:00 | INFO | idempotency_cache | Marked message 64b8fe1a-1d1f-4fa1-929d-b3f8b9b6f36d as processed | idempotency_key=a6dffac77dc5855a800efe8d71501496b6049a7fcd8170d5fa4dffc1f8486796
+2025-10-04 12:36:48 | INFO | idempotency_cache | Marked message b63c4352-69fd-4ea5-87e6-d4c8623207e5 as processed | idempotency_key=test-basic-d2a4ad8d-5bcd-4ea4-9bd7-fdf27722c923
+2025-10-04 12:36:48 | INFO | idempotency_cache | Marked message cd6626ea-82bf-46b1-9a0a-b6c0d46c4020 as processed | idempotency_key=test-concurrent-bd3fc889-fdf8-4705-b707-1a63520b8e2d
+2025-10-04 12:36:48 | INFO | idempotency_cache | Marked message 8c9dfa94-ed73-40d1-89b1-a698576b6fed as processed | idempotency_key=test-consecutive-1-085d3359-1d2d-4d48-87b6-2c774a2183ba
+2025-10-04 12:36:48 | INFO | idempotency_cache | Marked message cd3ee660-76ac-4ac0-8cae-f5a06bda7cae as processed | idempotency_key=test-consecutive-2-b2fc1ac8-2f23-4c55-a96d-9e7b68476196
+2025-10-04 13:01:18 | INFO | idempotency_cache | Marked message 705c9b6f-8264-4d00-8bc2-96e50d827931 as processed | idempotency_key=test-basic-a7dda2d6-1d72-49e3-bfe4-146938d578e9
+2025-10-04 13:01:18 | INFO | idempotency_cache | Marked message fcb711c8-85f7-4b66-b528-00f21fb1fd2b as processed | idempotency_key=test-concurrent-63dbe45f-0541-4411-a277-611a3631fdfb
+2025-10-04 13:01:18 | INFO | idempotency_cache | Marked message e6f42c38-85f5-424a-9c04-f5d0fd85eb1d as processed | idempotency_key=test-consecutive-1-fc33581b-a60f-43d9-b02b-0fcac462def6
+2025-10-04 13:01:18 | INFO | idempotency_cache | Marked message 9a181914-913d-4ed8-9f1f-0adcec0a2dc2 as processed | idempotency_key=test-consecutive-2-f1d8af4b-587b-4cb3-9683-2c654695dcae
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message c9262d32-cd50-461d-a73d-5d8b20dfdad5 as processed | idempotency_key=test-basic-371969fb-888b-4e04-bc6e-65a15a6f7881
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message 916baceb-31ff-4c82-85d9-c0f479760c3d as processed | idempotency_key=test-basic-371969fb-888b-4e04-bc6e-65a15a6f7881
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message a0361157-e15e-4b6f-bcbb-e59e69893051 as processed | idempotency_key=test-concurrent-e77ee272-c082-4be3-b2a0-d9a9321352f0
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message c67193c2-c458-4a60-b111-ceee8f87b1e4 as processed | idempotency_key=test-concurrent-e77ee272-c082-4be3-b2a0-d9a9321352f0
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message f5e02a6e-a555-44a1-959d-6506ebd20fa3 as processed | idempotency_key=test-consecutive-1-335111be-4dfd-4d47-9d45-8dea95d1f55c
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message 40bb12dc-1af8-4bb2-8545-66322b0126e6 as processed | idempotency_key=test-consecutive-2-c5651911-ef90-4627-af35-1d70b6878882
+2025-10-04 13:08:07 | INFO | idempotency_cache | Marked message bc2c466d-5f00-4c77-8db5-b1cec2e1a44d as processed | idempotency_key=test-consecutive-1-335111be-4dfd-4d47-9d45-8dea95d1f55c
+2025-10-04 13:14:55 | INFO | idempotency_cache | Marked message 19a5d16e-a6a7-42aa-8f63-5a1f16e24309 as processed with cached response | idempotency_key=test-basic-db99d542-1988-485a-9240-328e4ffbd403
+2025-10-04 13:14:55 | INFO | idempotency_cache | Found cached response in metadata_json | idempotency_key=test-basic-db99d542-1988-485a-9240-328e4ffbd403
+2025-10-04 13:14:55 | INFO | idempotency_cache | Marked message 12ed10ac-5c0e-471b-ac46-d92f12b45b9f as processed with cached response | idempotency_key=test-concurrent-735ddae1-0c5a-4147-83b9-b5a767dea8af
+2025-10-04 13:14:55 | INFO | idempotency_cache | Found cached response in metadata_json | idempotency_key=test-concurrent-735ddae1-0c5a-4147-83b9-b5a767dea8af
+2025-10-04 13:14:55 | INFO | idempotency_cache | Marked message 5d381343-4eae-4691-ae89-b6957f871015 as processed with cached response | idempotency_key=test-consecutive-1-233054db-e392-4e2b-9a11-2f5128256b09
+2025-10-04 13:14:55 | INFO | idempotency_cache | Marked message 1f5fb484-ebd6-4a0d-875f-d613b05fed5b as processed with cached response | idempotency_key=test-consecutive-2-4d93cbf1-d653-4ce5-a254-ddf47f861fb1
+2025-10-04 13:14:55 | INFO | idempotency_cache | Found cached response in metadata_json | idempotency_key=test-consecutive-1-233054db-e392-4e2b-9a11-2f5128256b09
+2025-10-04 13:15:01 | INFO | idempotency_cache | Marked message 9e30f505-194c-40da-ab11-8bdbad74703a as processed with cached response | idempotency_key=95ae89e8eca287cc31973705de1bc26b0236000a4f74111defe150eb8b0f1d7c
+2025-10-04 13:15:01 | INFO | idempotency_cache | Marked message 6d1a00af-f28d-425d-a240-0b6b4c7e64c7 as processed with cached response | idempotency_key=640656733cb097877f79795325236edfd980646725548b9d838b973da3db972a
