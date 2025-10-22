@@ -566,13 +566,13 @@ class TestTokenManagerInitializeSession:
         db_session.refresh(test_session)
         assert test_session.updated_at > old_time
     
-    @pytest.mark.xfail(reason="Adapter building tested in message_adapter tests")
+    @pytest.mark.skip(reason="Covered by message_adapter tests - avoid duplication")
     def test_adapter_built_before_token_init_warns_but_doesnt_fail(
         self, db_session, test_session
     ):
-        """✓ Adapter built before token init → Warns but doesn't fail"""
-        # This scenario is tested in adapter building tests
-        # TokenManager should handle missing token_plan gracefully
+        """Adapter built before token init → Warns but doesn't fail"""
+        # Tested in message_adapter tests
+        # TokenManager handles missing token_plan gracefully
         pass
 
 

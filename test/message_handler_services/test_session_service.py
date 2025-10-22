@@ -205,13 +205,13 @@ class TestGetOrCreateSession:
         
         assert session.token_plan_json is None
     
-    @pytest.mark.xfail(reason="Token plan initialization tested in token_service")
+    @pytest.mark.skip(reason="Covered by token_service tests - avoid duplication")
     def test_token_plan_initialized_later_token_plan_json_populated(
         self, db_session, test_session
     ):
-        """✓ Token plan initialized later → token_plan_json populated"""
-        # This is tested in token_service tests
-        # Token plan is initialized by TokenManager.initialize_session
+        """Token plan initialized later → token_plan_json populated"""
+        # Tested in token_service tests
+        # Token plan initialization by TokenManager.initialize_session
         pass
 
 
