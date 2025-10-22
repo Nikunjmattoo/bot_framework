@@ -35,83 +35,87 @@ from message_handler.utils.datetime_utils import get_current_datetime
 class TestCreateIdempotencyKey:
     """Test create_idempotency_key function."""
     
-    def test_missing_request_id_raises_validation_error(self):
-        """✓ Missing request_id → ValidationError"""
-        with pytest.raises(ValidationError) as exc_info:
-            create_idempotency_key(
-                request_id=None,
-                instance_id="inst-123"
-            )
-        
-        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
-        assert "request_id" in str(exc_info.value).lower()
-    
-    def test_missing_instance_id_raises_validation_error(self):
-        """✓ Missing instance_id → ValidationError"""
-        with pytest.raises(ValidationError) as exc_info:
-            create_idempotency_key(
-                request_id="req-123",
-                instance_id=None
-            )
-        
-        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
-        assert "instance_id" in str(exc_info.value).lower()
-    
-    def test_empty_request_id_raises_validation_error(self):
-        """✓ Empty request_id → ValidationError"""
-        with pytest.raises(ValidationError) as exc_info:
-            create_idempotency_key(
-                request_id="",
-                instance_id="inst-123"
-            )
-        
-        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
-    
-    def test_request_id_exceeds_128_chars_raises_validation_error(self):
-        """✓ request_id > 128 chars → ValidationError"""
-        long_id = "x" * 129
-        
-        with pytest.raises(ValidationError) as exc_info:
-            create_idempotency_key(
-                request_id=long_id,
-                instance_id="inst-123"
-            )
-        
-        assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
-        assert "128" in str(exc_info.value)
-    
-    def test_format_instance_id_session_id_request_id(self):
-        """✓ Format: "instance_id:session_id:request_id" """
+    def test_missing_request_id_returns_none(self):
+        """✓ Missing request_id → None"""
+        result = create_idempotency_key(
+            request_id=None,
+            instance_id="inst-123"
+        )
+
+        assert result is None
+
+    def test_missing_instance_id_returns_raw_request_id(self):
+        """✓ Missing instance_id → raw request_id (fallback)"""
+        result = create_idempotency_key(
+            request_id="req-123",
+            instance_id=None
+        )
+
+        # Fallback to raw request_id when no instance_id
+        assert result == "req-123"
+
+    def test_empty_request_id_returns_none(self):
+        """✓ Empty request_id → None"""
+        result = create_idempotency_key(
+            request_id="",
+            instance_id="inst-123"
+        )
+
+        assert result is None
+
+    def test_instance_scoped_key_format(self):
+        """✓ Instance-scoped format: hash(instance_id:request_id)"""
         key = create_idempotency_key(
             request_id="req-123",
-            instance_id="inst-456",
-            session_id="sess-789"
+            instance_id="inst-456"
         )
-        
-        assert key == "inst-456:sess-789:req-123"
-    
-    def test_format_no_session_instance_id_empty_request_id(self):
-        """✓ Format (no session): "instance_id::request_id" """
-        key = create_idempotency_key(
+
+        # Should return 32-char hash
+        assert key is not None
+        assert len(key) == 32
+        assert isinstance(key, str)
+
+    def test_deterministic_hash(self):
+        """✓ Same inputs → same hash (deterministic)"""
+        key1 = create_idempotency_key(
             request_id="req-123",
-            instance_id="inst-456",
-            session_id=None
+            instance_id="inst-456"
         )
-        
-        assert key == "inst-456::req-123"
-    
-    def test_hash_if_exceeds_128_chars(self):
-        """✓ Hash if > 128 chars"""
+
+        key2 = create_idempotency_key(
+            request_id="req-123",
+            instance_id="inst-456"
+        )
+
+        # Should produce same hash
+        assert key1 == key2
+
+    def test_different_instance_different_hash(self):
+        """✓ Different instance → different hash"""
+        key1 = create_idempotency_key(
+            request_id="req-123",
+            instance_id="inst-A"
+        )
+
+        key2 = create_idempotency_key(
+            request_id="req-123",
+            instance_id="inst-B"
+        )
+
+        # Different instances should produce different hashes
+        assert key1 != key2
+
+    def test_hash_always_32_chars(self):
+        """✓ Hash always 32 chars (regardless of input length)"""
         long_request = "x" * 100
-        
+
         key = create_idempotency_key(
             request_id=long_request,
-            instance_id="inst-" + ("y" * 50),
-            session_id="sess-" + ("z" * 50)
+            instance_id="inst-" + ("y" * 50)
         )
-        
-        # Should be hashed to max 128 chars
-        assert len(key) <= 128
+
+        # Should always be 32 chars
+        assert len(key) == 32
 
 
 # ============================================================================
@@ -121,25 +125,29 @@ class TestCreateIdempotencyKey:
 class TestGetProcessedMessage:
     """Test get_processed_message function."""
     
-    def test_no_request_id_returns_none(self, db_session):
-        """✓ No request_id → None"""
-        result = get_processed_message(db_session, request_id=None)
-        
+    def test_no_idempotency_key_returns_none(self, db_session):
+        """✓ No idempotency_key → None"""
+        result = get_processed_message(db_session, idempotency_key=None)
+
         assert result is None
-    
-    def test_non_string_request_id_raises_validation_error(self, db_session):
-        """✓ Non-string request_id → ValidationError"""
+
+    def test_non_string_idempotency_key_raises_validation_error(self, db_session):
+        """✓ Non-string idempotency_key → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            get_processed_message(db_session, request_id=123)
-        
+            get_processed_message(db_session, idempotency_key=123)
+
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
     def test_found_and_not_expired_returns_cached(
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Found + not expired → return cached"""
-        request_id = "test-req-123"
-        
+        # Create idempotency key from instance + request
+        idempotency_key = create_idempotency_key(
+            request_id="test-req-123",
+            instance_id=str(test_instance.id)
+        )
+
         # Create processed message with proper metadata structure
         message = MessageModel(
             session_id=test_session.id,
@@ -147,27 +155,27 @@ class TestGetProcessedMessage:
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,  # Store hashed key
             processed=True,
-            created_at=get_current_datetime(),  # ← ADD THIS LINE
+            created_at=get_current_datetime(),
             metadata_json={
                 "cached_response": {"text": "Cached response"}
             }
         )
         db_session.add(message)
         db_session.commit()
-        
+
         # Mark as processed explicitly (simulate mark_message_processed call)
         from message_handler.services.idempotency_service import mark_message_processed
         mark_message_processed(
             db_session,
-            request_id,
+            idempotency_key,  # Use hashed key
             {"text": "Cached response"}
         )
         db_session.commit()
-        
-        result = get_processed_message(db_session, request_id)
-        
+
+        result = get_processed_message(db_session, idempotency_key)
+
         assert result is not None
         assert result["text"] == "Cached response"    
     
@@ -175,8 +183,11 @@ class TestGetProcessedMessage:
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Found + expired → None"""
-        request_id = "test-req-expired"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="test-req-expired",
+            instance_id=str(test_instance.id)
+        )
+
         # Create old processed message
         old_time = get_current_datetime() - timedelta(minutes=IDEMPOTENCY_CACHE_DURATION_MINUTES + 10)
         message = MessageModel(
@@ -185,7 +196,7 @@ class TestGetProcessedMessage:
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,  # Hashed key
             processed=True,
             created_at=old_time,
             metadata_json={
@@ -194,19 +205,19 @@ class TestGetProcessedMessage:
         )
         db_session.add(message)
         db_session.commit()
-        
+
         result = get_processed_message(
-            db_session, 
-            request_id,
+            db_session,
+            idempotency_key,
             max_age_minutes=IDEMPOTENCY_CACHE_DURATION_MINUTES
         )
-        
+
         assert result is None
-    
+
     def test_not_found_returns_none(self, db_session):
         """✓ Not found → None"""
-        result = get_processed_message(db_session, "nonexistent-req")
-        
+        result = get_processed_message(db_session, "nonexistent-key-12345678901234567890123456789012")
+
         assert result is None
 
 
@@ -216,44 +227,47 @@ class TestGetProcessedMessage:
 
 class TestMarkMessageProcessed:
     """Test mark_message_processed function."""
-    
-    def test_no_request_id_returns_false(self, db_session):
-        """✓ No request_id → False"""
+
+    def test_no_idempotency_key_returns_false(self, db_session):
+        """✓ No idempotency_key → False"""
         result = mark_message_processed(
             db_session,
-            request_id=None,
+            idempotency_key=None,
             response_data={"text": "Response"}
         )
-        
+
         assert result is False
-    
+
     def test_invalid_response_data_raises_validation_error(self, db_session):
         """✓ Invalid response_data → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             mark_message_processed(
                 db_session,
-                request_id="req-123",
+                idempotency_key="key-123",
                 response_data="not a dict"
             )
-        
+
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
-    
+
     def test_message_not_found_returns_false(self, db_session):
         """✓ Message not found → False"""
         result = mark_message_processed(
             db_session,
-            request_id="nonexistent",
+            idempotency_key="nonexistent-key-12345678901234567890123456789012",
             response_data={"text": "Response"}
         )
-        
+
         assert result is False
-    
+
     def test_valid_inputs_updates_message(
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Valid inputs → update message"""
-        request_id = "req-update-123"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="req-update-123",
+            instance_id=str(test_instance.id)
+        )
+
         # Create message
         message = MessageModel(
             session_id=test_session.id,
@@ -261,144 +275,156 @@ class TestMarkMessageProcessed:
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,
             processed=False
         )
         db_session.add(message)
         db_session.commit()
-        
+
         result = mark_message_processed(
             db_session,
-            request_id=request_id,
+            idempotency_key=idempotency_key,
             response_data={"text": "Response"}
         )
-        
+
         assert result is True
         db_session.refresh(message)
         assert message.processed is True
-    
+
     def test_set_processed_true(self, db_session, test_session, test_user, test_instance):
         """✓ Set processed = True"""
-        request_id = "req-set-processed"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="req-set-processed",
+            instance_id=str(test_instance.id)
+        )
+
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,
             processed=False
         )
         db_session.add(message)
         db_session.commit()
-        
+
         mark_message_processed(
             db_session,
-            request_id=request_id,
+            idempotency_key=idempotency_key,
             response_data={"text": "Response"}
         )
-        
+
         db_session.refresh(message)
         assert message.processed is True
-    
+
     def test_store_cached_response_in_metadata_json(
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Store cached_response in metadata_json"""
-        request_id = "req-cache-123"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="req-cache-123",
+            instance_id=str(test_instance.id)
+        )
+
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,
             processed=False
         )
         db_session.add(message)
         db_session.commit()
-        
+
         response_data = {"text": "Cached response", "status": "success"}
-        
+
         mark_message_processed(
             db_session,
-            request_id=request_id,
+            idempotency_key=idempotency_key,
             response_data=response_data
         )
-        
+
         db_session.refresh(message)
         assert "cached_response" in message.metadata_json
         assert message.metadata_json["cached_response"]["text"] == "Cached response"
-    
+
     def test_sanitize_response_data_removes_sensitive_keys(
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Sanitize response_data (remove sensitive keys)"""
-        request_id = "req-sanitize-123"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="req-sanitize-123",
+            instance_id=str(test_instance.id)
+        )
+
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,
             processed=False
         )
         db_session.add(message)
         db_session.commit()
-        
+
         response_data = {
             "text": "Response",
             "password": "secret",
             "auth_token": "xyz"
         }
-        
+
         mark_message_processed(
             db_session,
-            request_id=request_id,
+            idempotency_key=idempotency_key,
             response_data=response_data
         )
-        
+
         db_session.refresh(message)
         cached = message.metadata_json.get("cached_response", {})
-        
+
         # Sensitive keys should be masked
         assert "password" in cached
         assert cached["password"] == "********"
-    
+
     def test_truncate_large_response_exceeds_64kb(
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Truncate large response (> 64KB)"""
-        request_id = "req-large-123"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="req-large-123",
+            instance_id=str(test_instance.id)
+        )
+
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,
             processed=False
         )
         db_session.add(message)
         db_session.commit()
-        
+
         # Create large response
         large_response = {"text": "x" * 70000}
-        
+
         mark_message_processed(
             db_session,
-            request_id=request_id,
+            idempotency_key=idempotency_key,
             response_data=large_response
         )
-        
+
         db_session.refresh(message)
         cached = message.metadata_json.get("cached_response", {})
-        
+
         # Should be truncated
         assert "truncated" in cached or len(str(cached)) < 70000
 
@@ -732,8 +758,11 @@ class TestCacheExpiry:
         self, db_session, test_session, test_user, test_instance
     ):
         """✓ Idempotency cache cleans up after 24 hours (1440 minutes)"""
-        request_id = "req-24hr-old"
-        
+        idempotency_key = create_idempotency_key(
+            request_id="req-24hr-old",
+            instance_id=str(test_instance.id)
+        )
+
         # Create very old message
         old_time = get_current_datetime() - timedelta(minutes=IDEMPOTENCY_CACHE_DURATION_MINUTES + 10)
         old_message = MessageModel(
@@ -742,14 +771,14 @@ class TestCacheExpiry:
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,
             processed=True,
             created_at=old_time,
             metadata_json={"cached_response": {"text": "Old"}}
         )
         db_session.add(old_message)
         db_session.commit()
-        
+
         # Should not find cached result (too old)
-        result = get_processed_message(db_session, request_id)
+        result = get_processed_message(db_session, idempotency_key)
         assert result is None

@@ -744,10 +744,11 @@ class TestIdempotencyScope:
         # Should have two different sessions
         assert session1.id != session2.id
 
-    def test_same_request_id_across_sessions_both_process(self, client, test_instance, test_user, db_session):
-        """✓ Same request_id across sessions → Both process (not duplicate)"""
-        # Same request_id can be used in different sessions
-        # They should not be considered duplicates
+    def test_same_request_id_across_sessions_returns_409_duplicate(self, client, test_instance, test_user, db_session):
+        """✓ Same request_id across sessions (same instance) → 409 Duplicate"""
+        # NEW BEHAVIOR: Instance-scoped idempotency
+        # Same request_id within same instance = duplicate, regardless of session
+        # This prevents accidental double-processing when session changes
 
         request_id = str(uuid.uuid4())
 
@@ -793,8 +794,14 @@ class TestIdempotencyScope:
         with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
             response2 = client.post("/api/messages", json=payload2)
 
-        # Should process successfully (different session scope)
-        assert response2.status_code == 200
+        # NEW BEHAVIOR: Should return 409 Duplicate (instance-scoped)
+        # Same instance + same request_id = duplicate, even in different session
+        assert response2.status_code == 409
+
+        # Verify response contains duplicate error details
+        data = response2.json()
+        assert "error" in data
+        assert data["error"]["code"] == "RESOURCE_ALREADY_EXISTS"
 
 
 @pytest.mark.edge_case
