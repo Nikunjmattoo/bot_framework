@@ -159,8 +159,13 @@ def run_all_tests():
     """Run all test suites in order and generate comprehensive bug report."""
     
     # Test suites configuration
-    # Order: Database → Services → Adapters → Core → API
+    # Order: Utils → Database → Services → Adapters → Core → API → Integration
     test_suites = [
+        {
+            "name": "Utils (Category F)",
+            "dir": "test/utils/",
+            "description": "Utility functions: datetime, validation, JSON, telemetry"
+        },
         {
             "name": "Database Layer (Category E)",
             "dir": "test/database_layer/",
@@ -185,6 +190,11 @@ def run_all_tests():
             "name": "API Layer (Category A)",
             "dir": "test/api_layer/",
             "description": "FastAPI endpoints, middleware, exception handling"
+        },
+        {
+            "name": "Integration Tests (Categories G, H, I)",
+            "dir": "test/integration/",
+            "description": "End-to-end flows, performance, security, monitoring, edge cases"
         }
     ]
     
@@ -193,6 +203,7 @@ def run_all_tests():
     print(f"{Colors.BOLD}Project:{Colors.END} Bot Framework")
     print(f"{Colors.BOLD}Database:{Colors.END} bot_framework_test")
     print(f"{Colors.BOLD}Test Suites:{Colors.END} {len(test_suites)}")
+    print(f"{Colors.BOLD}Purpose:{Colors.END} Regression testing - detect bugs from new modules")
     print(f"{Colors.BOLD}Started:{Colors.END} {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Run all test suites (NO STOPPING ON FAILURE - RUN ALL)
@@ -293,11 +304,13 @@ def run_specific_suite(suite_name):
         suite_name: Name of the test suite (e.g., 'database', 'services', 'api')
     """
     suite_map = {
+        "utils": ("test/utils/", "Utils"),
         "database": ("test/database_layer/", "Database Layer"),
         "services": ("test/message_handler_services/", "Message Handler Services"),
         "adapters": ("test/message_handler_adapters/", "Message Handler Adapters"),
         "core": ("test/message_handler_core/", "Message Handler Core"),
-        "api": ("test/api_layer/", "API Layer")
+        "api": ("test/api_layer/", "API Layer"),
+        "integration": ("test/integration/", "Integration Tests (G, H, I)")
     }
     
     if suite_name.lower() not in suite_map:
@@ -394,11 +407,13 @@ def show_help():
     print()
     
     print(f"{Colors.BOLD}AVAILABLE TEST SUITES:{Colors.END}")
+    print("  utils               Utils (datetime, validation, JSON, telemetry)")
     print("  database            Database Layer (models, connections)")
     print("  services            Message Handler Services")
     print("  adapters            Message Handler Adapters")
     print("  core                Message Handler Core")
     print("  api                 API Layer (endpoints, middleware)")
+    print("  integration         Integration Tests (G, H, I - end-to-end, performance, security)")
     print()
     
     print(f"{Colors.BOLD}EXAMPLES:{Colors.END}")
