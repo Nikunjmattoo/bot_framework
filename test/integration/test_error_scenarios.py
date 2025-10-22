@@ -141,8 +141,9 @@ class TestInvalidTemplate:
 
         response = client.post("/api/messages", json=payload)
 
-        # Should fail with validation error
-        assert response.status_code in [400, 500]
+        # Should fail with validation error (not server crash!)
+        assert response.status_code == 422, \
+            f"Invalid template should return 422, got {response.status_code}"
 
 
 class TestMissingModel:
@@ -197,8 +198,9 @@ class TestMissingModel:
 
         response = client.post("/api/messages", json=payload)
 
-        # Should fail with validation error
-        assert response.status_code in [400, 500]
+        # Should fail with validation error (not server crash!)
+        assert response.status_code == 422, \
+            f"Template without LLM model should return 422, got {response.status_code}"
 
 
 class TestOrchestratorTimeout:
@@ -316,8 +318,9 @@ class TestConcurrentIdempotency:
             t.join()
 
         # One should succeed (200), one should be duplicate (409)
-        assert 200 in results
-        assert 409 in results or results.count(200) == 2  # Race condition may allow both
+        # Idempotency MUST work - not both succeed!
+        assert 200 in results and 409 in results, \
+            f"Expected one 200 and one 409, got {results}"
 
 
 class TestInvalidRequestValidation:
@@ -368,7 +371,7 @@ class TestInvalidRequestValidation:
         assert response.status_code == 400  # ValidationError
 
     def test_invalid_request_id_format_returns_400(self, client, test_instance):
-        """✓ Invalid request_id format → 400"""
+        """✓ Invalid request_id format → 422"""
         payload = {
             "content": "Test",
             "instance_id": str(test_instance.id),
@@ -376,8 +379,9 @@ class TestInvalidRequestValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        # Should validate request_id format
-        assert response.status_code in [400, 422]
+        # Should validate request_id format (Pydantic validation = 422)
+        assert response.status_code == 422, \
+            f"Invalid request_id format should return 422, got {response.status_code}"
 
 
 class TestWhatsAppErrors:
