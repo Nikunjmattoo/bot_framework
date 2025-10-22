@@ -6,6 +6,7 @@
 import pytest
 import uuid
 import time
+import threading
 from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from db.models import UserModel, UserIdentifierModel, SessionModel
@@ -23,6 +24,9 @@ class TestThroughput:
         # Extract instance_id before threading to avoid SQLAlchemy session issues
         instance_id = str(test_instance.id)
 
+        # Lock for TestClient (not thread-safe)
+        client_lock = threading.Lock()
+
         mock_response = {
             "text": "Response",
             "intents": [],
@@ -38,7 +42,9 @@ class TestThroughput:
             }
             start = time.time()
             with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
-                response = client.post("/api/messages", json=payload)
+                # Use lock for TestClient (not thread-safe)
+                with client_lock:
+                    response = client.post("/api/messages", json=payload)
             end = time.time()
             return response.status_code, end - start
 
@@ -196,6 +202,9 @@ class TestDatabaseConnectionPool:
         # Extract instance_id before threading to avoid SQLAlchemy session issues
         instance_id = str(test_instance.id)
 
+        # Lock for TestClient (not thread-safe)
+        client_lock = threading.Lock()
+
         # This test would require exhausting the pool (pool_size=5)
         # Simplified test - ensure requests complete even under load
         mock_response = {
@@ -212,7 +221,9 @@ class TestDatabaseConnectionPool:
                 "user": {"phone_e164": f"+1999000{i:04d}"}
             }
             with patch('message_handler.core.processor.process_orchestrator_message', return_value=mock_response):
-                return client.post("/api/messages", json=payload).status_code
+                # Use lock for TestClient (not thread-safe)
+                with client_lock:
+                    return client.post("/api/messages", json=payload).status_code
 
         # Send 10 concurrent requests (more than pool size)
         with ThreadPoolExecutor(max_workers=10) as executor:
