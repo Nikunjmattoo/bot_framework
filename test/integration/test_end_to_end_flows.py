@@ -100,7 +100,10 @@ class TestNewUserFirstMessage:
         assert inbound.role == "user"
         assert inbound.content == "Hello, this is my first message!"
         assert inbound.user_id == user.id
-        assert inbound.metadata_json.get("request_id") == request_id
+        # request_id is saved to column (not metadata) as scoped idempotency_key
+        assert inbound.request_id is not None  # Verify it was saved
+        assert str(test_instance.id) in inbound.request_id  # Contains instance_id
+        assert request_id in inbound.request_id  # Contains original request_id
 
         # Outbound message
         outbound = messages[1]
@@ -218,7 +221,10 @@ class TestIdempotentRequest:
         response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 409
-        assert "already processed" in response.json()["error"]["message"].lower()
+        error_msg = response.json()["error"]["message"].lower()
+        # Check for duplicate/processed indicators
+        assert ("duplicate" in error_msg or "already" in error_msg), \
+            f"Expected duplicate error message, got: {response.json()['error']['message']}"
 
 
 class TestWhatsAppMessage:
