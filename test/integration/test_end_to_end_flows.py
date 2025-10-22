@@ -108,7 +108,7 @@ class TestNewUserFirstMessage:
         assert inbound.role == "user"
         assert inbound.content == "Hello, this is my first message!"
         assert inbound.user_id == user.id
-        # Note: request_id is tracked at API level, not in message metadata
+        assert inbound.metadata_json.get("request_id") == request_id
 
         # Outbound message
         outbound = messages[1]
@@ -155,7 +155,8 @@ class TestExistingUserNewMessage:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert "message_id" in data["data"]
+        assert data["data"]["user_id"] == str(test_user.id)
+        assert data["data"]["session_id"] == str(test_session.id)
         assert data["data"]["response"]["content"] == "Sure, here's the answer"
 
 

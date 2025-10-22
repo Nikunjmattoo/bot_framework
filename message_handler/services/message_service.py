@@ -112,21 +112,24 @@ def save_inbound_message(
             )
         
         normalized_content = _validate_content_length(content)
-        
+
         sanitized_meta = sanitize_data(
             meta_info or {},
             strip_keys=["password", "token", "secret", "auth"],
             max_string_length=1024
         )
-        
+
         metadata = {"channel": channel}
-        
+
+        if request_id:
+            metadata["request_id"] = request_id
+
         if sanitized_meta:
             validated_meta = _validate_metadata_size(sanitized_meta)
             metadata.update(validated_meta)
-        
+
         message_id = uuid.uuid4()
-        
+
         message = MessageModel(
             id=message_id,
             session_id=session_id,

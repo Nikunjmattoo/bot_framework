@@ -385,6 +385,8 @@ def process_core(
         
         result_data = {
             "message_id": str(inbound_message.id),
+            "user_id": str(user.id),
+            "session_id": str(user.session_id),
             "response": {
                 "id": str(response_message.id),
                 "content": response_text
