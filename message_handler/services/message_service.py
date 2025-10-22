@@ -112,13 +112,13 @@ def save_inbound_message(
             )
         
         normalized_content = _validate_content_length(content)
-        
+
         sanitized_meta = sanitize_data(
             meta_info or {},
-            strip_keys=["password", "token", "secret", "auth"],
+            strip_keys=["password", "token", "secret", "auth", "auth_token", "api_key", "access_token", "refresh_token", "secret_key"],
             max_string_length=1024
         )
-        
+
         metadata = {"channel": channel}
         
         if sanitized_meta:
@@ -205,10 +205,10 @@ def save_outbound_message(
         
         sanitized_meta = sanitize_data(
             meta_info or {},
-            strip_keys=["password", "token", "secret", "auth"],
+            strip_keys=["password", "token", "secret", "auth", "auth_token", "api_key", "access_token", "refresh_token", "secret_key"],
             max_string_length=1024
         )
-        
+
         sanitized_orchestrator = sanitize_data(
             orchestrator_response or {},
             max_string_length=10000,
