@@ -280,50 +280,6 @@ class TestDeadlock:
         pass
 
 
-class TestConcurrentIdempotency:
-    """G2.10: Concurrent Idempotency - Two requests with same request_id."""
-
-    @pytest.mark.skip(reason="Test uses threading with shared DB session - causes 'Session is already flushing' error. In production, each request has its own session.")
-    def test_concurrent_duplicate_requests(self, client, test_instance, db_session):
-        """✓ Two requests with same request_id → one processes, other gets 409"""
-        import threading
-        import time
-
-        request_id = str(uuid.uuid4())
-
-        payload = {
-            "content": "Concurrent test",
-            "instance_id": str(test_instance.id),
-            "request_id": request_id,
-            "user_details": {"phone_e164": "+15551111111"}
-        }
-
-        mock_response = {
-            "text": "Response",
-            "intents": [],
-            "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
-        }
-
-        results = []
-
-        def make_request():
-            with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
-                response = client.post("/api/messages", json=payload)
-                results.append(response.status_code)
-
-        # Send two concurrent requests
-        threads = [threading.Thread(target=make_request) for _ in range(2)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        # One should succeed (200), one should be duplicate (409)
-        # Idempotency MUST work - not both succeed!
-        assert 200 in results and 409 in results, \
-            f"Expected one 200 and one 409, got {results}"
-
-
 class TestInvalidRequestValidation:
     """G2.11: Request Validation - Invalid request payloads."""
 
