@@ -157,16 +157,17 @@ def process_api_message(
                     except Exception as e:
                         logger.warning(f"Error initializing token plan: {str(e)}")
                 
-                # Pass idempotency key to process_core
+                # Pass idempotency key for database storage, original request_id in metadata
                 result_data = process_core(
-                    tx, 
-                    content, 
-                    instance_id, 
+                    tx,
+                    content,
+                    instance_id,
                     user=user,
                     user_details=user_details,
-                    request_id=idempotency_key,
+                    request_id=idempotency_key,  # Hashed key for DB request_id field
                     trace_id=trace_id,
-                    channel=channel
+                    channel=channel,
+                    meta_info={"request_id": request_id}  # Original request_id for metadata
                 )
                 
                 # Mark as processed with idempotency key
