@@ -21,8 +21,8 @@ from message_handler.handlers.whatsapp_handler import (
 from message_handler.handlers.broadcast_handler import broadcast_message_internal
 from message_handler.utils.logging import get_context_logger, with_context
 from message_handler.exceptions import (
-    ValidationError, ResourceNotFoundError, DatabaseError, 
-    OrchestrationError, ErrorCode
+    ValidationError, ResourceNotFoundError, DatabaseError,
+    OrchestrationError, DuplicateError, ErrorCode
 )
 from message_handler.utils.error_handling import handle_database_error, with_error_handling
 from message_handler.utils.data_utils import sanitize_data
@@ -92,7 +92,7 @@ def get_handler_status() -> Dict[str, Any]:
 
 @with_error_handling(
     operation_name="process_message",
-    reraise=[ValidationError, ResourceNotFoundError, OrchestrationError]
+    reraise=[ValidationError, ResourceNotFoundError, OrchestrationError, DuplicateError]
 )
 def process_message(
     db: Session,
@@ -198,7 +198,7 @@ def process_message(
 
 @with_error_handling(
     operation_name="process_whatsapp_message",
-    reraise=[ValidationError, ResourceNotFoundError, OrchestrationError]
+    reraise=[ValidationError, ResourceNotFoundError, OrchestrationError, DuplicateError]
 )
 def process_whatsapp_message(
     db: Session,
@@ -304,7 +304,7 @@ def process_whatsapp_message(
 
 @with_error_handling(
     operation_name="broadcast_message",
-    reraise=[ValidationError, ResourceNotFoundError]
+    reraise=[ValidationError, ResourceNotFoundError, DuplicateError]
 )
 def broadcast_message(
     db: Session,
