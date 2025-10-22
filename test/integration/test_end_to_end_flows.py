@@ -183,16 +183,16 @@ class TestIdempotentRequest:
         """✓ Duplicate request → 409 with cached response"""
         request_id = str(uuid.uuid4())
 
-        # Create a message with request_id
+        # Create a message with request_id (use COLUMNS, not metadata!)
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
+            request_id=request_id,  # ✓ Use column
+            processed=True,         # ✓ Use column
             metadata_json={
-                "request_id": request_id,
-                "processed": True,
                 "cached_response": {
                     "response_text": "Cached response",
                     "message_id": str(uuid.uuid4())
