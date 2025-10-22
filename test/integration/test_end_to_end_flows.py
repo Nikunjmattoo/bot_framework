@@ -186,25 +186,35 @@ class TestIdempotentRequest:
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
-        assert response.json()["data"]["response_text"] == "First response"
+        assert response.json()["data"]["response"]["content"] == "First response"
 
     def test_duplicate_request_returns_409(self, client, test_instance, test_user, test_session, db_session):
         """✓ Duplicate request → 409 with cached response"""
         request_id = str(uuid.uuid4())
 
         # Create a message with request_id
+        cached_message_id = str(uuid.uuid4())
+        cached_response_id = str(uuid.uuid4())
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
+            request_id=request_id,
+            processed=True,
             metadata_json={
+                "channel": "api",
                 "request_id": request_id,
-                "processed": True,
+                "processed_at": "2025-01-01T00:00:00",
                 "cached_response": {
-                    "response_text": "Cached response",
-                    "message_id": str(uuid.uuid4())
+                    "message_id": cached_message_id,
+                    "user_id": str(test_user.id),
+                    "session_id": str(test_session.id),
+                    "response": {
+                        "id": cached_response_id,
+                        "content": "Cached response"
+                    }
                 }
             }
         )
