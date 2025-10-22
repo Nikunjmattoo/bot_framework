@@ -12,40 +12,7 @@ class UserDetails(BaseModel):
     auth_token: Optional[str] = Field(None, description="Authentication token")
 
     class Config:
-        extra = "allow"  # Allow extra fields so they can be stripped by sanitize_data
-
-    @field_validator('phone_e164')
-    @classmethod
-    def validate_phone_format(cls, v):
-        """Validate phone number format (E.164)."""
-        if v is None:
-            return v
-        # E.164 format: + followed by 1-15 digits
-        phone_pattern = re.compile(r'^\+[1-9][0-9]{1,14}$')
-        if not phone_pattern.match(v):
-            raise ValueError("phone_e164 must be in E.164 format (e.g., +1234567890)")
-        # Check for SQL injection patterns
-        if any(dangerous in v.lower() for dangerous in ["drop", "select", "insert", "delete", "update", "union", "--", ";"]):
-            raise ValueError("phone_e164 contains invalid characters")
-        return v
-
-    @field_validator('email')
-    @classmethod
-    def validate_email_format(cls, v):
-        """Validate email format."""
-        if v is None:
-            return v
-        # Basic email validation
-        email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
-        if not email_pattern.match(v):
-            raise ValueError("Invalid email address format")
-        # Check length
-        if len(v) > 128:
-            raise ValueError("email exceeds maximum length of 128 characters")
-        # Check for SQL injection patterns
-        if any(dangerous in v.lower() for dangerous in ["drop", "select", "insert", "delete", "update", "union", "--", ";"]):
-            raise ValueError("email contains invalid characters")
-        return v
+        extra = "allow"  # Allow extra fields for flexible user identification
 
 
 class MessageRequest(BaseModel):
