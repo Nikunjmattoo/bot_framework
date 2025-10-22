@@ -399,24 +399,7 @@ class TestDatabaseConnection:
         with session_scope() as verify_session:
             count = verify_session.query(UserModel).filter_by(acquisition_channel=unique_channel).count()
             assert count == 0
-    
-    def test_get_db_always_closes_session(self):
-        """✔ Always closes session
-        
-        NOTE: Testing session closure is difficult. We verify the generator
-        completes properly, which triggers the finally block.
-        """
-        gen = get_db()
-        session = next(gen)
-        
-        try:
-            next(gen)
-        except StopIteration:
-            pass
-        
-        # Generator completed - finally block executed
-        assert True
-    
+
     def test_session_scope_commits_on_success(self):
         """✔ Commits on success"""
         user_id = None
@@ -453,24 +436,7 @@ class TestDatabaseConnection:
         with session_scope() as session:
             user = session.query(UserModel).filter_by(id=user_id).first()
             assert user.user_tier == "standard"
-    
-    def test_session_scope_always_closes(self):
-        """✔ Always closes session
-        
-        NOTE: Similar to get_db test - we verify the context manager
-        completes and finally block executes.
-        """
-        try:
-            with session_scope() as session:
-                user = UserModel(acquisition_channel="test")
-                session.add(user)
-                raise ValueError("Test")
-        except ValueError:
-            pass
-        
-        # Context manager completed - finally block executed
-        assert True
-    
+
     def test_no_connection_leaks(self, db_session, test_user, test_instance):
         """✔ No connection leaks after 1000 requests"""
         initial_pool_size = engine.pool.size()

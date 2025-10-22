@@ -9,14 +9,14 @@ import uuid
 class TestExceptionHandling:
     """Test centralized exception handling."""
     
-    def test_validation_error_returns_400(self, client, test_instance):
-        """✓ ValidationError → Returns 400 + includes field name"""
+    def test_validation_error_returns_422(self, client, test_instance):
+        """✓ ValidationError → Returns 422 + includes field name"""
         response = client.post("/api/messages", json={
             "content": "",  # Empty content
             "instance_id": str(test_instance.id),
             "request_id": str(uuid.uuid4())
         })
-        assert response.status_code in [400, 422]
+        assert response.status_code == 422  # Pydantic validation
         data = response.json()
         assert "error" in data or "detail" in data
     
