@@ -191,8 +191,10 @@ class TestIdempotentRequest:
     def test_duplicate_request_returns_409(self, client, test_instance, test_user, test_session, db_session):
         """✓ Duplicate request → 409 with cached response"""
         request_id = str(uuid.uuid4())
+        # Production creates idempotency_key as instance_id::request_id
+        idempotency_key = f"{test_instance.id}::{request_id}"
 
-        # Create a message with request_id
+        # Create a message with request_id = idempotency_key
         cached_message_id = str(uuid.uuid4())
         cached_response_id = str(uuid.uuid4())
         message = MessageModel(
@@ -201,11 +203,11 @@ class TestIdempotentRequest:
             instance_id=test_instance.id,
             role="user",
             content="Test",
-            request_id=request_id,
+            request_id=idempotency_key,  # Use idempotency_key, not plain request_id
             processed=True,
             metadata_json={
                 "channel": "api",
-                "request_id": request_id,
+                "request_id": request_id,  # Original request_id in metadata
                 "processed_at": "2025-01-01T00:00:00",
                 "cached_response": {
                     "message_id": cached_message_id,
