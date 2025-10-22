@@ -20,6 +20,9 @@ class TestThroughput:
         num_requests = 100
         duration_seconds = 1
 
+        # Extract instance_id before threading to avoid SQLAlchemy session issues
+        instance_id = str(test_instance.id)
+
         mock_response = {
             "text": "Response",
             "intents": [],
@@ -29,7 +32,7 @@ class TestThroughput:
         def make_request(i):
             payload = {
                 "content": f"Test message {i}",
-                "instance_id": str(test_instance.id),
+                "instance_id": instance_id,
                 "request_id": str(uuid.uuid4()),
                 "user": {"phone_e164": f"+1555000{i:04d}"}
             }
@@ -190,6 +193,9 @@ class TestDatabaseConnectionPool:
         """✓ Pool exhaustion handling"""
         from db.db import engine
 
+        # Extract instance_id before threading to avoid SQLAlchemy session issues
+        instance_id = str(test_instance.id)
+
         # This test would require exhausting the pool (pool_size=5)
         # Simplified test - ensure requests complete even under load
         mock_response = {
@@ -201,7 +207,7 @@ class TestDatabaseConnectionPool:
         def make_concurrent_request(i):
             payload = {
                 "content": f"Concurrent {i}",
-                "instance_id": str(test_instance.id),
+                "instance_id": instance_id,
                 "request_id": str(uuid.uuid4()),
                 "user": {"phone_e164": f"+1999000{i:04d}"}
             }
