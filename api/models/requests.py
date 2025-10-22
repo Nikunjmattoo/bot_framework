@@ -49,12 +49,9 @@ class MessageRequest(BaseModel):
     """Standard message request."""
     content: str = Field(..., description="Message content", min_length=1)
     instance_id: str = Field(..., description="Instance ID")
-    user: Optional[UserDetails] = Field(None, alias="user_details", description="User details for authentication")
+    user_details: Optional[UserDetails] = Field(None, description="User details for authentication")
     request_id: str = Field(..., description="Client-provided unique request ID for idempotency", min_length=1, max_length=128)
     trace_id: Optional[str] = Field(None, description="Trace ID for request tracking")
-
-    class Config:
-        populate_by_name = True  # Accept both 'user' and 'user_details'
     
     @field_validator('request_id')
     @classmethod

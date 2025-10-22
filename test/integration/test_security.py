@@ -62,8 +62,8 @@ class TestSQLInjection:
         # Should reject malformed identifiers (phone with SQL injection chars)
         # Invalid phone format should fail validation
         response = client.post("/api/messages", json=payload)
-        assert response.status_code in [400, 422], \
-            f"Malformed identifiers should be rejected, got {response.status_code}"
+        assert response.status_code == 422, \
+            f"Malformed identifiers should be rejected with 422, got {response.status_code}"
 
         # Verify no user was created with malicious identifier
         from db.models import UserIdentifierModel
@@ -238,8 +238,8 @@ class TestInputValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code in [400, 422], \
-            f"Content length validation should return 400 or 422, got {response.status_code}"
+        assert response.status_code == 422, \
+            f"Content length validation should return 422, got {response.status_code}"
 
     def test_request_id_length_validation(self, client, test_instance):
         """✓ request_id length limits enforced"""
@@ -250,7 +250,8 @@ class TestInputValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code in [400, 422]
+        assert response.status_code == 422, \
+            f"Request ID length validation should return 422, got {response.status_code}"
 
     def test_phone_format_validation(self, client, test_instance):
         """✓ Phone number format validation"""
@@ -271,9 +272,9 @@ class TestInputValidation:
             }
 
             response = client.post("/api/messages", json=payload)
-            # Invalid phone format should be rejected
-            assert response.status_code in [400, 422], \
-                f"Invalid phone '{invalid_phone}' should be rejected, got {response.status_code}"
+            # Invalid phone format should be rejected with 422 (validation error)
+            assert response.status_code == 422, \
+                f"Invalid phone '{invalid_phone}' should be rejected with 422, got {response.status_code}"
 
     def test_email_format_validation(self, client, test_instance):
         """✓ Email format validation"""
@@ -294,9 +295,9 @@ class TestInputValidation:
             }
 
             response = client.post("/api/messages", json=payload)
-            # Invalid email format should be rejected
-            assert response.status_code in [400, 422], \
-                f"Invalid email '{invalid_email}' should be rejected, got {response.status_code}"
+            # Invalid email format should be rejected with 422 (validation error)
+            assert response.status_code == 422, \
+                f"Invalid email '{invalid_email}' should be rejected with 422, got {response.status_code}"
 
 
 @pytest.mark.security
