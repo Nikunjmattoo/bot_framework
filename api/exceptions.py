@@ -20,7 +20,7 @@ def handle_message_handler_exception(request: Request, exc: BaseAppException) ->
         error_content = {
             "success": False,
             "error": {
-                "code": exc.error_code.value,
+                "code": exc.error_code.name,  # Use .name for string representation
                 "message": str(exc) or "Duplicate request detected",
                 "type": exc.__class__.__name__,
                 "retry_after_ms": exc.details.get("retry_after_ms", 1000) if hasattr(exc, 'details') and exc.details else 1000
@@ -40,11 +40,11 @@ def handle_message_handler_exception(request: Request, exc: BaseAppException) ->
         )
     
     status_code, default_message = get_http_status(exc.error_code)
-    
+
     error_content = {
         "success": False,
         "error": {
-            "code": exc.error_code.value,
+            "code": exc.error_code.name,  # Use .name for string representation
             "message": str(exc) or default_message,
             "type": exc.__class__.__name__
         }
