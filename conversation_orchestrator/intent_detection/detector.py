@@ -6,6 +6,7 @@ Main logic - enriches adapter with DB fetches, fills template, calls LLM, trigge
 
 import logging
 import asyncio
+import time
 from typing import Dict, Any
 
 from conversation_orchestrator.schemas import EnrichedContext, TemplateVariables
@@ -142,7 +143,7 @@ async def detect_intents(
         
         # Step 9: Build result
         result = {
-            "intents": [intent.dict() for intent in intent_output.intents],
+            "intents": [intent.model_dump() for intent in intent_output.intents],
             "self_response": intent_output.self_response,
             "response_text": intent_output.response_text,
             "reasoning": intent_output.reasoning,
@@ -153,7 +154,7 @@ async def detect_intents(
         _trigger_cold_paths_async(
             session_id=session_id,
             user_message=user_message,
-            conversation_history=enriched.previous_messages or [],
+            enriched=enriched,
             trace_id=trace_id
         )
         
@@ -185,6 +186,7 @@ async def detect_intents(
             message=f"Intent detection failed: {str(e)}",
             error_code="INTENT_DETECTION_FAILED"
         ) from e
+
 
 def _fetch_enrichment_data(session_id: str, trace_id: str) -> EnrichedContext:
     """

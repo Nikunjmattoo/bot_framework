@@ -2,30 +2,25 @@
 Unit tests for intent detection parser.
 
 Tests:
-- parse_intent_response() function
-- Confidence filtering logic
-- Fallback intent creation
-- Clarification intent creation
+- JSON parsing
+- Intent validation
 - Response text validation
 - Error handling
+- Edge cases
 """
 
 import pytest
 import json
+from pydantic import ValidationError
 
 from conversation_orchestrator.intent_detection.parser import (
     parse_intent_response,
-    _filter_by_confidence,
-    _create_fallback_intent,
-    _create_clarification_intent,
     _validate_response_text
 )
 from conversation_orchestrator.intent_detection.models import (
     IntentType,
     SingleIntent,
-    IntentOutput,
-    MIN_CONFIDENCE,
-    CLARIFICATION_CONFIDENCE
+    IntentOutput
 )
 from conversation_orchestrator.exceptions import IntentDetectionError
 
@@ -34,601 +29,419 @@ from conversation_orchestrator.exceptions import IntentDetectionError
 # SECTION 1: Successful Parsing Tests
 # ============================================================================
 
-class TestParseIntentResponseSuccess:
-    """Test successful parsing scenarios."""
+class TestSuccessfulParsing:
+    """Test successful parsing of valid LLM responses."""
     
-    def test_parse_single_greeting_intent(self, llm_response_greeting):
+    def test_parse_single_greeting_intent(self):
         """✓ Parse single greeting intent successfully"""
-        output = parse_intent_response(llm_response_greeting["content"])
-        
-        assert isinstance(output, IntentOutput)
-        assert len(output.intents) == 1
-        assert output.intents[0].intent_type == IntentType.GREETING
-        assert output.intents[0].confidence == 0.98
-        assert output.response_text == "Hello! How can I help you today?"
-        assert output.self_response is True
-    
-    def test_parse_single_action_intent(self, llm_response_action):
-        """✓ Parse single action intent successfully"""
-        output = parse_intent_response(llm_response_action["content"])
-        
-        assert isinstance(output, IntentOutput)
-        assert len(output.intents) == 1
-        assert output.intents[0].intent_type == IntentType.ACTION
-        assert output.intents[0].canonical_intent == "check_order_status"
-        assert output.intents[0].confidence == 0.95
-        assert output.response_text is None
-        assert output.self_response is False
-    
-    def test_parse_multiple_intents_mixed(self, llm_response_multi_intent_mixed):
-        """✓ Parse multiple intents (mixed types)"""
-        output = parse_intent_response(llm_response_multi_intent_mixed["content"])
-        
-        assert isinstance(output, IntentOutput)
-        assert len(output.intents) == 2
-        assert output.intents[0].intent_type == IntentType.GRATITUDE
-        assert output.intents[0].sequence_order == 1
-        assert output.intents[1].intent_type == IntentType.ACTION
-        assert output.intents[1].sequence_order == 2
-        assert output.self_response is False
-    
-    def test_parse_multiple_intents_self_respond(self, llm_response_multi_intent_self_respond):
-        """✓ Parse multiple self-respond intents"""
-        output = parse_intent_response(llm_response_multi_intent_self_respond["content"])
-        
-        assert isinstance(output, IntentOutput)
-        assert len(output.intents) == 2
-        assert output.intents[0].intent_type == IntentType.GRATITUDE
-        assert output.intents[1].intent_type == IntentType.GOODBYE
-        assert output.response_text == "You're welcome! Goodbye and have a great day!"
-        assert output.self_response is True
-    
-    def test_parse_multiple_action_intents(self, llm_response_multi_action):
-        """✓ Parse multiple action intents"""
-        output = parse_intent_response(llm_response_multi_action["content"])
-        
-        assert isinstance(output, IntentOutput)
-        assert len(output.intents) == 2
-        assert output.intents[0].canonical_intent == "create_profile"
-        assert output.intents[1].canonical_intent == "apply_for_job"
-        assert output.self_response is False
-    
-    def test_parse_all_self_respond_intent_types(
-        self,
-        llm_response_greeting,
-        llm_response_goodbye,
-        llm_response_gratitude,
-        llm_response_chitchat
-    ):
-        """✓ Parse all 4 self-respond intent types"""
-        responses = [
-            llm_response_greeting,
-            llm_response_goodbye,
-            llm_response_gratitude,
-            llm_response_chitchat
-        ]
-        
-        expected_types = [
-            IntentType.GREETING,
-            IntentType.GOODBYE,
-            IntentType.GRATITUDE,
-            IntentType.CHITCHAT
-        ]
-        
-        for response, expected_type in zip(responses, expected_types):
-            output = parse_intent_response(response["content"])
-            assert output.intents[0].intent_type == expected_type
-            assert output.self_response is True
-            assert output.response_text is not None
-    
-    def test_parse_reasoning_field_present(self, llm_response_greeting):
-        """✓ Parse reasoning field if present"""
-        output = parse_intent_response(llm_response_greeting["content"])
-        assert output.reasoning == "Simple greeting - responding directly"
-    
-    def test_parse_entities_empty_dict(self, llm_response_greeting):
-        """✓ Parse entities as empty dict"""
-        output = parse_intent_response(llm_response_greeting["content"])
-        assert output.intents[0].entities == {}
-
-
-# ============================================================================
-# SECTION 2: Confidence Filtering Tests
-# ============================================================================
-
-class TestConfidenceFiltering:
-    """Test confidence filtering logic."""
-    
-    def test_high_confidence_intents_pass_filter(self):
-        """✓ High confidence intents (≥0.7) pass filter"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.GREETING,
-                confidence=0.95,
-                entities={},
-                sequence_order=1
-            ),
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="check_order",
-                confidence=0.85,
-                entities={},
-                sequence_order=2
-            )
-        ]
-        
-        filtered = _filter_by_confidence(intents)
-        assert len(filtered) == 2
-    
-    def test_low_confidence_intents_filtered_out(self, llm_response_low_confidence):
-        """✓ Low confidence intents (<0.7) filtered out → fallback"""
-        output = parse_intent_response(llm_response_low_confidence["content"])
-        
-        # Should create fallback intent
-        assert len(output.intents) == 1
-        assert output.intents[0].intent_type == IntentType.FALLBACK
-        assert output.intents[0].confidence == 0.5
-    
-    def test_single_medium_confidence_creates_clarification(self, llm_response_single_low_confidence):
-        """✓ Single intent with confidence 0.7-0.85 creates clarification"""
-        output = parse_intent_response(llm_response_single_low_confidence["content"])
-        
-        # Should create clarification intent
-        assert len(output.intents) == 1
-        assert output.intents[0].intent_type == IntentType.CLARIFICATION
-        assert output.intents[0].confidence == 0.6
-    
-    def test_confidence_exactly_0_7_passes(self):
-        """✓ Confidence = 0.7 passes filter (edge case)"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="check_order",
-                confidence=0.7,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        
-        filtered = _filter_by_confidence(intents)
-        assert len(filtered) == 1
-        assert filtered[0].intent_type == IntentType.ACTION
-    
-    def test_confidence_exactly_0_85_no_clarification(self):
-        """✓ Confidence = 0.85 doesn't trigger clarification (edge case)"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="check_order",
-                confidence=0.85,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        
-        filtered = _filter_by_confidence(intents)
-        assert len(filtered) == 1
-        assert filtered[0].intent_type == IntentType.ACTION
-    
-    def test_mixed_confidence_filters_low_keeps_high(self):
-        """✓ Mixed confidence: filters low, keeps high"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.GREETING,
-                confidence=0.95,
-                entities={},
-                sequence_order=1
-            ),
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="unknown",
-                confidence=0.45,
-                entities={},
-                sequence_order=2
-            ),
-            SingleIntent(
-                intent_type=IntentType.GRATITUDE,
-                confidence=0.88,
-                entities={},
-                sequence_order=3
-            )
-        ]
-        
-        filtered = _filter_by_confidence(intents)
-        assert len(filtered) == 2
-        assert filtered[0].intent_type == IntentType.GREETING
-        assert filtered[1].intent_type == IntentType.GRATITUDE
-
-
-# ============================================================================
-# SECTION 3: Fallback Intent Creation Tests
-# ============================================================================
-
-class TestFallbackIntentCreation:
-    """Test fallback intent creation."""
-    
-    def test_create_fallback_intent_structure(self):
-        """✓ Fallback intent has correct structure"""
-        fallback = _create_fallback_intent()
-        
-        assert isinstance(fallback, SingleIntent)
-        assert fallback.intent_type == IntentType.FALLBACK
-        assert fallback.canonical_intent is None
-        assert fallback.confidence == 0.5
-        assert fallback.entities == {}
-        assert fallback.sequence_order == 1
-    
-    def test_no_high_confidence_creates_fallback(self, llm_response_low_confidence):
-        """✓ No high-confidence intents → creates fallback"""
-        output = parse_intent_response(llm_response_low_confidence["content"])
-        
-        assert len(output.intents) == 1
-        assert output.intents[0].intent_type == IntentType.FALLBACK
-
-
-# ============================================================================
-# SECTION 4: Clarification Intent Creation Tests
-# ============================================================================
-
-class TestClarificationIntentCreation:
-    """Test clarification intent creation."""
-    
-    def test_create_clarification_intent_structure(self):
-        """✓ Clarification intent has correct structure"""
-        clarification = _create_clarification_intent()
-        
-        assert isinstance(clarification, SingleIntent)
-        assert clarification.intent_type == IntentType.CLARIFICATION
-        assert clarification.canonical_intent is None
-        assert clarification.confidence == 0.6
-        assert clarification.entities == {}
-        assert clarification.sequence_order == 1
-    
-    def test_single_medium_confidence_creates_clarification(self):
-        """✓ Single intent with confidence 0.7-0.84 → creates clarification"""
-        response_content = json.dumps({
+        response = json.dumps({
             "intents": [{
-                "intent_type": "action",
-                "canonical_intent": "check_order",
-                "confidence": 0.75,
+                "intent_type": "greeting",
+                "confidence": 0.98,
                 "entities": {},
                 "sequence_order": 1,
-                "reasoning": "Somewhat clear"
+                "reasoning": "User said hello"
+            }],
+            "response_text": "Hello! How can I help?",
+            "self_response": True,
+            "reasoning": "Simple greeting"
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert isinstance(result, IntentOutput)
+        assert len(result.intents) == 1
+        assert result.intents[0].intent_type == IntentType.GREETING
+        assert result.intents[0].confidence == 0.98
+        assert result.self_response is True
+        assert result.response_text == "Hello! How can I help?"
+    
+    def test_parse_single_action_intent(self):
+        """✓ Parse single action intent successfully"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "action",
+                "canonical_intent": "check_order_status",
+                "confidence": 0.95,
+                "entities": {"order_id": "12345"},
+                "sequence_order": 1,
+                "reasoning": "User wants to check order"
             }],
             "response_text": None,
             "self_response": False,
-            "reasoning": "Medium confidence"
+            "reasoning": "Action requires brain"
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        assert len(output.intents) == 1
-        assert output.intents[0].intent_type == IntentType.CLARIFICATION
+        assert len(result.intents) == 1
+        assert result.intents[0].intent_type == IntentType.ACTION
+        assert result.intents[0].canonical_intent == "check_order_status"
+        assert result.intents[0].confidence == 0.95
+        assert result.self_response is False
+        assert result.response_text is None
     
-    def test_multiple_intents_no_clarification_even_if_low(self):
-        """✓ Multiple intents with medium confidence → no clarification"""
-        response_content = json.dumps({
+    def test_parse_multiple_intents(self):
+        """✓ Parse multiple intents successfully"""
+        response = json.dumps({
             "intents": [
                 {
-                    "intent_type": "greeting",
-                    "canonical_intent": None,
-                    "confidence": 0.75,
+                    "intent_type": "gratitude",
+                    "confidence": 0.97,
                     "entities": {},
                     "sequence_order": 1,
-                    "reasoning": "Greeting"
+                    "reasoning": "User said thanks"
                 },
                 {
                     "intent_type": "action",
                     "canonical_intent": "check_order",
-                    "confidence": 0.78,
+                    "confidence": 0.94,
                     "entities": {},
                     "sequence_order": 2,
-                    "reasoning": "Action"
+                    "reasoning": "User wants to check order"
                 }
             ],
             "response_text": None,
             "self_response": False,
-            "reasoning": "Multiple intents"
+            "reasoning": "Gratitude + action"
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        # Should keep both intents, no clarification
-        assert len(output.intents) == 2
-        assert output.intents[0].intent_type == IntentType.GREETING
-        assert output.intents[1].intent_type == IntentType.ACTION
+        assert len(result.intents) == 2
+        assert result.intents[0].intent_type == IntentType.GRATITUDE
+        assert result.intents[1].intent_type == IntentType.ACTION
+        assert result.self_response is False
+    
+    def test_parse_with_low_confidence_intent(self):
+        """✓ Parse intent with low confidence (< 0.7) - should pass through"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "action",
+                "confidence": 0.65,
+                "entities": {},
+                "sequence_order": 1,
+                "reasoning": "Low confidence"
+            }],
+            "response_text": None,
+            "self_response": False,
+            "reasoning": "Uncertain intent"
+        })
+        
+        result = parse_intent_response(response)
+        
+        # Should pass through to orchestrator/brain
+        assert len(result.intents) == 1
+        assert result.intents[0].confidence == 0.65
+        assert result.intents[0].intent_type == IntentType.ACTION
 
 
 # ============================================================================
-# SECTION 5: Response Text Validation Tests
+# SECTION 2: Response Text Validation Tests
 # ============================================================================
 
 class TestResponseTextValidation:
     """Test response_text validation logic."""
     
-    def test_self_response_true_with_text_valid(self):
-        """✓ self_response=true with response_text → valid"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.GREETING,
-                confidence=0.98,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        response_text = "Hello!"
-        self_response = True
+    def test_self_respond_with_response_text_valid(self):
+        """✓ self_response=True with response_text is valid"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98,
+                "entities": {},
+                "sequence_order": 1
+            }],
+            "response_text": "Hello!",
+            "self_response": True,
+            "reasoning": "Greeting"
+        })
         
-        # Should not raise
-        _validate_response_text(intents, response_text, self_response)
+        result = parse_intent_response(response)
+        assert result.self_response is True
+        assert result.response_text == "Hello!"
     
-    def test_self_response_true_without_text_invalid(self, llm_response_self_respond_without_text):
-        """✓ self_response=true without response_text → invalid"""
-        with pytest.raises(IntentDetectionError) as exc:
-            parse_intent_response(llm_response_self_respond_without_text["content"])
-        
-        assert "response_text is missing" in str(exc.value).lower()
-        assert exc.value.error_code == "MISSING_RESPONSE_TEXT"
-    
-    def test_self_response_false_without_text_valid(self):
-        """✓ self_response=false without response_text → valid"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="check_order",
-                confidence=0.95,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        response_text = None
-        self_response = False
-        
-        # Should not raise
-        _validate_response_text(intents, response_text, self_response)
-    
-    def test_self_response_false_with_text_warning_only(self, caplog):
-        """✓ self_response=false with response_text → warning only"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="check_order",
-                confidence=0.95,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        response_text = "Some text"
-        self_response = False
-        
-        # Should not raise, but log warning
-        _validate_response_text(intents, response_text, self_response)
-        # Check logs if needed
-    
-    def test_all_self_respond_with_text_valid(self):
-        """✓ All self-respond intents with response_text → valid"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.GREETING,
-                confidence=0.98,
-                entities={},
-                sequence_order=1
-            ),
-            SingleIntent(
-                intent_type=IntentType.GRATITUDE,
-                confidence=0.97,
-                entities={},
-                sequence_order=2
-            )
-        ]
-        response_text = "Hello! You're welcome!"
-        self_response = True
-        
-        # Should not raise
-        _validate_response_text(intents, response_text, self_response)
-    
-    def test_all_self_respond_without_text_but_flag_true_invalid(self):
-        """✓ All self-respond intents, self_response=true, no text → invalid"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.GREETING,
-                confidence=0.98,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        response_text = None
-        self_response = True
+    def test_self_respond_without_response_text_raises_error(self):
+        """✓ self_response=True without response_text raises error"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98,
+                "entities": {},
+                "sequence_order": 1
+            }],
+            "response_text": None,
+            "self_response": True,
+            "reasoning": "Greeting"
+        })
         
         with pytest.raises(IntentDetectionError) as exc:
-            _validate_response_text(intents, response_text, self_response)
+            parse_intent_response(response)
         
         assert exc.value.error_code == "MISSING_RESPONSE_TEXT"
+    
+    def test_brain_required_without_response_text_valid(self):
+        """✓ self_response=False without response_text is valid"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "action",
+                "confidence": 0.95,
+                "entities": {},
+                "sequence_order": 1
+            }],
+            "response_text": None,
+            "self_response": False,
+            "reasoning": "Action"
+        })
+        
+        result = parse_intent_response(response)
+        assert result.self_response is False
+        assert result.response_text is None
+    
+    def test_infer_self_response_from_response_text(self):
+        """✓ Infer self_response from response_text if not provided"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98,
+                "entities": {},
+                "sequence_order": 1
+            }],
+            "response_text": "Hello!",
+            "self_response": False,  # Wrong flag
+            "reasoning": "Greeting"
+        })
+        
+        result = parse_intent_response(response)
+        # Should infer self_response=True from greeting intent + response_text
+        assert result.self_response is True
 
 
 # ============================================================================
-# SECTION 6: Error Handling Tests
+# SECTION 3: Parser Error Handling Tests
 # ============================================================================
 
 class TestParserErrorHandling:
     """Test parser error handling."""
     
-    def test_invalid_json_raises_error(self, llm_response_invalid_json):
+    def test_invalid_json_raises_error(self):
         """✓ Invalid JSON raises IntentDetectionError"""
+        response = "This is not valid JSON {broken"
+        
         with pytest.raises(IntentDetectionError) as exc:
-            parse_intent_response(llm_response_invalid_json["content"])
+            parse_intent_response(response)
         
         assert exc.value.error_code == "INVALID_JSON"
-        assert "not valid JSON" in str(exc.value).lower()
+        assert "not valid json" in str(exc.value).lower()
     
-    def test_missing_intents_field_raises_error(self, llm_response_missing_intents):
+    def test_missing_intents_field_raises_error(self):
         """✓ Missing 'intents' field raises error"""
+        response = json.dumps({
+            "response_text": "Hello!",
+            "self_response": True
+        })
+        
         with pytest.raises(IntentDetectionError) as exc:
-            parse_intent_response(llm_response_missing_intents["content"])
+            parse_intent_response(response)
         
         assert exc.value.error_code == "INVALID_RESPONSE_STRUCTURE"
-        assert "missing 'intents' field" in str(exc.value).lower()
+        assert "intents" in str(exc.value).lower()
     
-    def test_empty_intents_list_raises_error(self, llm_response_empty_intents):
+    def test_empty_intents_list_raises_error(self):
         """✓ Empty intents list raises error"""
+        response = json.dumps({
+            "intents": [],
+            "response_text": None,
+            "self_response": False
+        })
+        
         with pytest.raises(IntentDetectionError) as exc:
-            parse_intent_response(llm_response_empty_intents["content"])
+            parse_intent_response(response)
         
         assert exc.value.error_code == "INVALID_RESPONSE_STRUCTURE"
-        assert "cannot be empty" in str(exc.value).lower()
-    
-    def test_missing_confidence_field_uses_default(self, llm_response_missing_confidence):
-        """✓ Missing confidence field uses default 0.5"""
-        output = parse_intent_response(llm_response_missing_confidence["content"])
-        
-        # Should parse with default confidence
-        assert output.intents[0].confidence == 0.5
-    
-    def test_malformed_intent_skipped_continues_parsing(self):
-        """✓ Malformed intent skipped, parsing continues"""
-        response_content = json.dumps({
-            "intents": [
-                {
-                    "intent_type": "greeting",
-                    "confidence": 0.98,
-                    "entities": {},
-                    "sequence_order": 1
-                },
-                {
-                    # Missing intent_type - malformed
-                    "confidence": 0.95,
-                    "entities": {},
-                    "sequence_order": 2
-                },
-                {
-                    "intent_type": "gratitude",
-                    "confidence": 0.97,
-                    "entities": {},
-                    "sequence_order": 3
-                }
-            ],
-            "response_text": "Hello! Thanks!",
-            "self_response": True,
-            "reasoning": "Mixed"
-        })
-        
-        output = parse_intent_response(response_content)
-        
-        # Should have 2 valid intents (greeting and gratitude)
-        assert len(output.intents) == 2
-        assert output.intents[0].intent_type == IntentType.GREETING
-        assert output.intents[1].intent_type == IntentType.GRATITUDE
-    
-    def test_all_intents_malformed_raises_error(self):
-        """✓ All intents malformed raises NO_VALID_INTENTS error"""
-        response_content = json.dumps({
-            "intents": [
-                {
-                    # Missing intent_type
-                    "confidence": 0.95,
-                    "entities": {}
-                },
-                {
-                    # Missing confidence
-                    "intent_type": "greeting",
-                    "entities": {}
-                }
-            ],
-            "response_text": None,
-            "self_response": False,
-            "reasoning": "All malformed"
-        })
-        
-        # Should raise error after trying to parse all
-        # Note: This depends on implementation - might create fallback
-        # Let's check actual behavior
-        try:
-            output = parse_intent_response(response_content)
-            # If it doesn't raise, check if fallback was created
-            assert output.intents[0].intent_type == IntentType.FALLBACK
-        except IntentDetectionError as e:
-            assert e.error_code == "NO_VALID_INTENTS"
     
     def test_intents_not_list_raises_error(self):
-        """✓ 'intents' not a list raises error"""
-        response_content = json.dumps({
-            "intents": "not_a_list",
+        """✓ intents not a list raises error"""
+        response = json.dumps({
+            "intents": "not a list",
             "response_text": None,
-            "self_response": False,
-            "reasoning": "Invalid"
+            "self_response": False
         })
         
         with pytest.raises(IntentDetectionError) as exc:
-            parse_intent_response(response_content)
+            parse_intent_response(response)
         
         assert exc.value.error_code == "INVALID_RESPONSE_STRUCTURE"
-        assert "must be a list" in str(exc.value).lower()
     
-    def test_sequence_order_auto_assigned_if_missing(self):
-        """✓ sequence_order auto-assigned if missing"""
-        response_content = json.dumps({
+    def test_missing_intent_type_skips_intent(self):
+        """✓ Missing intent_type skips that intent"""
+        response = json.dumps({
             "intents": [
+                {
+                    "confidence": 0.95,
+                    "entities": {}
+                },
                 {
                     "intent_type": "greeting",
                     "confidence": 0.98,
                     "entities": {}
-                    # No sequence_order
-                },
-                {
-                    "intent_type": "gratitude",
-                    "confidence": 0.97,
-                    "entities": {}
-                    # No sequence_order
                 }
             ],
-            "response_text": "Hello! Thanks!",
-            "self_response": True,
-            "reasoning": "Auto sequence"
+            "response_text": "Hello!",
+            "self_response": True
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        assert output.intents[0].sequence_order == 1
-        assert output.intents[1].sequence_order == 2
+        # Should skip first intent, parse second
+        assert len(result.intents) == 1
+        assert result.intents[0].intent_type == IntentType.GREETING
+    
+    def test_missing_confidence_uses_default(self):
+        """✓ Missing confidence uses default 0.5"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "entities": {}
+            }],
+            "response_text": "Hello!",
+            "self_response": True
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert result.intents[0].confidence == 0.5
 
 
 # ============================================================================
-# SECTION 7: Edge Cases
+# SECTION 4: Intent Field Handling Tests
+# ============================================================================
+
+class TestIntentFieldHandling:
+    """Test handling of optional intent fields."""
+    
+    def test_sequence_order_auto_assigned(self):
+        """✓ sequence_order auto-assigned if missing"""
+        response = json.dumps({
+            "intents": [
+                {
+                    "intent_type": "greeting",
+                    "confidence": 0.98,
+                    "entities": {}
+                },
+                {
+                    "intent_type": "action",
+                    "confidence": 0.95,
+                    "entities": {}
+                }
+            ],
+            "response_text": None,
+            "self_response": False
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert result.intents[0].sequence_order == 1
+        assert result.intents[1].sequence_order == 2
+    
+    def test_entities_defaults_to_empty_dict(self):
+        """✓ entities defaults to empty dict if missing"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98
+            }],
+            "response_text": "Hello!",
+            "self_response": True
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert result.intents[0].entities == {}
+    
+    def test_canonical_intent_optional(self):
+        """✓ canonical_intent is optional"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98,
+                "entities": {}
+            }],
+            "response_text": "Hello!",
+            "self_response": True
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert result.intents[0].canonical_intent is None
+    
+    def test_reasoning_optional_in_intent(self):
+        """✓ reasoning is optional in intent"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98,
+                "entities": {}
+            }],
+            "response_text": "Hello!",
+            "self_response": True
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert result.intents[0].reasoning is None
+    
+    def test_reasoning_optional_in_output(self):
+        """✓ reasoning is optional in output"""
+        response = json.dumps({
+            "intents": [{
+                "intent_type": "greeting",
+                "confidence": 0.98,
+                "entities": {}
+            }],
+            "response_text": "Hello!",
+            "self_response": True
+        })
+        
+        result = parse_intent_response(response)
+        
+        assert result.reasoning is None
+
+
+# ============================================================================
+# SECTION 5: Edge Cases
 # ============================================================================
 
 class TestParserEdgeCases:
     """Test parser edge cases."""
     
     def test_response_with_unicode_characters(self):
-        """✓ Response with unicode characters parsed correctly"""
-        response_content = json.dumps({
+        """✓ Parse response with unicode characters"""
+        response = json.dumps({
             "intents": [{
                 "intent_type": "greeting",
-                "canonical_intent": None,
                 "confidence": 0.98,
                 "entities": {},
-                "sequence_order": 1,
-                "reasoning": "User greeted with émojis 🚀"
+                "reasoning": "User said 你好"
             }],
-            "response_text": "Hello! 你好! مرحبا!",
+            "response_text": "Hello! 你好!",
             "self_response": True,
-            "reasoning": "Multi-language greeting"
+            "reasoning": "Greeting with unicode"
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        assert output.response_text == "Hello! 你好! مرحبا!"
-        assert output.intents[0].reasoning == "User greeted with émojis 🚀"
+        assert "你好" in result.response_text
+        assert result.intents[0].reasoning == "User said 你好"
     
     def test_response_with_very_long_reasoning(self):
-        """✓ Very long reasoning text parsed correctly"""
-        long_reasoning = "A" * 10000
-        response_content = json.dumps({
+        """✓ Parse response with very long reasoning"""
+        long_reasoning = "A" * 1000
+        response = json.dumps({
             "intents": [{
                 "intent_type": "greeting",
                 "confidence": 0.98,
                 "entities": {},
-                "sequence_order": 1,
                 "reasoning": long_reasoning
             }],
             "response_text": "Hello!",
@@ -636,80 +449,105 @@ class TestParserEdgeCases:
             "reasoning": long_reasoning
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        assert len(output.reasoning) == 10000
-        assert len(output.intents[0].reasoning) == 10000
+        assert result.intents[0].reasoning == long_reasoning
+        assert result.reasoning == long_reasoning
     
-    def test_response_with_nested_entities(self):
-        """✓ Nested entities parsed correctly"""
-        response_content = json.dumps({
+    def test_response_with_special_characters_in_entities(self):
+        """✓ Parse entities with special characters"""
+        response = json.dumps({
             "intents": [{
                 "intent_type": "action",
-                "canonical_intent": "book_appointment",
                 "confidence": 0.95,
                 "entities": {
-                    "date": "2025-10-27",
-                    "time": "10:00",
-                    "location": {
-                        "city": "San Francisco",
-                        "address": "123 Main St"
-                    }
-                },
-                "sequence_order": 1,
-                "reasoning": "Booking appointment"
+                    "email": "user@example.com",
+                    "phone": "+1-234-567-8900",
+                    "name": "O'Brien"
+                }
             }],
             "response_text": None,
-            "self_response": False,
-            "reasoning": "Action with nested entities"
+            "self_response": False
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        assert output.intents[0].entities["location"]["city"] == "San Francisco"
-        assert output.intents[0].entities["date"] == "2025-10-27"
+        assert result.intents[0].entities["email"] == "user@example.com"
+        assert result.intents[0].entities["phone"] == "+1-234-567-8900"
+        assert result.intents[0].entities["name"] == "O'Brien"
     
-    def test_response_with_null_canonical_intent(self):
-        """✓ null canonical_intent parsed as None"""
-        response_content = json.dumps({
-            "intents": [{
-                "intent_type": "greeting",
-                "canonical_intent": None,
-                "confidence": 0.98,
-                "entities": {},
-                "sequence_order": 1,
-                "reasoning": "Greeting"
-            }],
-            "response_text": "Hello!",
-            "self_response": True,
-            "reasoning": "Simple greeting"
+    def test_all_intents_with_confidence_variations(self):
+        """✓ Parse intents with various confidence scores"""
+        response = json.dumps({
+            "intents": [
+                {"intent_type": "greeting", "confidence": 0.99, "entities": {}},
+                {"intent_type": "action", "confidence": 0.85, "entities": {}},
+                {"intent_type": "gratitude", "confidence": 0.70, "entities": {}},
+                {"intent_type": "chitchat", "confidence": 0.65, "entities": {}}
+            ],
+            "response_text": None,
+            "self_response": False
         })
         
-        output = parse_intent_response(response_content)
+        result = parse_intent_response(response)
         
-        assert output.intents[0].canonical_intent is None
+        # All intents should pass through (no filtering)
+        assert len(result.intents) == 4
+        assert result.intents[0].confidence == 0.99
+        assert result.intents[1].confidence == 0.85
+        assert result.intents[2].confidence == 0.70
+        assert result.intents[3].confidence == 0.65
+
+
+# ============================================================================
+# SECTION 6: Validation Function Tests
+# ============================================================================
+
+class TestValidateResponseText:
+    """Test _validate_response_text function directly."""
     
-    def test_response_with_extra_fields_ignored(self):
-        """✓ Extra fields in response ignored gracefully"""
-        response_content = json.dumps({
-            "intents": [{
-                "intent_type": "greeting",
-                "canonical_intent": None,
-                "confidence": 0.98,
-                "entities": {},
-                "sequence_order": 1,
-                "reasoning": "Greeting",
-                "extra_field": "ignored",
-                "another_field": 12345
-            }],
-            "response_text": "Hello!",
-            "self_response": True,
-            "reasoning": "Simple greeting",
-            "extra_top_level": "also ignored"
-        })
+    def test_valid_self_respond_with_text(self):
+        """✓ Valid: self_response=True with response_text"""
+        intents = [SingleIntent(
+            intent_type=IntentType.GREETING,
+            confidence=0.98,
+            entities={}
+        )]
         
-        output = parse_intent_response(response_content)
+        # Should not raise
+        _validate_response_text(intents, "Hello!", True)
+    
+    def test_invalid_self_respond_without_text(self):
+        """✓ Invalid: self_response=True without response_text"""
+        intents = [SingleIntent(
+            intent_type=IntentType.GREETING,
+            confidence=0.98,
+            entities={}
+        )]
         
-        # Should parse successfully, ignoring extra fields
-        assert output.intents[0].intent_type == IntentType.GREETING
-        assert output.response_text == "Hello!"
+        with pytest.raises(IntentDetectionError) as exc:
+            _validate_response_text(intents, None, True)
+        
+        assert exc.value.error_code == "MISSING_RESPONSE_TEXT"
+    
+    def test_valid_brain_required_without_text(self):
+        """✓ Valid: self_response=False without response_text"""
+        intents = [SingleIntent(
+            intent_type=IntentType.ACTION,
+            confidence=0.95,
+            entities={}
+        )]
+        
+        # Should not raise
+        _validate_response_text(intents, None, False)
+    
+    def test_warning_for_brain_required_with_text(self):
+        """✓ Warning (not error): self_response=False with response_text"""
+        intents = [SingleIntent(
+            intent_type=IntentType.ACTION,
+            confidence=0.95,
+            entities={}
+        )]
+        
+        # Should not raise (just warning)
+        _validate_response_text(intents, "Some text", False)

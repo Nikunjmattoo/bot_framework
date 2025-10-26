@@ -9,13 +9,7 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 
-# Constants for intent classification
-SELF_RESPOND_INTENTS = ["greeting", "goodbye", "gratitude", "chitchat"]
-BRAIN_REQUIRED_INTENTS = ["help", "fallback", "affirm", "deny", "clarification", "action"]
-MIN_CONFIDENCE = 0.7
-CLARIFICATION_CONFIDENCE = 0.85
-
-
+# Intent type enum must be defined first
 class IntentType(str, Enum):
     """
     10 core intent types.
@@ -39,6 +33,27 @@ class IntentType(str, Enum):
     
     # Functional (requires brain)
     ACTION = "action"
+
+
+# Constants for intent classification (using IntentType enum)
+SELF_RESPOND_INTENTS = {
+    IntentType.GREETING,
+    IntentType.GOODBYE,
+    IntentType.GRATITUDE,
+    IntentType.CHITCHAT
+}
+
+BRAIN_REQUIRED_INTENTS = {
+    IntentType.HELP,
+    IntentType.FALLBACK,
+    IntentType.AFFIRM,
+    IntentType.DENY,
+    IntentType.CLARIFICATION,
+    IntentType.ACTION
+}
+
+MIN_CONFIDENCE = 0.7
+CLARIFICATION_CONFIDENCE = 0.85
 
 
 class SingleIntent(BaseModel):
@@ -67,6 +82,11 @@ class SingleIntent(BaseModel):
         None,
         description="Order in which intent appears in message (1, 2, 3...)"
     )
+    
+    reasoning: Optional[str] = Field(
+        None,
+        description="Brief explanation for this intent"
+    )
 
 
 class IntentOutput(BaseModel):
@@ -87,7 +107,6 @@ class IntentOutput(BaseModel):
         description="Brief explanation of classification decision"
     )
     
-    # NEW FIELDS FOR PHASE I
     response_text: Optional[str] = Field(
         None,
         description="Generated response text (only for self-respond intents)"
@@ -111,7 +130,10 @@ def requires_brain(intents: List[SingleIntent]) -> bool:
     Returns:
         True if brain processing needed, False otherwise
     """
-    return any(intent.intent_type == IntentType.ACTION for intent in intents)
+    if not intents:
+        return False
+    
+    return any(intent.intent_type in BRAIN_REQUIRED_INTENTS for intent in intents)
 
 
 def get_action_intents(intents: List[SingleIntent]) -> List[SingleIntent]:
@@ -127,7 +149,7 @@ def get_action_intents(intents: List[SingleIntent]) -> List[SingleIntent]:
     return [intent for intent in intents if intent.intent_type == IntentType.ACTION]
 
 
-def get_primary_intent(intents: List[SingleIntent]) -> SingleIntent:
+def get_primary_intent(intents: List[SingleIntent]) -> Optional[SingleIntent]:
     """
     Get primary intent from list.
     
@@ -139,15 +161,18 @@ def get_primary_intent(intents: List[SingleIntent]) -> SingleIntent:
         intents: List of detected intents
     
     Returns:
-        Primary intent
+        Primary intent or None if list is empty
     """
+    if not intents:
+        return None
+    
     # Check for action intent first
     for intent in intents:
         if intent.intent_type == IntentType.ACTION:
             return intent
     
     # Return first intent
-    return intents[0] if intents else None
+    return intents[0]
 
 
 def is_self_respond_only(intents: List[SingleIntent]) -> bool:
@@ -162,4 +187,7 @@ def is_self_respond_only(intents: List[SingleIntent]) -> bool:
     Returns:
         True if all intents are self-respond, False otherwise
     """
-    return all(intent.intent_type.value in SELF_RESPOND_INTENTS for intent in intents)
+    if not intents:
+        return False
+    
+    return all(intent.intent_type in SELF_RESPOND_INTENTS for intent in intents)

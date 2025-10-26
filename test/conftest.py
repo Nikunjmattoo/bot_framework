@@ -375,9 +375,8 @@ def test_session_orchestrator(db_session, test_brand):
         id=session_id,
         user_id=user_id,
         instance_id=instance_id,
-        brand_id=test_brand.id,
-        channel="whatsapp",
-        status="active",
+        active=True,
+        started_at=datetime.now(timezone.utc),
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc)
     )
@@ -418,7 +417,7 @@ def test_messages_orchestrator(db_session, test_session_orchestrator):
 
 
 @pytest.fixture
-def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm_model_orchestrator):
+def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm_model_orchestrator, test_brand):
     """Create base adapter payload for orchestrator tests."""
     import uuid
     
@@ -426,12 +425,12 @@ def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm
         "trace_id": str(uuid.uuid4()),
         "routing": {
             "instance_id": test_session_orchestrator.instance_id,
-            "brand_id": test_session_orchestrator.brand_id
+            "brand_id": test_brand.id  # ✅ Get from test_brand, not session
         },
         "message": {
             "content": "Hello",
             "sender_user_id": test_session_orchestrator.user_id,
-            "channel": "whatsapp"
+            "channel": "whatsapp"  # ✅ Hardcode channel
         },
         "session_id": test_session_orchestrator.id,
         "policy": {
@@ -460,8 +459,6 @@ def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm
             }
         }
     }
-
-
 # LLM Response Fixtures for Orchestrator Tests
 
 @pytest.fixture

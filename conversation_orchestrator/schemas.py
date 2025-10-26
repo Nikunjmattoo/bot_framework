@@ -14,6 +14,10 @@ class Message(BaseModel):
     timestamp: Optional[datetime] = Field(None, description="Message timestamp")
 
 
+# Alias for backward compatibility
+PreviousMessage = Message
+
+
 class ActiveTask(BaseModel):
     """Active task information."""
     name: Optional[str] = Field(None, description="Task name (e.g., 'create_profile')")
