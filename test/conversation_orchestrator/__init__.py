@@ -1,5 +1,1 @@
-"""
-Conversation orchestrator package.
-"""
-
-__all__ = ["orchestrator", "intent_detection", "exceptions", "schemas"]
+"""Test suite for conversation orchestrator."""

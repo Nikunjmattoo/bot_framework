@@ -9,6 +9,13 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
 
+# Constants for intent classification
+SELF_RESPOND_INTENTS = ["greeting", "goodbye", "gratitude", "chitchat"]
+BRAIN_REQUIRED_INTENTS = ["help", "fallback", "affirm", "deny", "clarification", "action"]
+MIN_CONFIDENCE = 0.7
+CLARIFICATION_CONFIDENCE = 0.85
+
+
 class IntentType(str, Enum):
     """
     10 core intent types.
@@ -79,6 +86,17 @@ class IntentOutput(BaseModel):
         None,
         description="Brief explanation of classification decision"
     )
+    
+    # NEW FIELDS FOR PHASE I
+    response_text: Optional[str] = Field(
+        None,
+        description="Generated response text (only for self-respond intents)"
+    )
+    
+    self_response: bool = Field(
+        False,
+        description="Flag indicating if this is a self-response (no brain needed)"
+    )
 
 
 # Helper functions
@@ -130,3 +148,18 @@ def get_primary_intent(intents: List[SingleIntent]) -> SingleIntent:
     
     # Return first intent
     return intents[0] if intents else None
+
+
+def is_self_respond_only(intents: List[SingleIntent]) -> bool:
+    """
+    Check if all intents are self-respond types.
+    
+    Self-respond intents: greeting, goodbye, gratitude, chitchat
+    
+    Args:
+        intents: List of detected intents
+    
+    Returns:
+        True if all intents are self-respond, False otherwise
+    """
+    return all(intent.intent_type.value in SELF_RESPOND_INTENTS for intent in intents)

@@ -30,85 +30,73 @@ from conversation_orchestrator.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def detect_intents(adapter_payload: Dict[str, Any], trace_id: str) -> Dict[str, Any]:
+async def detect_intents(
+    adapter_payload: Dict[str, Any],
+    trace_id: str
+) -> Dict[str, Any]:
     """
-    Detect intents from user message.
+    Detect user intents from message.
     
-    Flow:
-    1. Extract data from adapter
-    2. Fetch enrichment data from DB
-    3. Fill intent_detection template
-    4. Fire LLM call (async)
-    5. Trigger cold paths (parallel with LLM)
-    6. Wait for LLM response
-    7. Parse and return intents
-    
-    Args:
-        adapter_payload: Adapter payload from message_handler
-        trace_id: Trace ID for logging
+    Steps:
+    1. Fetch template from DB
+    2. Fetch enrichment data (session summary, etc.)
+    3. Fill template with variables
+    4. Call LLM with correct model config
+    5. Parse response
+    6. Trigger cold paths
     
     Returns:
-        Dict with:
-            - intents: List of detected intents
-            - token_usage: Token usage stats
-            - reasoning: Optional reasoning
-    
-    Raises:
-        IntentDetectionError: If detection fails
+        Dict with intents, self_response, response_text, token_usage
     """
-    logger.info(
-        "intent_detection:started",
-        extra={"trace_id": trace_id}
-    )
+    start_time = time.time()
     
     try:
-        # Step 1: Extract from adapter
-        user_message = adapter_payload["message"]["content"]
-        user_id = adapter_payload["message"]["sender_user_id"]
-        session_id = adapter_payload["session_id"]
+        # Step 1: Get template key from adapter
+        template_key = adapter_payload.get("template", {}).get("json", {}).get("intent", {}).get("template")
         
-        # Derive user_type from policy.auth_state
-        policy = adapter_payload.get("policy", {})
-        auth_state = policy.get("auth_state", "guest")
-        user_type = "verified" if auth_state == "channel_verified" else "guest"
-        
-        # Get template key from functions mapping
-        functions = adapter_payload["template"]["json"]
-        intent_function = functions.get("intent", {})
-        template_key = intent_function.get("template")
-
         if not template_key:
             raise IntentDetectionError(
-                message="Intent template key not found in adapter",
+                message="Missing intent template key in adapter payload",
                 error_code="MISSING_TEMPLATE_KEY"
             )
-
-        # Fetch template string from DB
-        intent_template = fetch_template_string(template_key)
-
-        # Extract budget and model from token_plan
-        template_data = adapter_payload["token_plan"]["templates"][template_key]
-        token_budget = template_data["total_budget"]
-        model_id = template_data["llm_model_id"]
-        api_model_name = template_data["api_model_name"]
-        provider = template_data.get("provider", "groq")
-        temperature = template_data.get("temperature", 0.7)
+        
+        # Step 2: Get LLM config from token_plan
+        llm_config = adapter_payload.get("token_plan", {}).get("templates", {}).get(template_key, {})
+        
+        if not llm_config:
+            raise IntentDetectionError(
+                message=f"Missing LLM config for template {template_key} in token_plan",
+                error_code="MISSING_LLM_CONFIG"
+            )
+        
+        provider = llm_config.get("provider")
+        api_model_name = llm_config.get("api_model_name")
+        temperature = llm_config.get("temperature", 0.7)
+        max_tokens = llm_config.get("max_tokens", 2000)
         
         logger.info(
-            "intent_detection:extracted_from_adapter",
+            "intent_detection:llm_config",
             extra={
                 "trace_id": trace_id,
-                "user_type": user_type,
+                "provider": provider,
                 "model": api_model_name,
-                "token_budget": token_budget
+                "temperature": temperature
             }
         )
         
-        # Step 2: Fetch enrichment data from DB
+        # Step 3: Fetch template from DB
+        template_string = await fetch_template_string(template_key)
+        
+        # Step 4: Fetch enrichment data
+        session_id = adapter_payload.get("session_id")
         enriched = _fetch_enrichment_data(session_id, trace_id)
         
-        # Step 3: Build template variables
-        template_vars = _build_template_variables(
+        # Step 5: Build template variables
+        user_message = adapter_payload.get("message", {}).get("content", "")
+        user_id = adapter_payload.get("message", {}).get("sender_user_id", "")
+        user_type = "verified" if adapter_payload.get("policy", {}).get("auth_state") == "channel_verified" else "guest"
+        
+        variables = _build_template_variables(
             user_message=user_message,
             user_id=user_id,
             session_id=session_id,
@@ -116,70 +104,73 @@ def detect_intents(adapter_payload: Dict[str, Any], trace_id: str) -> Dict[str, 
             enriched=enriched
         )
         
-        # Step 4: Fill template
-        filled_prompt = fill_template(intent_template, template_vars)
+        # Step 6: Fill template
+        filled_template = template_string
+        for key, value in variables.items():
+            placeholder = "{{" + key + "}}"
+            filled_template = filled_template.replace(placeholder, str(value))
         
         logger.info(
             "intent_detection:template_filled",
             extra={
                 "trace_id": trace_id,
-                "prompt_length": len(filled_prompt)
+                "template_key": template_key,
+                "prompt_length": len(filled_template)
             }
         )
         
-        # Step 5: Fire LLM call (async)
-        llm_future = call_llm_async(
-            prompt=filled_prompt,
+        # Step 7: Call LLM with correct config
+        llm_response = await call_llm_async(
+            prompt=filled_template,
+            provider=provider,
             model=api_model_name,
-            runtime=provider,
-            max_tokens=token_budget,
             temperature=temperature,
-            response_format={"type": "json_object"}
-        )
-        
-        logger.info(
-            "intent_detection:llm_call_fired",
-            extra={"trace_id": trace_id}
-        )
-        
-        # Step 6: Trigger cold paths (parallel with LLM)
-        _trigger_cold_paths_async(
-            session_id=session_id,
-            user_message=user_message,
-            enriched=enriched,
+            max_tokens=max_tokens,
             trace_id=trace_id
         )
         
-        # Step 7: Wait for LLM response
-        loop = asyncio.get_event_loop()
-        llm_result = loop.run_until_complete(llm_future)
-        
         logger.info(
-            "intent_detection:llm_response_received",
+            "intent_detection:llm_called",
             extra={
                 "trace_id": trace_id,
-                "tokens_used": llm_result["token_usage"]["total"]
+                "tokens_used": llm_response.get("token_usage", {}).get("total", 0)
             }
         )
         
-        # Step 8: Parse response
-        intent_output = parse_intent_response(llm_result["content"])
+        # Step 8: Parse LLM response
+        intent_output = parse_intent_response(llm_response["content"])
+        
+        # Step 9: Build result
+        result = {
+            "intents": [intent.dict() for intent in intent_output.intents],
+            "self_response": intent_output.self_response,
+            "response_text": intent_output.response_text,
+            "reasoning": intent_output.reasoning,
+            "token_usage": llm_response.get("token_usage", {})
+        }
+        
+        # Step 10: Trigger cold paths (async, non-blocking)
+        _trigger_cold_paths_async(
+            session_id=session_id,
+            user_message=user_message,
+            conversation_history=enriched.previous_messages or [],
+            trace_id=trace_id
+        )
         
         logger.info(
             "intent_detection:completed",
             extra={
                 "trace_id": trace_id,
-                "intents_count": len(intent_output.intents),
-                "intents": [i.intent_type.value for i in intent_output.intents]
+                "intents_count": len(result["intents"]),
+                "self_response": result["self_response"],
+                "latency_ms": (time.time() - start_time) * 1000
             }
         )
         
-        # Return result
-        return {
-            "intents": [intent.dict() for intent in intent_output.intents],
-            "token_usage": llm_result["token_usage"],
-            "reasoning": intent_output.reasoning
-        }
+        return result
+    
+    except IntentDetectionError:
+        raise
     
     except Exception as e:
         logger.error(
@@ -194,7 +185,6 @@ def detect_intents(adapter_payload: Dict[str, Any], trace_id: str) -> Dict[str, 
             message=f"Intent detection failed: {str(e)}",
             error_code="INTENT_DETECTION_FAILED"
         ) from e
-
 
 def _fetch_enrichment_data(session_id: str, trace_id: str) -> EnrichedContext:
     """
