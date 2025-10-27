@@ -147,20 +147,13 @@ def run_test_suite(name, test_dir, description):
         test_count = 0
         last_position = 0
         no_output_cycles = 0
-        MAX_NO_OUTPUT_CYCLES = 50  # 5 seconds of no output after process done
-        MAX_TOTAL_WAIT_TIME = 300  # 5 minutes absolute maximum
-        read_start_time = time.time()
+        pytest_finished = False  # Track if pytest summary line seen
+        pytest_finish_time = None
+        MAX_WAIT_AFTER_SUMMARY = 20  # 2 seconds after seeing summary line
 
         print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
 
         while True:
-            # Safety: Force exit after 5 minutes to prevent infinite hanging
-            if time.time() - read_start_time > MAX_TOTAL_WAIT_TIME:
-                print(f"\n{Colors.RED}⚠ Test suite exceeded 5 minute timeout - forcing exit{Colors.END}")
-                break
-            # Check if process finished
-            process_done = process.poll() is not None
-
             # Read new content from file
             try:
                 with open(tmp_filename, 'r') as f:
@@ -173,6 +166,11 @@ def run_test_suite(name, test_dir, description):
                     lines = new_content.splitlines(keepends=True)
                     for line in lines:
                         output_lines.append(line)
+
+                        # Check if this is the pytest summary line (indicates pytest is done)
+                        if "passed" in line and "==" in line and (" in " in line or "warnings" in line):
+                            pytest_finished = True
+                            pytest_finish_time = time.time()
 
                         # Track test progress
                         if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
@@ -198,20 +196,20 @@ def run_test_suite(name, test_dir, description):
                             print(line, end='', flush=True)
                 else:
                     # No new output
-                    if process_done:
-                        no_output_cycles += 1
-                        if no_output_cycles >= MAX_NO_OUTPUT_CYCLES:
-                            # Process done and no output for 5 seconds - we're done
-                            break
+                    no_output_cycles += 1
 
-                # If process is done and we've had some cycles of no output, break
-                if process_done and no_output_cycles >= 5:
+                # CRITICAL: If we saw pytest summary and no output for 2 seconds, EXIT
+                if pytest_finished and pytest_finish_time:
+                    if time.time() - pytest_finish_time > 2.0:
+                        break
+
+                # Fallback: If no output for 5 seconds AND process done, exit
+                if process.poll() is not None and no_output_cycles >= 50:
                     break
 
             except Exception as e:
                 print(f"\n{Colors.RED}Error reading output file: {e}{Colors.END}")
-                if process_done:
-                    break
+                break
 
             # Small sleep to avoid busy waiting
             time.sleep(0.1)
