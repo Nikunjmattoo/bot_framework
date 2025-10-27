@@ -370,19 +370,17 @@ def test_template_full(db_session, test_llm_model_orchestrator):
 
 
 @pytest.fixture
-def test_session_orchestrator(db_session, test_brand):
+def test_session_orchestrator(db_session, test_user, test_instance):
     """Create test session for orchestrator tests."""
     import uuid
     from datetime import datetime, timezone
-    
+
     session_id = str(uuid.uuid4())
-    user_id = str(uuid.uuid4())
-    instance_id = str(uuid.uuid4())
-    
+
     session = SessionModel(
         id=session_id,
-        user_id=user_id,
-        instance_id=instance_id,
+        user_id=test_user.id,  # Use actual test user
+        instance_id=test_instance.id,  # Use actual test instance
         active=True,
         started_at=datetime.now(timezone.utc),
         created_at=datetime.now(timezone.utc),
