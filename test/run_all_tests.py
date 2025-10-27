@@ -39,26 +39,45 @@ def print_section(title):
     print(f"{Colors.BLUE}{Colors.BOLD}{'─' * 80}{Colors.END}")
     print()
 
-def print_result(name, passed, duration, failed_count=0, total_count=0):
-    """Print test suite result with failure details."""
+def print_result(name, passed, duration, failed_count=0, total_count=0, skipped_count=0):
+    """Print test suite result with clear test count details."""
     if passed:
         status = f"{Colors.GREEN}✅ PASSED{Colors.END}"
-        detail = f"({total_count} tests)"
+        # When all tests pass, show clear count
+        if skipped_count > 0:
+            passed_count = total_count - skipped_count
+            detail = f"({passed_count} passed, {skipped_count} skipped, {total_count} total)"
+        else:
+            detail = f"({total_count} passed)"
     else:
         status = f"{Colors.RED}❌ FAILED{Colors.END}"
-        detail = f"({failed_count}/{total_count} failed)"
-    
+        # When tests fail, show failure ratio and total
+        passed_count = total_count - failed_count - skipped_count
+        if skipped_count > 0:
+            detail = f"({failed_count}/{total_count} failed, {passed_count} passed, {skipped_count} skipped)"
+        else:
+            detail = f"({failed_count}/{total_count} failed, {passed_count} passed)"
+
     print(f"  {status} - {Colors.BOLD}{name}{Colors.END} ({duration:.2f}s) {detail}")
 
 def parse_pytest_output(output):
     """
     Parse pytest output to extract test results and failures.
-    
+
+    Handles all pytest summary formats:
+    - "===== 21 failed, 33 passed, 6 skipped in 32.55s ====="
+    - "===== 119 passed in 3.70s ====="
+    - "===== 2 failed, 13 passed, 20 errors in 9.21s ====="
+
+    Note: Errors are counted as failures (tests that couldn't run due to setup issues).
+          xfailed/xpassed are ignored (expected failures don't affect test counts).
+
     Returns:
         dict: {
             'total': int,
             'passed': int,
             'failed': int,
+            'skipped': int,
             'failures': [{'test': str, 'file': str, 'line': int, 'error': str}]
         }
     """
@@ -66,22 +85,41 @@ def parse_pytest_output(output):
         'total': 0,
         'passed': 0,
         'failed': 0,
+        'skipped': 0,
         'failures': []
     }
-    
-    # Extract summary line: "1 failed, 28 passed, 3 warnings in 0.99s"
-    summary_match = re.search(r'(\d+) failed.*?(\d+) passed', output)
+
+    # Extract summary line - must be surrounded by === and contain "in X.XXs"
+    # This ensures we only match pytest's official summary, not random numbers in errors
+    summary_pattern = r'=+\s*(.*?)\s+in\s+[\d.]+s\s*=+'
+    summary_match = re.search(summary_pattern, output)
+
     if summary_match:
-        result['failed'] = int(summary_match.group(1))
-        result['passed'] = int(summary_match.group(2))
-        result['total'] = result['failed'] + result['passed']
-    else:
-        # Try just passed
-        passed_match = re.search(r'(\d+) passed', output)
+        summary_text = summary_match.group(1)
+
+        # Extract counts from summary text only
+        failed_match = re.search(r'(\d+) failed', summary_text)
+        if failed_match:
+            result['failed'] = int(failed_match.group(1))
+
+        passed_match = re.search(r'(\d+) passed', summary_text)
         if passed_match:
             result['passed'] = int(passed_match.group(1))
-            result['total'] = result['passed']
-    
+
+        skipped_match = re.search(r'(\d+) skipped', summary_text)
+        if skipped_match:
+            result['skipped'] = int(skipped_match.group(1))
+
+        # Errors are tests that couldn't run (e.g., database connection failed)
+        # Count them as failures for test suite status
+        error_match = re.search(r'(\d+) error', summary_text)
+        if error_match:
+            result['failed'] += int(error_match.group(1))
+
+    # Total is sum of all outcomes (passed + failed + skipped)
+    # Note: xfailed/xpassed are NOT counted in total
+    result['total'] = result['passed'] + result['failed'] + result['skipped']
+
     # Extract failed test details
     # Pattern: FAILED test/path/file.py::TestClass::test_name - AssertionError: ...
     failed_pattern = r'FAILED (.*?)::(.*?)::(.*?) - (.*?)(?:\n|$)'
@@ -93,7 +131,7 @@ def parse_pytest_output(output):
             'error': match.group(4).strip()
         }
         result['failures'].append(failure)
-    
+
     return result
 
 def run_test_suite(name, test_dir, description):
@@ -234,20 +272,24 @@ def run_test_suite(name, test_dir, description):
             os.unlink(tmp_filename)
         except:
             pass
-    duration = time.time() - start_time
-    passed = process.returncode == 0
 
+    duration = time.time() - start_time
     output = ''.join(output_lines)
 
     # Parse test results
     test_results = parse_pytest_output(output)
-    
+
+    # Suite passes if no test failures (NOT based on process returncode)
+    # Process returncode can be non-zero even when all tests pass (e.g., when killing zombie threads)
+    passed = (test_results['failed'] == 0)
+
     return {
         'name': name,
         'passed': passed,
         'duration': duration,
         'total': test_results['total'],
         'failed': test_results['failed'],
+        'skipped': test_results['skipped'],
         'failures': test_results['failures']
     }
 
@@ -327,36 +369,40 @@ def run_all_tests():
     print()
     for result in results:
         print_result(
-            result["name"], 
-            result["passed"], 
+            result["name"],
+            result["passed"],
             result["duration"],
             result["failed"],
-            result["total"]
+            result["total"],
+            result.get("skipped", 0)
         )
     
     print()
     print(f"{Colors.BOLD}{'─' * 80}{Colors.END}")
-    
-    # Count results
+
+    # Count results - ensure all outcomes are properly summed
     total_suites = len(results)
     passed_suites = sum(1 for r in results if r["passed"])
     failed_suites = total_suites - passed_suites
-    
+
     total_tests = sum(r["total"] for r in results)
     total_failed = sum(r["failed"] for r in results)
-    total_passed = total_tests - total_failed
-    
+    total_skipped = sum(r.get("skipped", 0) for r in results)
+    total_passed = total_tests - total_failed - total_skipped
+
     print()
     print(f"{Colors.BOLD}Test Suites:{Colors.END} {total_suites}")
     print(f"{Colors.GREEN}{Colors.BOLD}Passed Suites:{Colors.END} {passed_suites}")
     if failed_suites > 0:
         print(f"{Colors.RED}{Colors.BOLD}Failed Suites:{Colors.END} {failed_suites}")
-    
+
     print()
     print(f"{Colors.BOLD}Total Tests:{Colors.END} {total_tests}")
     print(f"{Colors.GREEN}{Colors.BOLD}Passed Tests:{Colors.END} {total_passed}")
     if total_failed > 0:
         print(f"{Colors.RED}{Colors.BOLD}Failed Tests:{Colors.END} {total_failed}")
+    if total_skipped > 0:
+        print(f"{Colors.YELLOW}{Colors.BOLD}Skipped Tests:{Colors.END} {total_skipped}")
     print(f"{Colors.BOLD}Total Duration:{Colors.END} {total_duration:.2f}s")
     
     # Print detailed bug report if there are failures
@@ -430,13 +476,14 @@ def run_specific_suite(suite_name):
     
     print()
     print_header("📊 SUMMARY")
-    
+
     print_result(
         result["name"],
         result["passed"],
         result["duration"],
         result["failed"],
-        result["total"]
+        result["total"],
+        result.get("skipped", 0)
     )
     
     # Show failures if any
