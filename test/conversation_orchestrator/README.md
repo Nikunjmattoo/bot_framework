@@ -1,6 +1,27 @@
-# Intent Detection Test Suite
+# Conversation Orchestrator Test Suite
 
-Comprehensive test suite for conversation orchestrator intent detection module.
+Comprehensive test suite for conversation orchestrator (intent detection, orchestration, LLM integration).
+
+## 🚀 Quick Start
+
+**Prerequisites**: PostgreSQL running with `bot_framework_test` database
+
+```bash
+# Option 1: Run with bash script (automated)
+./test/conversation_orchestrator/run_full_tests.sh
+
+# Option 2: Run with Python
+python test/conversation_orchestrator/run_tests.py
+
+# Option 3: Run specific category
+python test/conversation_orchestrator/run_tests.py models
+```
+
+**Need setup help?** See [SETUP_AND_RUN.md](./SETUP_AND_RUN.md)
+
+**Test results?** See [TEST_REPORT.md](./TEST_REPORT.md)
+
+---
 
 ## Test Structure
 ```
