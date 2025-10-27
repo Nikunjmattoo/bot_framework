@@ -175,7 +175,6 @@ def run_test_suite(name, test_dir, description):
                 "-v",                    # Verbose - shows each test
                 "--tb=short",            # Short traceback
                 "--color=yes",           # Colored output
-                "--durations=5",         # Show 5 slowest tests
                 "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
             ],
             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -233,8 +232,6 @@ def run_test_suite(name, test_dir, description):
                         elif "=" in line and ("passed" in line or "failed" in line):
                             print(line, end='', flush=True)
                         elif "FAILED" in line and "::" in line and " - " in line:
-                            print(line, end='', flush=True)
-                        elif "slowest" in line.lower() or "durations" in line.lower():
                             print(line, end='', flush=True)
                 else:
                     # No new output
