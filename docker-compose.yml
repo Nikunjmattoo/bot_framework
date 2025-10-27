@@ -1,4 +1,22 @@
 services:
+  # Application PostgreSQL database
+  app-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=bot_framework_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   langfuse-server:
     image: langfuse/langfuse:latest
     ports:
@@ -60,5 +78,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  app-db-data:
   langfuse-db-data:
   langfuse-clickhouse-data:

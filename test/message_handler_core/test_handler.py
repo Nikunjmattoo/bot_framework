@@ -361,7 +361,7 @@ class TestBroadcastMessage:
                 "summary": {"total": 1, "successful": 1, "failed": 0}
             }
             
-            result = await broadcast_message(
+            result = broadcast_message(
                 db=db_session,
                 content="Broadcast test",
                 instance_id=str(test_instance.id),
@@ -446,14 +446,14 @@ class TestBroadcastMessage:
                 "summary": {"total": 0}
             }
             
-            await broadcast_message(
+            broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
                 user_ids=user_ids,
                 request_id=request_id
             )
-            
+
             mock_bc.assert_called_once()
             call_args = mock_bc.call_args
             assert call_args.kwargs['content'] == "Test"
@@ -471,14 +471,14 @@ class TestBroadcastMessage:
                 "summary": {"total": 0}
             }
             
-            await broadcast_message(
+            broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
                 user_ids=user_ids,
                 request_id=str(uuid.uuid4())
             )
-            
+
             # Should be truncated to max_list_items
             call_args = mock_bc.call_args
             sanitized_ids = call_args.kwargs['user_ids']
