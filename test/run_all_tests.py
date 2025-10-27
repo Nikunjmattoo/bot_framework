@@ -98,12 +98,12 @@ def parse_pytest_output(output):
 def run_test_suite(name, test_dir, description):
     """
     Run a single test suite and capture detailed results.
-    
+
     Args:
         name: Name of the test suite
         test_dir: Directory containing tests
         description: Short description
-    
+
     Returns:
         dict: {
             'passed': bool,
@@ -117,34 +117,72 @@ def run_test_suite(name, test_dir, description):
     print(f"  📁 Directory: {test_dir}")
     print(f"  📝 Description: {description}")
     print()
-    
+
     start_time = time.time()
-    
-    # Run pytest and capture output
-    result = subprocess.run([
+
+    # Run pytest with real-time output
+    process = subprocess.Popen([
         sys.executable, "-m", "pytest",
         test_dir,
-        "-v",                    # Verbose
+        "-v",                    # Verbose - shows each test
         "--tb=short",            # Short traceback
         "--color=yes",           # Colored output
-        # NO -x flag - run all tests
         "--durations=5",         # Show 5 slowest tests
         "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
-    ], 
+    ],
     cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    capture_output=True,
-    text=True)
-    
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+    bufsize=1)  # Line buffered
+
+    # Print output in real-time with progress tracking
+    output_lines = []
+    test_count = 0
+    current_test = ""
+
+    print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
+
+    for line in process.stdout:
+        output_lines.append(line)
+
+        # Track test progress - look for test names in verbose output
+        if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
+            test_count += 1
+            # Extract test name from line like "test_file.py::TestClass::test_name PASSED"
+            test_match = re.search(r'(test_\w+\.py::\S+)', line)
+            if test_match:
+                current_test = test_match.group(1)
+                # Show progress indicator with color-coded status
+                elapsed = time.time() - start_time
+                if "PASSED" in line:
+                    status_icon = f"{Colors.GREEN}✓{Colors.END}"
+                elif "FAILED" in line:
+                    status_icon = f"{Colors.RED}✗{Colors.END}"
+                elif "ERROR" in line:
+                    status_icon = f"{Colors.RED}⚠{Colors.END}"
+                else:  # SKIPPED
+                    status_icon = f"{Colors.YELLOW}○{Colors.END}"
+
+                print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
+        elif "=" in line and ("passed" in line or "failed" in line):
+            # Print summary lines
+            print(line, end='', flush=True)
+        elif "FAILED" in line and "::" in line and " - " in line:
+            # Print failure details
+            print(line, end='', flush=True)
+        elif "slowest" in line.lower() or "durations" in line.lower():
+            # Print duration info
+            print(line, end='', flush=True)
+
+    process.wait()
     duration = time.time() - start_time
-    passed = result.returncode == 0
-    
-    # Print the output
-    print(result.stdout)
-    if result.stderr:
-        print(result.stderr)
-    
+    passed = process.returncode == 0
+
+    output = ''.join(output_lines)
+
     # Parse test results
-    test_results = parse_pytest_output(result.stdout)
+    test_results = parse_pytest_output(output)
     
     return {
         'name': name,
