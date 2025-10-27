@@ -30,7 +30,8 @@ from db.models.messages import MessageModel
 class TestSaveInboundMessage:
     """Test save_inbound_message function."""
     
-    def test_missing_session_id_raises_validation_error(self, db_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_session_id_raises_validation_error(self, db_session, test_user, test_instance):
         """✓ Missing session_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_inbound_message(
@@ -44,7 +45,8 @@ class TestSaveInboundMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "session" in str(exc_info.value).lower()
     
-    def test_missing_user_id_raises_validation_error(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_user_id_raises_validation_error(self, db_session, test_session, test_instance):
         """✓ Missing user_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_inbound_message(
@@ -58,7 +60,8 @@ class TestSaveInboundMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "user" in str(exc_info.value).lower()
     
-    def test_missing_instance_id_raises_validation_error(self, db_session, test_session, test_user):
+    @pytest.mark.asyncio
+    async def test_missing_instance_id_raises_validation_error(self, db_session, test_session, test_user):
         """✓ Missing instance_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_inbound_message(
@@ -90,7 +93,8 @@ class TestSaveInboundMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "10000" in str(exc_info.value)
     
-    def test_valid_inputs_saves_message(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_valid_inputs_saves_message(self, db_session, test_session, test_user, test_instance):
         """✓ Valid inputs → save message"""
         message = save_inbound_message(
             db_session,
@@ -103,7 +107,8 @@ class TestSaveInboundMessage:
         assert message is not None
         assert message.content == "Test message"
     
-    def test_role_is_user(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_role_is_user(self, db_session, test_session, test_user, test_instance):
         """✓ role = user"""
         message = save_inbound_message(
             db_session,
@@ -115,7 +120,8 @@ class TestSaveInboundMessage:
         
         assert message.role == "user"
     
-    def test_include_request_id(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_include_request_id(self, db_session, test_session, test_user, test_instance):
         """✓ Include request_id"""
         request_id = str(uuid.uuid4())
         
@@ -130,7 +136,8 @@ class TestSaveInboundMessage:
         
         assert message.request_id == request_id
     
-    def test_include_trace_id(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_include_trace_id(self, db_session, test_session, test_user, test_instance):
         """✓ Include trace_id"""
         trace_id = str(uuid.uuid4())
         
@@ -145,7 +152,8 @@ class TestSaveInboundMessage:
         
         assert message.trace_id == trace_id
     
-    def test_sanitize_metadata(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_sanitize_metadata(self, db_session, test_session, test_user, test_instance):
         """✓ Sanitize metadata"""
         meta_info = {
             "channel": "api",
@@ -185,7 +193,8 @@ class TestSaveInboundMessage:
         
         assert message.metadata_json is not None
     
-    def test_update_session_last_message_at(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_update_session_last_message_at(self, db_session, test_session, test_user, test_instance):
         """✓ Update session.last_message_at"""
         old_time = test_session.last_message_at
         
@@ -208,7 +217,8 @@ class TestSaveInboundMessage:
 class TestSaveOutboundMessage:
     """Test save_outbound_message function."""
     
-    def test_missing_session_id_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_session_id_raises_validation_error(self, db_session, test_instance):
         """✓ Missing session_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_outbound_message(
@@ -220,7 +230,8 @@ class TestSaveOutboundMessage:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_missing_instance_id_raises_validation_error(self, db_session, test_session):
+    @pytest.mark.asyncio
+    async def test_missing_instance_id_raises_validation_error(self, db_session, test_session):
         """✓ Missing instance_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_outbound_message(
@@ -249,7 +260,8 @@ class TestSaveOutboundMessage:
         assert len(message.content) <= 10000
         assert "[truncated]" in message.content
     
-    def test_valid_inputs_saves_message(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_valid_inputs_saves_message(self, db_session, test_session, test_instance):
         """✓ Valid inputs → save message"""
         message = save_outbound_message(
             db_session,
@@ -261,7 +273,8 @@ class TestSaveOutboundMessage:
         assert message is not None
         assert message.content == "Response message"
     
-    def test_role_is_assistant(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_role_is_assistant(self, db_session, test_session, test_instance):
         """✓ role = assistant"""
         message = save_outbound_message(
             db_session,
@@ -272,7 +285,8 @@ class TestSaveOutboundMessage:
         
         assert message.role == "assistant"
     
-    def test_user_id_is_null(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_user_id_is_null(self, db_session, test_session, test_instance):
         """✓ user_id = NULL"""
         message = save_outbound_message(
             db_session,
@@ -323,7 +337,8 @@ class TestSaveOutboundMessage:
         # Should be truncated or handled
         assert message.metadata_json is not None
     
-    def test_update_session_last_message_at(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_update_session_last_message_at(self, db_session, test_session, test_instance):
         """✓ Update session.last_message_at"""
         old_time = test_session.last_message_at
         
@@ -359,7 +374,8 @@ class TestSaveOutboundMessage:
 class TestSaveBroadcastMessage:
     """Test save_broadcast_message function."""
     
-    def test_missing_session_id_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_session_id_raises_validation_error(self, db_session, test_instance):
         """✓ Missing session_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_broadcast_message(
@@ -371,7 +387,8 @@ class TestSaveBroadcastMessage:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_missing_instance_id_raises_validation_error(self, db_session, test_session):
+    @pytest.mark.asyncio
+    async def test_missing_instance_id_raises_validation_error(self, db_session, test_session):
         """✓ Missing instance_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             save_broadcast_message(
@@ -383,7 +400,8 @@ class TestSaveBroadcastMessage:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_content_exceeds_10000_truncates(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_content_exceeds_10000_truncates(self, db_session, test_session, test_instance):
         """✓ Content > 10000 → truncate"""
         long_content = "x" * 10001
         
@@ -397,7 +415,8 @@ class TestSaveBroadcastMessage:
         assert len(message.content) <= 10000
         assert "[truncated]" in message.content
     
-    def test_valid_inputs_saves_message(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_valid_inputs_saves_message(self, db_session, test_session, test_instance):
         """✓ Valid inputs → save message"""
         message = save_broadcast_message(
             db_session,
@@ -409,7 +428,8 @@ class TestSaveBroadcastMessage:
         assert message is not None
         assert message.content == "Broadcast message"
     
-    def test_role_is_assistant(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_role_is_assistant(self, db_session, test_session, test_instance):
         """✓ role = assistant"""
         message = save_broadcast_message(
             db_session,
@@ -420,7 +440,8 @@ class TestSaveBroadcastMessage:
         
         assert message.role == "assistant"
     
-    def test_user_id_is_null(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_user_id_is_null(self, db_session, test_session, test_instance):
         """✓ user_id = NULL"""
         message = save_broadcast_message(
             db_session,
@@ -431,7 +452,8 @@ class TestSaveBroadcastMessage:
         
         assert message.user_id is None
     
-    def test_metadata_channel_is_broadcast(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_metadata_channel_is_broadcast(self, db_session, test_session, test_instance):
         """✓ metadata.channel = broadcast"""
         message = save_broadcast_message(
             db_session,
@@ -442,7 +464,8 @@ class TestSaveBroadcastMessage:
         
         assert message.metadata_json.get("channel") == "broadcast"
     
-    def test_update_session_last_message_at(self, db_session, test_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_update_session_last_message_at(self, db_session, test_session, test_instance):
         """✓ Update session.last_message_at"""
         old_time = test_session.last_message_at
         
@@ -464,14 +487,16 @@ class TestSaveBroadcastMessage:
 class TestGetRecentMessages:
     """Test get_recent_messages function."""
     
-    def test_missing_session_id_raises_validation_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_missing_session_id_raises_validation_error(self, db_session):
         """✓ Missing session_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             get_recent_messages(db_session, session_id=None)
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_session_not_found_raises_resource_not_found_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_session_not_found_raises_resource_not_found_error(self, db_session):
         """✓ Session not found → ResourceNotFoundError"""
         fake_id = str(uuid.uuid4())
         
@@ -529,7 +554,8 @@ class TestGetRecentMessages:
         assert messages[0].content == "Message 2"
         assert messages[2].content == "Message 0"
     
-    def test_apply_limit(self, db_session, test_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_apply_limit(self, db_session, test_session, test_user, test_instance):
         """✓ Apply limit"""
         # Create 5 messages
         for i in range(5):
@@ -553,7 +579,8 @@ class TestGetRecentMessages:
 class TestGetMessageById:
     """Test get_message_by_id function."""
     
-    def test_missing_message_id_raises_validation_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_missing_message_id_raises_validation_error(self, db_session):
         """✓ Missing message_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
             get_message_by_id(db_session, message_id=None)
@@ -577,7 +604,8 @@ class TestGetMessageById:
         assert retrieved is not None
         assert retrieved.id == message.id
     
-    def test_invalid_message_id_returns_none(self, db_session):
+    @pytest.mark.asyncio
+    async def test_invalid_message_id_returns_none(self, db_session):
         """✓ Invalid message_id → None"""
         fake_id = str(uuid.uuid4())
         message = get_message_by_id(db_session, fake_id)

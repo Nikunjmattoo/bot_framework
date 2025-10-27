@@ -6,7 +6,7 @@
 import pytest
 import uuid
 import time
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from db.models import UserModel, UserIdentifierModel, SessionModel
 
@@ -15,7 +15,8 @@ from db.models import UserModel, UserIdentifierModel, SessionModel
 class TestThroughput:
     """G3.1: Throughput - Sustained request handling."""
 
-    def test_sustained_100_req_per_second(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_sustained_100_req_per_second(self, client, test_instance, db_session):
         """✓ 100 req/s sustained"""
         num_requests = 100
         duration_seconds = 1
@@ -58,7 +59,8 @@ class TestThroughput:
         assert throughput >= 50  # At least 50 req/s (relaxed for testing)
 
     @pytest.mark.skip(reason="High load test - run manually")
-    def test_burst_1000_req_per_second(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_burst_1000_req_per_second(self, client, test_instance, db_session):
         """✓ 1000 req/s burst (MANUAL TEST ONLY)"""
         num_requests = 1000
 
@@ -99,7 +101,8 @@ class TestThroughput:
 class TestLatency:
     """G3.2: Latency - Response time percentiles."""
 
-    def test_latency_percentiles(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_latency_percentiles(self, client, test_instance, db_session):
         """
         ✓ P50 < 500ms
         ✓ P95 < 2s
@@ -150,7 +153,8 @@ class TestLatency:
 class TestDatabaseConnectionPool:
     """G3.3: Database Connection Pool - Pool management."""
 
-    def test_no_connection_leaks_after_1000_requests(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_no_connection_leaks_after_1000_requests(self, client, test_instance, db_session):
         """✓ No connection leaks after 1000 requests"""
         from db.db import engine
 
@@ -186,7 +190,8 @@ class TestDatabaseConnectionPool:
         # Pool should be stable, no connections permanently checked out
         assert final_checked_out <= initial_checked_out + 2  # Allow some variance
 
-    def test_pool_exhaustion_handling(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_pool_exhaustion_handling(self, client, test_instance, db_session):
         """✓ Pool exhaustion handling"""
         from db.db import engine
 
@@ -222,14 +227,16 @@ class TestMemory:
     """G3.4: Memory - Memory leak detection."""
 
     @pytest.mark.skip(reason="Memory testing requires specialized tools")
-    def test_no_memory_leaks(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_no_memory_leaks(self, client, test_instance, db_session):
         """✓ No memory leaks"""
         # This would require memory profiling tools
         # Placeholder for documentation
         pass
 
     @pytest.mark.skip(reason="Memory testing requires specialized tools")
-    def test_stable_memory_usage(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_stable_memory_usage(self, client, test_instance, db_session):
         """✓ Stable memory usage"""
         # This would require monitoring memory over time
         # Placeholder for documentation
@@ -240,7 +247,8 @@ class TestMemory:
 class TestTokenPlanInitialization:
     """G3.5: Token Plan Initialization - Performance."""
 
-    def test_first_message_with_token_plan_init(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_first_message_with_token_plan_init(self, client, test_instance, db_session):
         """✓ First message < 1s (including token plan initialization)"""
         payload = {
             "content": "First message with token init",
@@ -268,7 +276,8 @@ class TestTokenPlanInitialization:
         # Relaxed threshold for testing
         assert duration_ms < 2000  # 2s
 
-    def test_subsequent_message_uses_cached_plan(self, client, test_instance, test_user, test_session, db_session):
+    @pytest.mark.asyncio
+    async def test_subsequent_message_uses_cached_plan(self, client, test_instance, test_user, test_session, db_session):
         """✓ Subsequent messages use cached plan (faster)"""
         # Initialize token plan
         from message_handler.services.token_service import TokenManager
@@ -306,7 +315,8 @@ class TestTokenPlanInitialization:
 class TestCachePerformance:
     """G3.6: Cache Performance - Instance cache hit rate."""
 
-    def test_instance_cache_hit_rate(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_instance_cache_hit_rate(self, client, test_instance, db_session):
         """✓ Instance cache hit rate > 90% after warmup"""
         from message_handler.services.instance_service import InstanceService
 
@@ -336,7 +346,8 @@ class TestCachePerformance:
 class TestIdempotencyCacheCleanup:
     """G3.7: Idempotency Cache Cleanup."""
 
-    def test_idempotency_cache_cleanup_after_24_hours(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_idempotency_cache_cleanup_after_24_hours(self, client, test_instance, db_session):
         """✓ Idempotency cache cleans up after 24 hours"""
         from datetime import datetime, timedelta, timezone
         from db.models import MessageModel

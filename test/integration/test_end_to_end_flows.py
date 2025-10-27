@@ -6,7 +6,7 @@
 import pytest
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from db.models import (
     UserModel, UserIdentifierModel, SessionModel, MessageModel
@@ -17,7 +17,8 @@ from message_handler.services.token_service import TokenManager
 class TestNewUserFirstMessage:
     """G1.1: New User, First Message - Full flow from request to response."""
 
-    def test_new_user_first_message_success(self, client, test_instance, test_brand, db_session):
+    @pytest.mark.asyncio
+    async def test_new_user_first_message_success(self, client, test_instance, test_brand, db_session):
         """
         ✓ POST /api/messages with user identifiers
         ✓ User created
@@ -112,7 +113,8 @@ class TestNewUserFirstMessage:
 class TestExistingUserNewMessage:
     """G1.2: Existing User, New Message."""
 
-    def test_existing_user_new_message(self, client, test_instance, test_user, test_session, db_session):
+    @pytest.mark.asyncio
+    async def test_existing_user_new_message(self, client, test_instance, test_user, test_session, db_session):
         """
         ✓ User resolved
         ✓ Existing session returned
@@ -154,7 +156,8 @@ class TestExistingUserNewMessage:
 class TestIdempotentRequest:
     """G1.3: Idempotent Request - Same request_id should return cached response."""
 
-    def test_first_request_processes(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_first_request_processes(self, client, test_instance, db_session):
         """✓ First request → process"""
         request_id = str(uuid.uuid4())
 
@@ -179,7 +182,8 @@ class TestIdempotentRequest:
         assert response.status_code == 200
         assert response.json()["data"]["response_text"] == "First response"
 
-    def test_duplicate_request_returns_409(self, client, test_instance, test_user, test_session, db_session):
+    @pytest.mark.asyncio
+    async def test_duplicate_request_returns_409(self, client, test_instance, test_user, test_session, db_session):
         """✓ Duplicate request → 409 with cached response"""
         request_id = str(uuid.uuid4())
 
@@ -220,7 +224,8 @@ class TestIdempotentRequest:
 class TestWhatsAppMessage:
     """G1.4: WhatsApp Message - Full WhatsApp flow."""
 
-    def test_whatsapp_text_message(self, client, test_whatsapp_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_whatsapp_text_message(self, client, test_whatsapp_instance, db_session):
         """
         ✓ POST /api/whatsapp/messages
         ✓ Extract from/to from message
@@ -269,7 +274,8 @@ class TestWhatsAppMessage:
 class TestBroadcastMessage:
     """G1.5: Broadcast Message - Send to multiple users."""
 
-    def test_broadcast_to_multiple_users(self, client, test_instance, test_brand, db_session):
+    @pytest.mark.asyncio
+    async def test_broadcast_to_multiple_users(self, client, test_instance, test_brand, db_session):
         """
         ✓ POST /api/broadcast
         ✓ Resolve instance
@@ -319,7 +325,8 @@ class TestBroadcastMessage:
 class TestGuestUser:
     """G1.6: Guest User - Create guest when no identifiers."""
 
-    def test_guest_user_accepted(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_guest_user_accepted(self, client, test_instance, db_session):
         """
         ✓ POST /api/messages with no user identifiers
         ✓ Instance has accept_guest_users=true
@@ -354,7 +361,8 @@ class TestGuestUser:
         ).first()
         assert user.user_tier == "guest"
 
-    def test_guest_user_rejected(self, client, test_instance_no_guest, db_session):
+    @pytest.mark.asyncio
+    async def test_guest_user_rejected(self, client, test_instance_no_guest, db_session):
         """
         ✓ POST /api/messages with no user identifiers
         ✓ Instance has accept_guest_users=false
@@ -376,7 +384,8 @@ class TestGuestUser:
 class TestBrandScopedIdentity:
     """G1.7: Brand-Scoped Identity - Same identifier, different brands."""
 
-    def test_same_phone_different_brands(self, client, db_session, test_template_set, test_llm_model):
+    @pytest.mark.asyncio
+    async def test_same_phone_different_brands(self, client, db_session, test_template_set, test_llm_model):
         """
         ✓ User A with phone +123 in Brand A
         ✓ User B with phone +123 in Brand B
@@ -454,7 +463,8 @@ class TestBrandScopedIdentity:
 class TestSessionTimeout:
     """G1.8: Session Timeout - Create new session after timeout."""
 
-    def test_session_timeout_creates_new_session(self, client, test_instance, test_user, db_session):
+    @pytest.mark.asyncio
+    async def test_session_timeout_creates_new_session(self, client, test_instance, test_user, db_session):
         """
         ✓ Last message > 60 minutes ago
         ✓ New session created on next message
@@ -499,7 +509,8 @@ class TestSessionTimeout:
 class TestTokenBudget:
     """G1.9: Token Budget - Initialize and track token usage."""
 
-    def test_token_plan_initialization_and_tracking(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_token_plan_initialization_and_tracking(self, client, test_instance, db_session):
         """
         ✓ Initialize plan from template_set
         ✓ Calculate budget from sections

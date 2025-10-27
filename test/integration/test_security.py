@@ -5,14 +5,15 @@
 
 import pytest
 import uuid
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 
 @pytest.mark.security
 class TestSQLInjection:
     """G4.1: SQL Injection - Parameterized queries only."""
 
-    def test_sql_injection_in_content(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_sql_injection_in_content(self, client, test_instance, db_session):
         """✓ SQL injection attempts in content field are safely handled"""
         malicious_payloads = [
             "'; DROP TABLE messages; --",
@@ -46,7 +47,8 @@ class TestSQLInjection:
             count = db_session.query(MessageModel).count()
             assert count >= 0  # Table exists
 
-    def test_sql_injection_in_user_identifiers(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_sql_injection_in_user_identifiers(self, client, test_instance, db_session):
         """✓ SQL injection attempts in user identifiers are safely handled"""
         payload = {
             "content": "Test message",
@@ -67,7 +69,8 @@ class TestSQLInjection:
 class TestXSS:
     """G4.2: XSS - Input sanitization."""
 
-    def test_xss_in_content(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_xss_in_content(self, client, test_instance, db_session):
         """✓ XSS payloads are sanitized"""
         xss_payloads = [
             "<script>alert('XSS')</script>",
@@ -110,7 +113,8 @@ class TestXSS:
 class TestSensitiveData:
     """G4.3: Sensitive Data - No passwords/tokens in logs."""
 
-    def test_no_passwords_in_logs(self, client, test_instance, db_session, caplog):
+    @pytest.mark.asyncio
+    async def test_no_passwords_in_logs(self, client, test_instance, db_session, caplog):
         """✓ Passwords are not logged"""
         payload = {
             "content": "Test message",
@@ -141,7 +145,8 @@ class TestSensitiveData:
             assert "secret_token_123" not in record.message
             assert "my_secret" not in record.message
 
-    def test_sensitive_keys_stripped_from_metadata(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_sensitive_keys_stripped_from_metadata(self, client, test_instance, db_session):
         """✓ Sensitive keys are stripped from stored metadata"""
         payload = {
             "content": "Test message",
@@ -181,21 +186,24 @@ class TestRateLimiting:
     """G4.4: Rate Limiting - Prevent abuse."""
 
     @pytest.mark.skip(reason="Rate limiting not implemented yet")
-    def test_per_user_rate_limit(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_per_user_rate_limit(self, client, test_instance, db_session):
         """✓ Per-user rate limits enforced"""
         # This would test rate limiting per user
         # Not implemented yet - placeholder
         pass
 
     @pytest.mark.skip(reason="Rate limiting not implemented yet")
-    def test_per_instance_rate_limit(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_per_instance_rate_limit(self, client, test_instance, db_session):
         """✓ Per-instance rate limits enforced"""
         # This would test rate limiting per instance
         # Not implemented yet - placeholder
         pass
 
     @pytest.mark.skip(reason="Rate limiting not implemented yet")
-    def test_rate_limit_bypass_detection(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_rate_limit_bypass_detection(self, client, test_instance, db_session):
         """✓ Rate limit bypass attempts detected"""
         # This would test detection of bypass attempts
         # Not implemented yet - placeholder
@@ -206,7 +214,8 @@ class TestRateLimiting:
 class TestInputValidation:
     """G4.5: Input Validation - All user input validated."""
 
-    def test_content_length_validation(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_content_length_validation(self, client, test_instance):
         """✓ Content length limits enforced"""
         # Test max length
         payload = {
@@ -218,7 +227,8 @@ class TestInputValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code == 400  # Validation error
 
-    def test_request_id_length_validation(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_request_id_length_validation(self, client, test_instance):
         """✓ request_id length limits enforced"""
         payload = {
             "content": "Test",
@@ -229,7 +239,8 @@ class TestInputValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code in [400, 422]
 
-    def test_phone_format_validation(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_phone_format_validation(self, client, test_instance):
         """✓ Phone number format validation"""
         invalid_phones = [
             "1234567890",  # Missing +
@@ -251,7 +262,8 @@ class TestInputValidation:
             # Should either reject or process without creating identifier
             assert response.status_code in [200, 400, 422]
 
-    def test_email_format_validation(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_email_format_validation(self, client, test_instance):
         """✓ Email format validation"""
         invalid_emails = [
             "not-an-email",
@@ -278,7 +290,8 @@ class TestInputValidation:
 class TestAuthorizationValidation:
     """G4.6: Authorization - Proper access control."""
 
-    def test_guest_users_rejected_when_not_allowed(self, client, test_instance_no_guest):
+    @pytest.mark.asyncio
+    async def test_guest_users_rejected_when_not_allowed(self, client, test_instance_no_guest):
         """✓ Guest users rejected when instance doesn't allow guests"""
         payload = {
             "content": "Test",
@@ -290,7 +303,8 @@ class TestAuthorizationValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code == 401
 
-    def test_inactive_instance_access_denied(self, client, test_brand, test_template_set, db_session):
+    @pytest.mark.asyncio
+    async def test_inactive_instance_access_denied(self, client, test_brand, test_template_set, db_session):
         """✓ Inactive instances cannot be accessed"""
         from db.models import InstanceModel, InstanceConfigModel
 
@@ -327,7 +341,8 @@ class TestAuthorizationValidation:
 class TestDataLeakage:
     """G4.7: Data Leakage - No internal details in error responses."""
 
-    def test_database_error_no_internal_details(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_database_error_no_internal_details(self, client, test_instance, db_session):
         """✓ Database errors don't leak internal details"""
         # This would require triggering a database error
         # Check that error response doesn't contain:
@@ -336,7 +351,8 @@ class TestDataLeakage:
         # - Stack traces (in production)
         pass
 
-    def test_validation_errors_safe(self, client):
+    @pytest.mark.asyncio
+    async def test_validation_errors_safe(self, client):
         """✓ Validation errors don't leak system information"""
         payload = {
             "content": "Test",
@@ -357,7 +373,8 @@ class TestDataLeakage:
 class TestHeaderSecurity:
     """G4.8: HTTP Security Headers."""
 
-    def test_trace_id_in_response_header(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_trace_id_in_response_header(self, client, test_instance):
         """✓ X-Trace-ID present in response"""
         payload = {
             "content": "Test",
@@ -378,7 +395,8 @@ class TestHeaderSecurity:
         # Should have trace ID in headers
         assert "x-trace-id" in response.headers or "X-Trace-ID" in response.headers
 
-    def test_request_id_echoed_in_response(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_request_id_echoed_in_response(self, client, test_instance):
         """✓ X-Request-ID echoed back"""
         request_id = str(uuid.uuid4())
 

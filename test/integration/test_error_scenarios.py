@@ -5,7 +5,7 @@
 
 import pytest
 import uuid
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from datetime import datetime, timezone
 
 from db.models import InstanceModel, InstanceConfigModel, TemplateModel, TemplateSetModel
@@ -15,7 +15,8 @@ from message_handler.exceptions import OrchestrationError
 class TestInvalidInstance:
     """G2.1: Invalid Instance - Non-existent instance_id."""
 
-    def test_invalid_instance_id_returns_404(self, client):
+    @pytest.mark.asyncio
+    async def test_invalid_instance_id_returns_404(self, client):
         """✓ POST with invalid instance_id → 404"""
         fake_instance_id = str(uuid.uuid4())
 
@@ -35,7 +36,8 @@ class TestInvalidInstance:
 class TestInactiveInstance:
     """G2.2: Inactive Instance - Instance with is_active=False."""
 
-    def test_inactive_instance_returns_404(self, client, test_brand, test_template_set, db_session):
+    @pytest.mark.asyncio
+    async def test_inactive_instance_returns_404(self, client, test_brand, test_template_set, db_session):
         """✓ POST with inactive instance → 404"""
         # Create inactive instance
         inactive_instance = InstanceModel(
@@ -72,7 +74,8 @@ class TestInactiveInstance:
 class TestMissingConfig:
     """G2.3: Missing Config - Instance without active config."""
 
-    def test_instance_without_active_config_returns_404(self, client, test_brand, db_session):
+    @pytest.mark.asyncio
+    async def test_instance_without_active_config_returns_404(self, client, test_brand, db_session):
         """✓ Instance without active config → 404"""
         # Create instance without config
         instance_no_config = InstanceModel(
@@ -101,7 +104,8 @@ class TestMissingConfig:
 class TestInvalidTemplate:
     """G2.4: Invalid Template - Template_set references non-existent template."""
 
-    def test_invalid_template_reference(self, client, test_brand, test_llm_model, db_session):
+    @pytest.mark.asyncio
+    async def test_invalid_template_reference(self, client, test_brand, test_llm_model, db_session):
         """✓ Template_set references non-existent template → ValidationError"""
         # Create template set with invalid template reference
         invalid_template_set = TemplateSetModel(
@@ -148,7 +152,8 @@ class TestInvalidTemplate:
 class TestMissingModel:
     """G2.5: Missing Model - Template without llm_model."""
 
-    def test_template_without_llm_model(self, client, test_brand, db_session):
+    @pytest.mark.asyncio
+    async def test_template_without_llm_model(self, client, test_brand, db_session):
         """✓ Template without llm_model → ValidationError"""
         # Create template without llm_model
         template_no_model = TemplateModel(
@@ -204,7 +209,8 @@ class TestMissingModel:
 class TestOrchestratorTimeout:
     """G2.6: Orchestrator Timeout - Orchestrator takes too long."""
 
-    def test_orchestrator_timeout_returns_default_response(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_orchestrator_timeout_returns_default_response(self, client, test_instance, db_session):
         """✓ Orchestrator > 30s → default response"""
         import time
 
@@ -232,7 +238,8 @@ class TestOrchestratorTimeout:
 class TestOrchestratorError:
     """G2.7: Orchestrator Error - Orchestrator throws exception."""
 
-    def test_orchestrator_exception_returns_default_response(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_orchestrator_exception_returns_default_response(self, client, test_instance, db_session):
         """✓ Orchestrator exception → default response"""
 
         def failing_orchestrator(*args, **kwargs):
@@ -257,7 +264,8 @@ class TestOrchestratorError:
 class TestDatabaseConnectionLost:
     """G2.8: Database Connection Lost - Connection drops during request."""
 
-    def test_database_connection_error_retries(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_database_connection_error_retries(self, client, test_instance, db_session):
         """✓ Connection drops → OperationalError → retry"""
         from sqlalchemy.exc import OperationalError
 
@@ -269,7 +277,8 @@ class TestDatabaseConnectionLost:
 class TestDeadlock:
     """G2.9: Deadlock - Database deadlock detected."""
 
-    def test_deadlock_detection_and_retry(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_deadlock_detection_and_retry(self, client, test_instance, db_session):
         """✓ Deadlock detected → retry transaction"""
         from sqlalchemy.exc import OperationalError
 
@@ -281,7 +290,8 @@ class TestDeadlock:
 class TestConcurrentIdempotency:
     """G2.10: Concurrent Idempotency - Two requests with same request_id."""
 
-    def test_concurrent_duplicate_requests(self, client, test_instance, db_session):
+    @pytest.mark.asyncio
+    async def test_concurrent_duplicate_requests(self, client, test_instance, db_session):
         """✓ Two requests with same request_id → one processes, other gets 409"""
         import threading
         import time
@@ -323,7 +333,8 @@ class TestConcurrentIdempotency:
 class TestInvalidRequestValidation:
     """G2.11: Request Validation - Invalid request payloads."""
 
-    def test_missing_content_returns_422(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_content_returns_422(self, client, test_instance):
         """✓ Missing content → 422"""
         payload = {
             "instance_id": str(test_instance.id),
@@ -334,7 +345,8 @@ class TestInvalidRequestValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code == 422
 
-    def test_missing_instance_id_returns_422(self, client):
+    @pytest.mark.asyncio
+    async def test_missing_instance_id_returns_422(self, client):
         """✓ Missing instance_id → 422"""
         payload = {
             "content": "Test",
@@ -345,7 +357,8 @@ class TestInvalidRequestValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code == 422
 
-    def test_missing_request_id_returns_400(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_request_id_returns_400(self, client, test_instance):
         """✓ Missing request_id → 400"""
         payload = {
             "content": "Test",
@@ -356,7 +369,8 @@ class TestInvalidRequestValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code == 400
 
-    def test_content_too_long_returns_422(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_content_too_long_returns_422(self, client, test_instance):
         """✓ Content > 10000 chars → 422"""
         payload = {
             "content": "x" * 10001,  # Exceeds limit
@@ -367,7 +381,8 @@ class TestInvalidRequestValidation:
         response = client.post("/api/messages", json=payload)
         assert response.status_code == 400  # ValidationError
 
-    def test_invalid_request_id_format_returns_400(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_invalid_request_id_format_returns_400(self, client, test_instance):
         """✓ Invalid request_id format → 400"""
         payload = {
             "content": "Test",
@@ -383,7 +398,8 @@ class TestInvalidRequestValidation:
 class TestWhatsAppErrors:
     """G2.12: WhatsApp-specific errors."""
 
-    def test_missing_from_field_returns_400(self, client):
+    @pytest.mark.asyncio
+    async def test_missing_from_field_returns_400(self, client):
         """✓ Missing 'from' → 400"""
         payload = {
             "request_id": str(uuid.uuid4()),
@@ -398,7 +414,8 @@ class TestWhatsAppErrors:
         response = client.post("/api/whatsapp/messages", json=payload)
         assert response.status_code == 400
 
-    def test_missing_to_field_returns_400(self, client):
+    @pytest.mark.asyncio
+    async def test_missing_to_field_returns_400(self, client):
         """✓ Missing 'to' → 400"""
         payload = {
             "request_id": str(uuid.uuid4()),
@@ -417,7 +434,8 @@ class TestWhatsAppErrors:
 class TestBroadcastErrors:
     """G2.13: Broadcast-specific errors."""
 
-    def test_missing_user_ids_returns_400(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_user_ids_returns_400(self, client, test_instance):
         """✓ Missing user_ids → 400"""
         payload = {
             "content": "Broadcast",
@@ -429,7 +447,8 @@ class TestBroadcastErrors:
         response = client.post("/api/broadcast", json=payload)
         assert response.status_code == 422  # Pydantic validation
 
-    def test_empty_user_ids_list_returns_400(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_empty_user_ids_list_returns_400(self, client, test_instance):
         """✓ Empty user_ids list → 400"""
         payload = {
             "content": "Broadcast",
@@ -441,7 +460,8 @@ class TestBroadcastErrors:
         response = client.post("/api/broadcast", json=payload)
         assert response.status_code == 400
 
-    def test_too_many_user_ids_returns_400(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_too_many_user_ids_returns_400(self, client, test_instance):
         """✓ user_ids > 100 → 400"""
         payload = {
             "content": "Broadcast",
