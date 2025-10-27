@@ -143,39 +143,48 @@ def run_test_suite(name, test_dir, description):
 
     print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
 
-    for line in process.stdout:
-        output_lines.append(line)
+    # Read output line by line with progress tracking
+    try:
+        for line in iter(process.stdout.readline, ''):
+            if not line:  # Empty string means EOF
+                break
 
-        # Track test progress - look for test names in verbose output
-        if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
-            test_count += 1
-            # Extract test name from line like "test_file.py::TestClass::test_name PASSED"
-            test_match = re.search(r'(test_\w+\.py::\S+)', line)
-            if test_match:
-                current_test = test_match.group(1)
-                # Show progress indicator with color-coded status
-                elapsed = time.time() - start_time
-                if "PASSED" in line:
-                    status_icon = f"{Colors.GREEN}✓{Colors.END}"
-                elif "FAILED" in line:
-                    status_icon = f"{Colors.RED}✗{Colors.END}"
-                elif "ERROR" in line:
-                    status_icon = f"{Colors.RED}⚠{Colors.END}"
-                else:  # SKIPPED
-                    status_icon = f"{Colors.YELLOW}○{Colors.END}"
+            output_lines.append(line)
 
-                print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
-        elif "=" in line and ("passed" in line or "failed" in line):
-            # Print summary lines
-            print(line, end='', flush=True)
-        elif "FAILED" in line and "::" in line and " - " in line:
-            # Print failure details
-            print(line, end='', flush=True)
-        elif "slowest" in line.lower() or "durations" in line.lower():
-            # Print duration info
-            print(line, end='', flush=True)
+            # Track test progress - look for test names in verbose output
+            if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
+                test_count += 1
+                # Extract test name from line like "test_file.py::TestClass::test_name PASSED"
+                test_match = re.search(r'(test_\w+\.py::\S+)', line)
+                if test_match:
+                    current_test = test_match.group(1)
+                    # Show progress indicator with color-coded status
+                    elapsed = time.time() - start_time
+                    if "PASSED" in line:
+                        status_icon = f"{Colors.GREEN}✓{Colors.END}"
+                    elif "FAILED" in line:
+                        status_icon = f"{Colors.RED}✗{Colors.END}"
+                    elif "ERROR" in line:
+                        status_icon = f"{Colors.RED}⚠{Colors.END}"
+                    else:  # SKIPPED
+                        status_icon = f"{Colors.YELLOW}○{Colors.END}"
 
-    process.wait()
+                    print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
+            elif "=" in line and ("passed" in line or "failed" in line):
+                # Print summary lines
+                print(line, end='', flush=True)
+            elif "FAILED" in line and "::" in line and " - " in line:
+                # Print failure details
+                print(line, end='', flush=True)
+            elif "slowest" in line.lower() or "durations" in line.lower():
+                # Print duration info
+                print(line, end='', flush=True)
+    except Exception as e:
+        print(f"\n{Colors.RED}Error reading test output: {e}{Colors.END}")
+    finally:
+        # Ensure process is terminated
+        process.stdout.close()
+        process.wait(timeout=5)  # Wait up to 5 seconds for process to finish
     duration = time.time() - start_time
     passed = process.returncode == 0
 
