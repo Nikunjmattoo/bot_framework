@@ -172,8 +172,12 @@ class TestSensitiveData:
 
         # Check message metadata doesn't contain sensitive keys
         from db.models import MessageModel
+
+        # Get message_id from response and query database
+        data = response.json()
+        message_id = data["data"]["message_id"]
         message = db_session.query(MessageModel).filter(
-            MessageModel.session_id == response.json()["data"]["session_id"]
+            MessageModel.id == message_id
         ).first()
 
         if message and message.metadata_json:
