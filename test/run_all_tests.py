@@ -225,7 +225,7 @@ def run_all_tests():
     """Run all test suites in order and generate comprehensive bug report."""
     
     # Test suites configuration
-    # Order: Database → Services → Adapters → Core → Orchestrator → API
+    # Order: Database → Services → Adapters → Core → Orchestrator → API → Utils → Integration
     test_suites = [
         {
             "name": "Database Layer (Category E)",
@@ -250,12 +250,22 @@ def run_all_tests():
         {
             "name": "Conversation Orchestrator (Category H)",
             "dir": "test/conversation_orchestrator/",
-            "description": "Intent detection, orchestration, LLM integration (182 tests)"
+            "description": "Intent detection, orchestration, LLM integration"
         },
         {
             "name": "API Layer (Category A)",
             "dir": "test/api_layer/",
             "description": "FastAPI endpoints, middleware, exception handling"
+        },
+        {
+            "name": "Utils (Category F)",
+            "dir": "test/utils/",
+            "description": "Utility functions, helpers, formatters, validators (408 tests)"
+        },
+        {
+            "name": "Integration Tests (Category G)",
+            "dir": "test/integration/",
+            "description": "End-to-end integration tests, security tests (60 tests)"
         }
     ]
     
@@ -369,7 +379,9 @@ def run_specific_suite(suite_name):
         "adapters": ("test/message_handler_adapters/", "Message Handler Adapters"),
         "core": ("test/message_handler_core/", "Message Handler Core"),
         "orchestrator": ("test/conversation_orchestrator/", "Conversation Orchestrator"),
-        "api": ("test/api_layer/", "API Layer")
+        "api": ("test/api_layer/", "API Layer"),
+        "utils": ("test/utils/", "Utils"),
+        "integration": ("test/integration/", "Integration Tests")
     }
     
     if suite_name.lower() not in suite_map:
@@ -472,6 +484,8 @@ def show_help():
     print("  core                Message Handler Core")
     print("  orchestrator        Conversation Orchestrator (intent detection, 182 tests)")
     print("  api                 API Layer (endpoints, middleware)")
+    print("  utils               Utils (helpers, formatters, validators, 408 tests)")
+    print("  integration         Integration Tests (end-to-end, security, 60 tests)")
     print()
     
     print(f"{Colors.BOLD}EXAMPLES:{Colors.END}")
