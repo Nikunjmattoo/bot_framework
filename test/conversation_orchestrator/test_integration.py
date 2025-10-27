@@ -366,7 +366,7 @@ class TestErrorRecoveryIntegration:
             
             # First call should fail
             with pytest.raises(Exception):
-                process_message(base_adapter_payload)
+                await process_message(base_adapter_payload)
             
             # Second call should succeed
             result = await process_message(base_adapter_payload)

@@ -167,7 +167,7 @@ class TestSelfRespondPath:
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
             with pytest.raises(Exception):
-                process_message(base_adapter_payload)
+                await process_message(base_adapter_payload)
 
 
 # ============================================================================
@@ -468,7 +468,7 @@ class TestAdapterValidation:
         del base_adapter_payload["routing"]
         
         with pytest.raises(Exception):
-            process_message(base_adapter_payload)
+            await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_missing_message_raises_error(self, base_adapter_payload):
@@ -476,7 +476,7 @@ class TestAdapterValidation:
         del base_adapter_payload["message"]
         
         with pytest.raises(Exception):
-            process_message(base_adapter_payload)
+            await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_missing_session_id_raises_error(self, base_adapter_payload):
@@ -484,7 +484,7 @@ class TestAdapterValidation:
         del base_adapter_payload["session_id"]
         
         with pytest.raises(Exception):
-            process_message(base_adapter_payload)
+            await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_missing_template_raises_error(self, base_adapter_payload):
@@ -492,7 +492,7 @@ class TestAdapterValidation:
         del base_adapter_payload["template"]
         
         with pytest.raises(Exception):
-            process_message(base_adapter_payload)
+            await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_missing_token_plan_raises_error(self, base_adapter_payload):
@@ -500,7 +500,7 @@ class TestAdapterValidation:
         del base_adapter_payload["token_plan"]
         
         with pytest.raises(Exception):
-            process_message(base_adapter_payload)
+            await process_message(base_adapter_payload)
 
 
 # ============================================================================
@@ -527,7 +527,7 @@ class TestOrchestratorErrorHandling:
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
             with pytest.raises(Exception):
-                process_message(base_adapter_payload)
+                await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_llm_timeout_error_handling(
@@ -550,7 +550,7 @@ class TestOrchestratorErrorHandling:
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
             with pytest.raises(Exception):
-                process_message(base_adapter_payload)
+                await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_database_error_handling(
@@ -564,7 +564,7 @@ class TestOrchestratorErrorHandling:
         
         with patch('conversation_orchestrator.intent_detection.detector.fetch_template_string', new=mock_db_error):
             with pytest.raises(Exception):
-                process_message(base_adapter_payload)
+                await process_message(base_adapter_payload)
     
     @pytest.mark.asyncio
     async def test_validation_error_includes_details(self, base_adapter_payload):
@@ -572,7 +572,7 @@ class TestOrchestratorErrorHandling:
         del base_adapter_payload["routing"]
         
         with pytest.raises(Exception):
-            process_message(base_adapter_payload)
+            await process_message(base_adapter_payload)
 
 
 # ============================================================================

@@ -55,7 +55,7 @@ async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
         ValidationError: If adapter payload is invalid
     """
     start_time = time.time()
-    trace_id = str(uuid.uuid4())
+    trace_id = adapter_payload.get("trace_id") or str(uuid.uuid4())
     
     logger.info(
         "orchestrator:started",
