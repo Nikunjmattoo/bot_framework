@@ -10,6 +10,7 @@ from pathlib import Path
 import time
 from datetime import datetime
 import re
+import select
 
 # Colors for terminal output
 class Colors:
@@ -145,47 +146,59 @@ def run_test_suite(name, test_dir, description):
 
     # Read output line by line with progress tracking
     try:
-        while process.poll() is None:  # While process is still running
-            line = process.stdout.readline()
-            if not line:  # Empty line
-                continue
+        while True:
+            # Check if process has finished
+            is_running = process.poll() is None
 
-            output_lines.append(line)
+            # Use select to check if data is available (with 0.1s timeout)
+            # This prevents blocking forever on readline()
+            ready, _, _ = select.select([process.stdout], [], [], 0.1)
 
-            # Track test progress - look for test names in verbose output
-            if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
-                test_count += 1
-                # Extract test name from line like "test_file.py::TestClass::test_name PASSED"
-                test_match = re.search(r'(test_\w+\.py::\S+)', line)
-                if test_match:
-                    current_test = test_match.group(1)
-                    # Show progress indicator with color-coded status
-                    elapsed = time.time() - start_time
-                    if "PASSED" in line:
-                        status_icon = f"{Colors.GREEN}✓{Colors.END}"
-                    elif "FAILED" in line:
-                        status_icon = f"{Colors.RED}✗{Colors.END}"
-                    elif "ERROR" in line:
-                        status_icon = f"{Colors.RED}⚠{Colors.END}"
-                    else:  # SKIPPED
-                        status_icon = f"{Colors.YELLOW}○{Colors.END}"
+            if ready:
+                # Data is available, read it
+                line = process.stdout.readline()
+                if not line:  # EOF
+                    break
 
-                    print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
-            elif "=" in line and ("passed" in line or "failed" in line):
-                # Print summary lines
-                print(line, end='', flush=True)
-            elif "FAILED" in line and "::" in line and " - " in line:
-                # Print failure details
-                print(line, end='', flush=True)
-            elif "slowest" in line.lower() or "durations" in line.lower():
-                # Print duration info
-                print(line, end='', flush=True)
+                output_lines.append(line)
 
-        # Process has finished, read any remaining output
-        remaining = process.stdout.read()
-        if remaining:
-            output_lines.append(remaining)
-            print(remaining, end='', flush=True)
+                # Track test progress - look for test names in verbose output
+                if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
+                    test_count += 1
+                    # Extract test name from line like "test_file.py::TestClass::test_name PASSED"
+                    test_match = re.search(r'(test_\w+\.py::\S+)', line)
+                    if test_match:
+                        current_test = test_match.group(1)
+                        # Show progress indicator with color-coded status
+                        elapsed = time.time() - start_time
+                        if "PASSED" in line:
+                            status_icon = f"{Colors.GREEN}✓{Colors.END}"
+                        elif "FAILED" in line:
+                            status_icon = f"{Colors.RED}✗{Colors.END}"
+                        elif "ERROR" in line:
+                            status_icon = f"{Colors.RED}⚠{Colors.END}"
+                        else:  # SKIPPED
+                            status_icon = f"{Colors.YELLOW}○{Colors.END}"
+
+                        print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
+                elif "=" in line and ("passed" in line or "failed" in line):
+                    # Print summary lines
+                    print(line, end='', flush=True)
+                elif "FAILED" in line and "::" in line and " - " in line:
+                    # Print failure details
+                    print(line, end='', flush=True)
+                elif "slowest" in line.lower() or "durations" in line.lower():
+                    # Print duration info
+                    print(line, end='', flush=True)
+            elif not is_running:
+                # No data available and process has finished
+                # Read any remaining buffered data
+                remaining = process.stdout.read()
+                if remaining:
+                    output_lines.append(remaining)
+                    print(remaining, end='', flush=True)
+                break
+            # else: No data yet, but process still running - continue loop
 
     except Exception as e:
         print(f"\n{Colors.RED}Error reading test output: {e}{Colors.END}")
