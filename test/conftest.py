@@ -41,12 +41,20 @@ from db.models import (
 @pytest.fixture(scope="session")
 def test_engine():
     """Create test database engine (session-scoped, reused)."""
-    engine = create_engine(
-        TEST_DATABASE_URL,
-        pool_size=5,
-        max_overflow=10,
-        pool_pre_ping=True
-    )
+    # SQLite doesn't support pool_size, max_overflow parameters
+    # Use conditional configuration based on database type
+    if TEST_DATABASE_URL.startswith("sqlite"):
+        engine = create_engine(
+            TEST_DATABASE_URL,
+            connect_args={"check_same_thread": False}  # Required for SQLite
+        )
+    else:
+        engine = create_engine(
+            TEST_DATABASE_URL,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True
+        )
     return engine
 
 @pytest.fixture(scope="session")

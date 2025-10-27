@@ -159,7 +159,7 @@ def run_all_tests():
     """Run all test suites in order and generate comprehensive bug report."""
     
     # Test suites configuration
-    # Order: Database → Services → Adapters → Core → API
+    # Order: Database → Services → Adapters → Core → Orchestrator → API
     test_suites = [
         {
             "name": "Database Layer (Category E)",
@@ -180,6 +180,11 @@ def run_all_tests():
             "name": "Message Handler Core (Category B)",
             "dir": "test/message_handler_core/",
             "description": "Core processing logic and orchestrator integration"
+        },
+        {
+            "name": "Conversation Orchestrator (Category H)",
+            "dir": "test/conversation_orchestrator/",
+            "description": "Intent detection, orchestration, LLM integration (182 tests)"
         },
         {
             "name": "API Layer (Category A)",
@@ -297,6 +302,7 @@ def run_specific_suite(suite_name):
         "services": ("test/message_handler_services/", "Message Handler Services"),
         "adapters": ("test/message_handler_adapters/", "Message Handler Adapters"),
         "core": ("test/message_handler_core/", "Message Handler Core"),
+        "orchestrator": ("test/conversation_orchestrator/", "Conversation Orchestrator"),
         "api": ("test/api_layer/", "API Layer")
     }
     
@@ -398,6 +404,7 @@ def show_help():
     print("  services            Message Handler Services")
     print("  adapters            Message Handler Adapters")
     print("  core                Message Handler Core")
+    print("  orchestrator        Conversation Orchestrator (intent detection, 182 tests)")
     print("  api                 API Layer (endpoints, middleware)")
     print()
     
