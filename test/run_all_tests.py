@@ -70,7 +70,6 @@ def parse_pytest_output(output):
     - "===== 2 failed, 13 passed, 20 errors in 9.21s ====="
 
     Note: Errors are counted as failures (tests that couldn't run due to setup issues).
-          xfailed/xpassed are ignored (expected failures don't affect test counts).
 
     Returns:
         dict: {
@@ -89,15 +88,20 @@ def parse_pytest_output(output):
         'failures': []
     }
 
-    # Extract summary line - must be surrounded by === and contain "in X.XXs"
-    # This ensures we only match pytest's official summary, not random numbers in errors
-    summary_pattern = r'=+\s*(.*?)\s+in\s+[\d.]+s\s*=+'
-    summary_match = re.search(summary_pattern, output)
+    # Strip ANSI color codes first - they break regex matching
+    # Pattern: \033[XXm or \x1b[XXm where XX is any sequence
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*m|\033\[[0-9;]*m')
+    clean_output = ansi_escape.sub('', output)
+
+    # Find pytest summary line: "===== N passed in X.XXs ====="
+    # Must have equals signs on both sides and "in X.XXs" format
+    summary_pattern = r'=+\s*(.+?)\s+in\s+[\d.]+s\s*=+'
+    summary_match = re.search(summary_pattern, clean_output)
 
     if summary_match:
         summary_text = summary_match.group(1)
 
-        # Extract counts from summary text only
+        # Extract counts from summary text
         failed_match = re.search(r'(\d+) failed', summary_text)
         if failed_match:
             result['failed'] = int(failed_match.group(1))
@@ -110,20 +114,19 @@ def parse_pytest_output(output):
         if skipped_match:
             result['skipped'] = int(skipped_match.group(1))
 
-        # Errors are tests that couldn't run (e.g., database connection failed)
-        # Count them as failures for test suite status
+        # Errors are tests that couldn't run (database connection failed, etc.)
+        # Count them as failures for test suite pass/fail status
         error_match = re.search(r'(\d+) error', summary_text)
         if error_match:
             result['failed'] += int(error_match.group(1))
 
     # Total is sum of all outcomes (passed + failed + skipped)
-    # Note: xfailed/xpassed are NOT counted in total
     result['total'] = result['passed'] + result['failed'] + result['skipped']
 
-    # Extract failed test details
+    # Extract failed test details from output
     # Pattern: FAILED test/path/file.py::TestClass::test_name - AssertionError: ...
     failed_pattern = r'FAILED (.*?)::(.*?)::(.*?) - (.*?)(?:\n|$)'
-    for match in re.finditer(failed_pattern, output):
+    for match in re.finditer(failed_pattern, clean_output):
         failure = {
             'file': match.group(1),
             'class': match.group(2),
@@ -210,11 +213,12 @@ def run_test_suite(name, test_dir, description):
                             pytest_finished = True
                             pytest_finish_time = time.time()
 
-                        # Track test progress
+                        # Track test progress - match any test file format
                         if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
-                            test_count += 1
-                            test_match = re.search(r'(test_\w+\.py::\S+)', line)
+                            # Match test file patterns more flexibly: test*.py::anything
+                            test_match = re.search(r'(test[^:]*?\.py::\S+?)(?:\s|$|\[)', line)
                             if test_match:
+                                test_count += 1
                                 current_test = test_match.group(1)
                                 elapsed = time.time() - start_time
                                 if "PASSED" in line:
