@@ -10,8 +10,7 @@ from pathlib import Path
 import time
 from datetime import datetime
 import re
-import threading
-import queue
+import tempfile
 
 # Colors for terminal output
 class Colors:
@@ -122,121 +121,96 @@ def run_test_suite(name, test_dir, description):
 
     start_time = time.time()
 
-    # Run pytest with real-time output
-    process = subprocess.Popen([
-        sys.executable, "-m", "pytest",
-        test_dir,
-        "-v",                    # Verbose - shows each test
-        "--tb=short",            # Short traceback
-        "--color=yes",           # Colored output
-        "--durations=5",         # Show 5 slowest tests
-        "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
-    ],
-    cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    text=True,
-    bufsize=1)  # Line buffered
+    # Create temporary file for output - this avoids pipe blocking issues
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.txt') as tmp_file:
+        tmp_filename = tmp_file.name
 
-    # Print output in real-time with progress tracking
-    output_lines = []
-    test_count = 0
-    current_test = ""
-
-    print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
-
-    # Use threading to read stdout without blocking (works on Windows + Unix)
-    output_queue = queue.Queue()
-
-    def read_output():
-        """Read stdout line by line in a separate thread."""
-        try:
-            for line in iter(process.stdout.readline, ''):
-                output_queue.put(line)
-        except Exception as e:
-            output_queue.put(f"ERROR: {e}")
-        finally:
-            output_queue.put(None)  # Signal EOF
-
-    # Start reading thread
-    reader_thread = threading.Thread(target=read_output, daemon=True)
-    reader_thread.start()
-
-    # Read output line by line with progress tracking
     try:
+        # Run pytest with output to file
+        with open(tmp_filename, 'w') as out_file:
+            process = subprocess.Popen([
+                sys.executable, "-m", "pytest",
+                test_dir,
+                "-v",                    # Verbose - shows each test
+                "--tb=short",            # Short traceback
+                "--color=yes",           # Colored output
+                "--durations=5",         # Show 5 slowest tests
+                "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
+            ],
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            stdout=out_file,
+            stderr=subprocess.STDOUT,
+            text=True)
+
+        # Read and display output in real-time
+        output_lines = []
+        test_count = 0
+        last_position = 0
+        no_output_cycles = 0
+        MAX_NO_OUTPUT_CYCLES = 50  # 5 seconds of no output after process done
+
+        print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
+
         while True:
+            # Check if process finished
+            process_done = process.poll() is not None
+
+            # Read new content from file
             try:
-                # Try to get a line with timeout
-                line = output_queue.get(timeout=0.1)
+                with open(tmp_filename, 'r') as f:
+                    f.seek(last_position)
+                    new_content = f.read()
+                    last_position = f.tell()
 
-                if line is None:  # EOF signal
-                    break
+                if new_content:
+                    no_output_cycles = 0
+                    lines = new_content.splitlines(keepends=True)
+                    for line in lines:
+                        output_lines.append(line)
 
-                output_lines.append(line)
-
-                # Track test progress - look for test names in verbose output
-                if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
-                    test_count += 1
-                    # Extract test name from line like "test_file.py::TestClass::test_name PASSED"
-                    test_match = re.search(r'(test_\w+\.py::\S+)', line)
-                    if test_match:
-                        current_test = test_match.group(1)
-                        # Show progress indicator with color-coded status
-                        elapsed = time.time() - start_time
-                        if "PASSED" in line:
-                            status_icon = f"{Colors.GREEN}✓{Colors.END}"
-                        elif "FAILED" in line:
-                            status_icon = f"{Colors.RED}✗{Colors.END}"
-                        elif "ERROR" in line:
-                            status_icon = f"{Colors.RED}⚠{Colors.END}"
-                        else:  # SKIPPED
-                            status_icon = f"{Colors.YELLOW}○{Colors.END}"
-
-                        print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
-                elif "=" in line and ("passed" in line or "failed" in line):
-                    # Print summary lines
-                    print(line, end='', flush=True)
-                elif "FAILED" in line and "::" in line and " - " in line:
-                    # Print failure details
-                    print(line, end='', flush=True)
-                elif "slowest" in line.lower() or "durations" in line.lower():
-                    # Print duration info
-                    print(line, end='', flush=True)
-
-            except queue.Empty:
-                # No data yet, check if process finished
-                if process.poll() is not None:
-                    # Process done - wait max 3 seconds for thread to finish
-                    reader_thread.join(timeout=3.0)
-                    if reader_thread.is_alive():
-                        # Thread still stuck on readline() - force cleanup and exit
-                        print(f"{Colors.YELLOW}⚠ Reader thread hung, forcing cleanup...{Colors.END}")
-                        try:
-                            process.stdout.close()
-                        except:
-                            pass
-                        break
-                    # Thread finished, drain any remaining items from queue
-                    while not output_queue.empty():
-                        try:
-                            line = output_queue.get_nowait()
-                            if line and line != None:
-                                output_lines.append(line)
-                        except queue.Empty:
+                        # Track test progress
+                        if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
+                            test_count += 1
+                            test_match = re.search(r'(test_\w+\.py::\S+)', line)
+                            if test_match:
+                                current_test = test_match.group(1)
+                                elapsed = time.time() - start_time
+                                if "PASSED" in line:
+                                    status_icon = f"{Colors.GREEN}✓{Colors.END}"
+                                elif "FAILED" in line:
+                                    status_icon = f"{Colors.RED}✗{Colors.END}"
+                                elif "ERROR" in line:
+                                    status_icon = f"{Colors.RED}⚠{Colors.END}"
+                                else:  # SKIPPED
+                                    status_icon = f"{Colors.YELLOW}○{Colors.END}"
+                                print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
+                        elif "=" in line and ("passed" in line or "failed" in line):
+                            print(line, end='', flush=True)
+                        elif "FAILED" in line and "::" in line and " - " in line:
+                            print(line, end='', flush=True)
+                        elif "slowest" in line.lower() or "durations" in line.lower():
+                            print(line, end='', flush=True)
+                else:
+                    # No new output
+                    if process_done:
+                        no_output_cycles += 1
+                        if no_output_cycles >= MAX_NO_OUTPUT_CYCLES:
+                            # Process done and no output for 5 seconds - we're done
                             break
+
+                # If process is done and we've had some cycles of no output, break
+                if process_done and no_output_cycles >= 5:
                     break
-                # else: continue waiting
 
-    except Exception as e:
-        print(f"\n{Colors.RED}Error reading test output: {e}{Colors.END}")
-    finally:
-        # Clean up
-        try:
-            process.stdout.close()
-        except:
-            pass
+            except Exception as e:
+                print(f"\n{Colors.RED}Error reading output file: {e}{Colors.END}")
+                if process_done:
+                    break
 
-        # Process should already be done, but make sure
+            # Small sleep to avoid busy waiting
+            time.sleep(0.1)
+
+        # Ensure process is terminated
         if process.poll() is None:
             process.terminate()
             try:
@@ -245,9 +219,12 @@ def run_test_suite(name, test_dir, description):
                 process.kill()
                 process.wait()
 
-        # Make sure thread is done
-        if reader_thread.is_alive():
-            reader_thread.join(timeout=1.0)
+    finally:
+        # Clean up temp file
+        try:
+            os.unlink(tmp_filename)
+        except:
+            pass
     duration = time.time() - start_time
     passed = process.returncode == 0
 
