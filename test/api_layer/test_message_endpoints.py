@@ -47,7 +47,7 @@ class TestMessageEndpoints:
         assert response.status_code == 422
     
     @pytest.mark.asyncio
-    async def test_missing_instance_id(self, client):
+    async def test_missing_instance_id(self, async_client):
         """✓ Missing instance_id → 422"""
         response = await async_client.post("/api/messages", json={
             "content": "Hello",
@@ -111,7 +111,7 @@ class TestMessageEndpoints:
         assert response.status_code == 422
     
     @pytest.mark.asyncio
-    async def test_invalid_instance_id_format(self, client):
+    async def test_invalid_instance_id_format(self, async_client):
         """✓ Invalid UUID format for instance_id → 422"""
         response = await async_client.post("/api/messages", json={
             "content": "Hello",
@@ -201,7 +201,7 @@ class TestMessageEndpoints:
     # ========================================================================
     
     @pytest.mark.asyncio
-    async def test_invalid_instance_id(self, client):
+    async def test_invalid_instance_id(self, async_client):
         """✓ Invalid instance_id → 404"""
         fake_uuid = str(uuid.uuid4())
         response = await async_client.post("/api/messages", json={
@@ -263,17 +263,17 @@ class TestMessageEndpoints:
     async def test_duplicate_request_returns_409(self, async_client, test_instance):
         """✓ Duplicate request_id → return 409"""
         request_id = str(uuid.uuid4())
-        
+
         # First request
-        response1 = client.post("/api/messages", json={
+        response1 = await async_client.post("/api/messages", json={
             "content": "Hello",
             "instance_id": str(test_instance.id),
             "request_id": request_id
         })
         assert response1.status_code == 200
-        
+
         # Duplicate request
-        response2 = client.post("/api/messages", json={
+        response2 = await async_client.post("/api/messages", json={
             "content": "Hello again",  # Different content shouldn't matter
             "instance_id": str(test_instance.id),
             "request_id": request_id
@@ -284,22 +284,22 @@ class TestMessageEndpoints:
     async def test_duplicate_request_returns_cached_response(self, async_client, test_instance):
         """✓ Duplicate returns cached response with retry_after_ms"""
         request_id = str(uuid.uuid4())
-        
+
         # First request
-        response1 = client.post("/api/messages", json={
+        response1 = await async_client.post("/api/messages", json={
             "content": "Hello",
             "instance_id": str(test_instance.id),
             "request_id": request_id
         })
         original_data = response1.json()
-        
+
         # Duplicate request
-        response2 = client.post("/api/messages", json={
+        response2 = await async_client.post("/api/messages", json={
             "content": "Different content",
             "instance_id": str(test_instance.id),
             "request_id": request_id
         })
-        
+
         assert response2.status_code == 409
         data = response2.json()
         assert "error" in data
@@ -444,7 +444,7 @@ class TestMessageEndpoints:
         assert "content" in data["data"]["response"]
     
     @pytest.mark.asyncio
-    async def test_error_response_format(self, client):
+    async def test_error_response_format(self, async_client):
         """✓ Error: {success: false, error: {...}, trace_id: "..."}"""
         response = await async_client.post("/api/messages", json={
             "content": "Hello",
@@ -460,7 +460,7 @@ class TestMessageEndpoints:
         assert isinstance(data["error"], dict)
     
     @pytest.mark.asyncio
-    async def test_error_response_includes_error_code(self, client):
+    async def test_error_response_includes_error_code(self, async_client):
         """✓ Error response includes error code"""
         response = await async_client.post("/api/messages", json={
             "content": "Hello",

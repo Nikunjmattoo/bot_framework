@@ -104,7 +104,7 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def async_client(db_session):
     """
     Provide async FastAPI test client for testing async endpoints.

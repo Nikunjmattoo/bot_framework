@@ -212,7 +212,7 @@ class TestWhatsAppEndpoints:
         assert response.status_code == 200
     
     @pytest.mark.asyncio
-    async def test_no_matching_instance(self, client):
+    async def test_no_matching_instance(self, async_client):
         """✓ No matching instance → 404"""
         response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
