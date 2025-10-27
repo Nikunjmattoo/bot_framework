@@ -229,8 +229,6 @@ def run_test_suite(name, test_dir, description):
                                 else:  # SKIPPED
                                     status_icon = f"{Colors.YELLOW}○{Colors.END}"
                                 print(f"{Colors.CYAN}[{test_count:3d}]{Colors.END} {status_icon} {current_test} ({elapsed:.1f}s)", flush=True)
-                        elif "=" in line and ("passed" in line or "failed" in line):
-                            print(line, end='', flush=True)
                         elif "FAILED" in line and "::" in line and " - " in line:
                             print(line, end='', flush=True)
                 else:
