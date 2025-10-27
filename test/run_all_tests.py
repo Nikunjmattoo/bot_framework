@@ -189,6 +189,7 @@ def run_test_suite(name, test_dir, description):
         no_output_cycles = 0
         pytest_finished = False  # Track if pytest summary line seen
         pytest_finish_time = None
+        in_durations_section = False  # Track if we're in slowest durations section
         MAX_WAIT_AFTER_SUMMARY = 20  # 2 seconds after seeing summary line
 
         print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
@@ -207,10 +208,21 @@ def run_test_suite(name, test_dir, description):
                     for line in lines:
                         output_lines.append(line)
 
+                        # Detect slowest durations section (pytest shows this when tests fail)
+                        if "slowest" in line.lower() and "duration" in line.lower():
+                            in_durations_section = True
+                            continue
+
                         # Check if this is the pytest summary line (indicates pytest is done)
                         if "passed" in line and "==" in line and (" in " in line or "warnings" in line):
                             pytest_finished = True
                             pytest_finish_time = time.time()
+                            in_durations_section = False  # Exit durations section
+                            continue
+
+                        # Skip lines in durations section (they're duplicates)
+                        if in_durations_section:
+                            continue
 
                         # Track test progress - match any test file format
                         if "::" in line and ("PASSED" in line or "FAILED" in line or "ERROR" in line or "SKIPPED" in line):
