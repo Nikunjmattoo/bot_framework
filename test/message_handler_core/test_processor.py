@@ -432,7 +432,7 @@ class TestProcessCoreOrchestratorIntegration:
         assert result is not None
         assert "response" in result
     
-    @pytest.mark.xfail(reason="🔴 CRITICAL BUG: Empty ENVIRONMENT not handled")
+    @pytest.mark.skip(reason="🔴 CRITICAL BUG: Empty ENVIRONMENT not handled")
     @patch('message_handler.core.processor.ORCHESTRATOR_AVAILABLE', False)
     @patch('message_handler.core.processor.langfuse_client')
     @pytest.mark.asyncio

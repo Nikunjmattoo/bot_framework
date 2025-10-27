@@ -205,7 +205,7 @@ class TestGetOrCreateSession:
         
         assert session.token_plan_json is None
     
-    @pytest.mark.xfail(reason="Token plan initialization tested in token_service")
+    @pytest.mark.skip(reason="Token plan initialization tested in token_service")
     def test_token_plan_initialized_later_token_plan_json_populated(
         self, db_session, test_session
     ):

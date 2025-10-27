@@ -60,6 +60,7 @@ class TestThroughput:
 
     @pytest.mark.skip(reason="High load test - run manually")
     @pytest.mark.asyncio
+    @pytest.mark.skip(reason="Message burst/gating control not implemented - future feature")
     async def test_burst_1000_req_per_second(self, client, test_instance, db_session):
         """✓ 1000 req/s burst (MANUAL TEST ONLY)"""
         num_requests = 1000

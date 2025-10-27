@@ -566,7 +566,7 @@ class TestTokenManagerInitializeSession:
         db_session.refresh(test_session)
         assert test_session.updated_at > old_time
     
-    @pytest.mark.xfail(reason="Adapter building tested in message_adapter tests")
+    @pytest.mark.skip(reason="Adapter building tested in message_adapter tests")
     def test_adapter_built_before_token_init_warns_but_doesnt_fail(
         self, db_session, test_session
     ):

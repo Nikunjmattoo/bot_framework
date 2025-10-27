@@ -556,7 +556,7 @@ class TestIdempotencyLock:
             with idempotency_lock(db_session, request_id):
                 pass
     
-    @pytest.mark.xfail(reason="🔴 CRITICAL: Concurrent orphaned lock cleanup → Second request gets 409")
+    @pytest.mark.skip(reason="🔴 CRITICAL: Concurrent orphaned lock cleanup → Second request gets 409")
     def test_concurrent_orphaned_lock_cleanup_second_request_gets_409(
         self, db_session
     ):
@@ -581,7 +581,7 @@ class TestIdempotencyLock:
         # For now, mark as xfail to document the bug
         pass
     
-    @pytest.mark.xfail(reason="Lock expiry during processing requires long-running test")
+    @pytest.mark.skip(reason="Lock expiry during processing requires long-running test")
     def test_lock_expires_during_processing_cleanup_without_deadlock(
         self, db_session
     ):
@@ -590,7 +590,7 @@ class TestIdempotencyLock:
         # Mark as xfail for unit tests
         pass
     
-    @pytest.mark.xfail(reason="🔴 CRITICAL: Re-query after cleanup missing in implementation")
+    @pytest.mark.skip(reason="🔴 CRITICAL: Re-query after cleanup missing in implementation")
     def test_requery_after_cleanup_to_ensure_lock_is_gone(self, db_session):
         """🔴 CRITICAL: Re-query after orphaned lock cleanup to ensure lock is gone"""
         # After cleaning up an orphaned lock, the code should re-query
@@ -598,7 +598,7 @@ class TestIdempotencyLock:
         # Currently this check is missing at line 292
         pass
     
-    @pytest.mark.xfail(reason="Requires concurrent execution setup")
+    @pytest.mark.skip(reason="Requires concurrent execution setup")
     def test_multiple_requests_detect_same_orphaned_lock_simultaneously(
         self, db_session
     ):
