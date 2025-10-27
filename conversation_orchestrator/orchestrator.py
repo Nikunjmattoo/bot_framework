@@ -20,7 +20,7 @@ from conversation_orchestrator.utils.validation import validate_adapter_payload
 logger = get_logger(__name__)
 
 
-def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
+async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Main entry point for conversation orchestrator.
     
@@ -71,7 +71,7 @@ def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
         validate_adapter_payload(adapter_payload)
         
         # Step 1: Intent Detection
-        intent_result = detect_intents(adapter_payload, trace_id)
+        intent_result = await detect_intents(adapter_payload, trace_id)
         
         logger.info(
             "orchestrator:intent_detection_complete",
