@@ -205,8 +205,25 @@ def run_test_suite(name, test_dir, description):
 
             except queue.Empty:
                 # No data yet, check if process finished
-                if process.poll() is not None and output_queue.empty():
-                    # Process done and queue empty
+                if process.poll() is not None:
+                    # Process done - wait max 3 seconds for thread to finish
+                    reader_thread.join(timeout=3.0)
+                    if reader_thread.is_alive():
+                        # Thread still stuck on readline() - force cleanup and exit
+                        print(f"{Colors.YELLOW}⚠ Reader thread hung, forcing cleanup...{Colors.END}")
+                        try:
+                            process.stdout.close()
+                        except:
+                            pass
+                        break
+                    # Thread finished, drain any remaining items from queue
+                    while not output_queue.empty():
+                        try:
+                            line = output_queue.get_nowait()
+                            if line and line != None:
+                                output_lines.append(line)
+                        except queue.Empty:
+                            break
                     break
                 # else: continue waiting
 
@@ -227,6 +244,10 @@ def run_test_suite(name, test_dir, description):
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
+
+        # Make sure thread is done
+        if reader_thread.is_alive():
+            reader_thread.join(timeout=1.0)
     duration = time.time() - start_time
     passed = process.returncode == 0
 
