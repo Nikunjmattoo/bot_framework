@@ -10,7 +10,8 @@ from pathlib import Path
 import time
 from datetime import datetime
 import re
-import select
+import threading
+import queue
 
 # Colors for terminal output
 class Colors:
@@ -144,20 +145,31 @@ def run_test_suite(name, test_dir, description):
 
     print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
 
+    # Use threading to read stdout without blocking (works on Windows + Unix)
+    output_queue = queue.Queue()
+
+    def read_output():
+        """Read stdout line by line in a separate thread."""
+        try:
+            for line in iter(process.stdout.readline, ''):
+                output_queue.put(line)
+        except Exception as e:
+            output_queue.put(f"ERROR: {e}")
+        finally:
+            output_queue.put(None)  # Signal EOF
+
+    # Start reading thread
+    reader_thread = threading.Thread(target=read_output, daemon=True)
+    reader_thread.start()
+
     # Read output line by line with progress tracking
     try:
         while True:
-            # Check if process has finished
-            is_running = process.poll() is None
+            try:
+                # Try to get a line with timeout
+                line = output_queue.get(timeout=0.1)
 
-            # Use select to check if data is available (with 0.1s timeout)
-            # This prevents blocking forever on readline()
-            ready, _, _ = select.select([process.stdout], [], [], 0.1)
-
-            if ready:
-                # Data is available, read it
-                line = process.stdout.readline()
-                if not line:  # EOF
+                if line is None:  # EOF signal
                     break
 
                 output_lines.append(line)
@@ -190,15 +202,13 @@ def run_test_suite(name, test_dir, description):
                 elif "slowest" in line.lower() or "durations" in line.lower():
                     # Print duration info
                     print(line, end='', flush=True)
-            elif not is_running:
-                # No data available and process has finished
-                # Read any remaining buffered data
-                remaining = process.stdout.read()
-                if remaining:
-                    output_lines.append(remaining)
-                    print(remaining, end='', flush=True)
-                break
-            # else: No data yet, but process still running - continue loop
+
+            except queue.Empty:
+                # No data yet, check if process finished
+                if process.poll() is not None and output_queue.empty():
+                    # Process done and queue empty
+                    break
+                # else: continue waiting
 
     except Exception as e:
         print(f"\n{Colors.RED}Error reading test output: {e}{Colors.END}")
