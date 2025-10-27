@@ -148,10 +148,16 @@ def run_test_suite(name, test_dir, description):
         last_position = 0
         no_output_cycles = 0
         MAX_NO_OUTPUT_CYCLES = 50  # 5 seconds of no output after process done
+        MAX_TOTAL_WAIT_TIME = 300  # 5 minutes absolute maximum
+        read_start_time = time.time()
 
         print(f"{Colors.CYAN}🔄 Running tests with real-time progress...{Colors.END}\n")
 
         while True:
+            # Safety: Force exit after 5 minutes to prevent infinite hanging
+            if time.time() - read_start_time > MAX_TOTAL_WAIT_TIME:
+                print(f"\n{Colors.RED}⚠ Test suite exceeded 5 minute timeout - forcing exit{Colors.END}")
+                break
             # Check if process finished
             process_done = process.poll() is not None
 
@@ -212,12 +218,17 @@ def run_test_suite(name, test_dir, description):
 
         # Ensure process is terminated
         if process.poll() is None:
+            print(f"{Colors.YELLOW}⚠ Process still running after tests complete, forcing termination...{Colors.END}")
             process.terminate()
             try:
                 process.wait(timeout=2)
             except subprocess.TimeoutExpired:
+                print(f"{Colors.YELLOW}⚠ Process didn't terminate, sending KILL signal...{Colors.END}")
                 process.kill()
-                process.wait()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    print(f"{Colors.RED}⚠ Process won't die - abandoning and continuing...{Colors.END}")
 
     finally:
         # Clean up temp file
