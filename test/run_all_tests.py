@@ -145,9 +145,10 @@ def run_test_suite(name, test_dir, description):
 
     # Read output line by line with progress tracking
     try:
-        for line in iter(process.stdout.readline, ''):
-            if not line:  # Empty string means EOF
-                break
+        while process.poll() is None:  # While process is still running
+            line = process.stdout.readline()
+            if not line:  # Empty line
+                continue
 
             output_lines.append(line)
 
@@ -179,12 +180,30 @@ def run_test_suite(name, test_dir, description):
             elif "slowest" in line.lower() or "durations" in line.lower():
                 # Print duration info
                 print(line, end='', flush=True)
+
+        # Process has finished, read any remaining output
+        remaining = process.stdout.read()
+        if remaining:
+            output_lines.append(remaining)
+            print(remaining, end='', flush=True)
+
     except Exception as e:
         print(f"\n{Colors.RED}Error reading test output: {e}{Colors.END}")
     finally:
-        # Ensure process is terminated
-        process.stdout.close()
-        process.wait(timeout=5)  # Wait up to 5 seconds for process to finish
+        # Clean up
+        try:
+            process.stdout.close()
+        except:
+            pass
+
+        # Process should already be done, but make sure
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
     duration = time.time() - start_time
     passed = process.returncode == 0
 
