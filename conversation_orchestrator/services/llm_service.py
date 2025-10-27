@@ -14,7 +14,6 @@ import asyncio
 import json
 import os
 from typing import Dict, Any, Optional
-from concurrent.futures import Future
 
 logger = logging.getLogger(__name__)
 
@@ -330,14 +329,16 @@ class LLMService:
 _llm_service = LLMService()
 
 
-def call_llm_async(
+# BUG FIX #3: Changed to proper async function, returns Dict instead of Future
+async def call_llm_async(
     prompt: str,
     model: str,
     runtime: str,
     max_tokens: int,
     temperature: float = 0.1,
+    trace_id: str = None,
     response_format: Optional[Dict[str, str]] = None
-) -> Future:
+) -> Dict[str, Any]:
     """
     Call LLM asynchronously.
     
@@ -347,45 +348,29 @@ def call_llm_async(
         runtime: Runtime ('groq', 'gemini', 'anthropic', 'ollama', 'openai')
         max_tokens: Maximum output tokens
         temperature: Temperature (default: 0.1)
+        trace_id: Trace ID for logging
         response_format: Response format dict (ignored for some providers)
     
     Returns:
-        Future that resolves to dict with content and token_usage
+        Dict with content and token_usage
     
     Raises:
         LLMError: If runtime not supported or call fails
     """
     runtime = runtime.lower()
     
-    # Create event loop if needed
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    
     # Route to appropriate provider
     if runtime == "groq":
-        future = asyncio.ensure_future(
-            _llm_service.call_groq(prompt, model, max_tokens, temperature)
-        )
+        return await _llm_service.call_groq(prompt, model, max_tokens, temperature)
     elif runtime == "gemini":
-        future = asyncio.ensure_future(
-            _llm_service.call_gemini(prompt, model, max_tokens, temperature)
-        )
+        return await _llm_service.call_gemini(prompt, model, max_tokens, temperature)
     elif runtime == "anthropic":
-        future = asyncio.ensure_future(
-            _llm_service.call_anthropic(prompt, model, max_tokens, temperature)
-        )
+        return await _llm_service.call_anthropic(prompt, model, max_tokens, temperature)
     elif runtime == "ollama":
-        future = asyncio.ensure_future(
-            _llm_service.call_ollama(prompt, model, max_tokens, temperature)
-        )
+        return await _llm_service.call_ollama(prompt, model, max_tokens, temperature)
     else:
         raise LLMError(
             message=f"Unsupported LLM runtime: {runtime}",
             error_code="UNSUPPORTED_RUNTIME",
             details={"runtime": runtime}
         )
-    
-    return future

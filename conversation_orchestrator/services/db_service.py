@@ -5,7 +5,7 @@ Fetches session_summary, previous_messages, active_task, next_narrative from DB.
 """
 
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -48,7 +48,6 @@ def fetch_session_summary(session_id: str) -> Optional[str]:
                 return None
             
             # Get session_summary from session model
-            # TODO: Adjust based on your actual schema
             summary = getattr(session, 'session_summary', None)
             
             if summary:
@@ -175,8 +174,6 @@ def fetch_active_task(session_id: str) -> Optional[ActiveTask]:
                 return None
             
             # Get active_task from session
-            # TODO: Adjust based on your actual schema
-            # This might be a JSON field or a separate table
             task_name = getattr(session, 'active_task_name', None)
             task_status = getattr(session, 'active_task_status', None)
             task_started = getattr(session, 'active_task_started_at', None)
@@ -215,7 +212,68 @@ def fetch_active_task(session_id: str) -> Optional[ActiveTask]:
             details={"session_id": session_id}
         ) from e
 
-def fetch_template_string(template_key: str) -> str:
+
+def fetch_next_narrative(session_id: str) -> Optional[str]:
+    """
+    Fetch next narrative guidance from previous turn.
+    
+    Args:
+        session_id: Session identifier
+    
+    Returns:
+        Next narrative string or None if not found
+    
+    Raises:
+        DatabaseError: If database operation fails
+    """
+    try:
+        db: Session = next(get_db())
+        
+        try:
+            # Fetch session
+            session = db.query(SessionModel).filter(
+                SessionModel.id == session_id
+            ).first()
+            
+            if not session:
+                logger.warning(
+                    "db_service:session_not_found",
+                    extra={"session_id": session_id}
+                )
+                return None
+            
+            # Get next_narrative from session
+            next_narrative = getattr(session, 'next_narrative', None)
+            
+            if next_narrative:
+                logger.debug(
+                    "db_service:next_narrative_found",
+                    extra={"session_id": session_id, "narrative_length": len(next_narrative)}
+                )
+            else:
+                logger.debug(
+                    "db_service:next_narrative_not_found",
+                    extra={"session_id": session_id}
+                )
+            
+            return next_narrative
+        
+        finally:
+            db.close()
+    
+    except Exception as e:
+        logger.error(
+            "db_service:fetch_next_narrative_error",
+            extra={"session_id": session_id, "error": str(e)}
+        )
+        raise DatabaseError(
+            message=f"Failed to fetch next narrative: {str(e)}",
+            error_code="DB_FETCH_ERROR",
+            details={"session_id": session_id}
+        ) from e
+
+
+async def fetch_template_string(template_key: str) -> str:
     """
     Fetch and build template string from database.
     
@@ -297,64 +355,147 @@ def fetch_template_string(template_key: str) -> str:
             error_code="DB_FETCH_ERROR",
             details={"template_key": template_key}
         ) from e
-    
-def fetch_next_narrative(session_id: str) -> Optional[str]:
+
+
+def save_session_summary(session_id: str, summary: str) -> None:
     """
-    Fetch next narrative guidance from previous turn.
+    Save session summary to database.
+    
+    Updates the session_summary column in sessions table.
+    This summary will be read by intent detector in next turn.
     
     Args:
         session_id: Session identifier
+        summary: Summary text (100-150 tokens typically)
     
     Returns:
-        Next narrative string or None if not found
-    
-    Raises:
-        DatabaseError: If database operation fails
+        None
     """
     try:
         db: Session = next(get_db())
         
         try:
-            # Fetch session
-            session = db.query(SessionModel).filter(
-                SessionModel.id == session_id
-            ).first()
+            from sqlalchemy.sql import func
             
-            if not session:
+            # Update session summary
+            session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+            
+            if session:
+                session.session_summary = summary
+                session.updated_at = func.now()
+                db.commit()
+                
+                logger.info(
+                    "db_service:session_summary_saved",
+                    extra={
+                        "session_id": session_id,
+                        "summary_length": len(summary)
+                    }
+                )
+            else:
                 logger.warning(
                     "db_service:session_not_found",
                     extra={"session_id": session_id}
                 )
-                return None
-            
-            # Get next_narrative from session
-            # TODO: Adjust based on your actual schema
-            # This might be stored in a separate table or as a JSON field
-            next_narrative = getattr(session, 'next_narrative', None)
-            
-            if next_narrative:
-                logger.debug(
-                    "db_service:next_narrative_found",
-                    extra={"session_id": session_id, "narrative_length": len(next_narrative)}
-                )
-            else:
-                logger.debug(
-                    "db_service:next_narrative_not_found",
-                    extra={"session_id": session_id}
-                )
-            
-            return next_narrative
-        
         finally:
             db.close()
     
     except Exception as e:
         logger.error(
-            "db_service:fetch_next_narrative_error",
-            extra={"session_id": session_id, "error": str(e)}
+            "db_service:save_session_summary_error",
+            extra={
+                "session_id": session_id,
+                "error": str(e)
+            }
         )
         raise DatabaseError(
-            message=f"Failed to fetch next narrative: {str(e)}",
-            error_code="DB_FETCH_ERROR",
+            message=f"Failed to save session summary: {str(e)}",
+            error_code="DB_SAVE_ERROR",
             details={"session_id": session_id}
+        ) from e
+
+
+async def fetch_template_config(template_key: str) -> Dict[str, Any]:
+    """
+    Fetch LLM configuration for a template.
+    
+    Reads the template and its associated LLM model to get
+    provider, model name, and other config needed to call LLM.
+    
+    Args:
+        template_key: Template key (e.g., "session_summary_v1")
+    
+    Returns:
+        Dict with LLM config:
+        {
+            "provider": "groq",
+            "model": "llama-3.1-70b-versatile",
+            "temperature": 0.7,
+            "max_tokens": 2000
+        }
+    
+    Raises:
+        DatabaseError: If template or LLM model not found
+    """
+    try:
+        db: Session = next(get_db())
+        
+        try:
+            from db.models.templates import TemplateModel
+            from db.models.llm_models import LLMModel
+            
+            # Fetch template with joined LLM model
+            result = (
+                db.query(TemplateModel, LLMModel)
+                .join(LLMModel, TemplateModel.llm_model_id == LLMModel.id)
+                .filter(TemplateModel.template_key == template_key)
+                .filter(TemplateModel.is_active == True)
+                .first()
+            )
+            
+            if not result:
+                raise DatabaseError(
+                    message=f"Template '{template_key}' not found or inactive",
+                    error_code="TEMPLATE_NOT_FOUND",
+                    details={"template_key": template_key}
+                )
+            
+            template, llm_model = result
+            
+            # Build config dict
+            config = {
+                "provider": llm_model.provider,
+                "model": llm_model.api_model_name,
+                "temperature": float(llm_model.temperature) if llm_model.temperature else 0.7,
+                "max_tokens": llm_model.max_tokens
+            }
+            
+            logger.info(
+                "db_service:template_config_fetched",
+                extra={
+                    "template_key": template_key,
+                    "provider": config["provider"],
+                    "model": config["model"]
+                }
+            )
+            
+            return config
+        
+        finally:
+            db.close()
+    
+    except DatabaseError:
+        raise
+    except Exception as e:
+        logger.error(
+            "db_service:fetch_template_config_error",
+            extra={
+                "template_key": template_key,
+                "error": str(e)
+            }
+        )
+        raise DatabaseError(
+            message=f"Failed to fetch template config: {str(e)}",
+            error_code="DB_FETCH_ERROR",
+            details={"template_key": template_key}
         ) from e

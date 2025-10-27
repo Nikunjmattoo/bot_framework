@@ -350,12 +350,28 @@ class TestIdempotencyCacheCleanup:
     async def test_idempotency_cache_cleanup_after_24_hours(self, client, test_instance, db_session):
         """✓ Idempotency cache cleans up after 24 hours"""
         from datetime import datetime, timedelta, timezone
-        from db.models import MessageModel
+        from db.models import MessageModel, UserModel, SessionModel
 
-        # Create old processed message (>24 hours)
+        # Create test user (required for foreign key)
+        test_user = UserModel(acquisition_channel="test")
+        db_session.add(test_user)
+        db_session.flush()
+
+        # Create test session (required for foreign key)
+        test_session = SessionModel(
+            user_id=test_user.id,
+            instance_id=test_instance.id,
+            started_at=datetime.now(timezone.utc) - timedelta(hours=25),
+            last_message_at=datetime.now(timezone.utc) - timedelta(hours=25),
+            active=False
+        )
+        db_session.add(test_session)
+        db_session.flush()
+
+        # Create old processed message (>24 hours) with valid foreign keys
         old_message = MessageModel(
-            session_id=uuid.uuid4(),
-            user_id=uuid.uuid4(),
+            session_id=test_session.id,  # ✅ Valid foreign key
+            user_id=test_user.id,        # ✅ Valid foreign key
             instance_id=test_instance.id,
             role="user",
             content="Old message",

@@ -92,6 +92,47 @@ def drop_test_database():
         return False
 
 
+def set_test_database_timezone():
+    """Set test database timezone to UTC."""
+    print_step("Setting test database timezone to UTC...")
+
+    env = os.environ.copy()
+    env['PGPASSWORD'] = DB_PASSWORD
+
+    cmd = f'psql -h {DB_HOST} -p {DB_PORT} -U {DB_USER} -d postgres -c "ALTER DATABASE {TEST_DB} SET timezone TO \'UTC\';"'
+    success, output = run_command(cmd, env)
+
+    if success:
+        print_success("Test database timezone set to UTC")
+        return True
+    else:
+        print_error(f"Failed to set timezone: {output}")
+        return False
+
+
+def verify_timezone():
+    """Verify test database timezone is UTC."""
+    print_step("Verifying timezone configuration...")
+
+    env = os.environ.copy()
+    env['PGPASSWORD'] = DB_PASSWORD
+
+    cmd = f'psql -h {DB_HOST} -p {DB_PORT} -U {DB_USER} -d {TEST_DB} -t -c "SHOW TIME ZONE;"'
+    success, output = run_command(cmd, env)
+
+    if success:
+        timezone = output.strip()
+        if timezone.upper() == 'UTC':
+            print_success(f"✓ Timezone verified: {timezone}")
+            return True
+        else:
+            print_error(f"✗ Timezone is {timezone}, expected UTC")
+            return False
+    else:
+        print_error(f"Failed to check timezone: {output}")
+        return False
+
+
 def copy_production_to_test():
     """Dump production and restore to test database."""
     print_step("Dumping production database...")
@@ -179,20 +220,30 @@ def main():
     print(f"{Colors.BOLD}  TEST DATABASE SYNC (COPY FROM PRODUCTION){Colors.END}")
     print(f"{Colors.BOLD}{'='*60}{Colors.END}")
     print()
-    
+
     # Step 1: Drop and recreate test database
     if not drop_test_database():
         print_error("Failed to prepare test database")
         sys.exit(1)
-    
-    # Step 2: Copy production to test
+
+    # Step 2: Set timezone to UTC (CRITICAL FIX!)
+    if not set_test_database_timezone():
+        print_error("Failed to set timezone")
+        sys.exit(1)
+
+    # Step 3: Copy production to test
     if not copy_production_to_test():
         print_error("Failed to copy database")
         sys.exit(1)
-    
-    # Step 3: Verify
+
+    # Step 4: Verify data copy
     if not verify_copy():
         print_error("Verification failed - data mismatch")
+        sys.exit(1)
+
+    # Step 5: Verify timezone is UTC
+    if not verify_timezone():
+        print_error("Timezone verification failed")
         sys.exit(1)
     
     # Success
@@ -202,10 +253,12 @@ def main():
     print(f"{Colors.BOLD}{'='*60}{Colors.END}")
     print()
     print(f"{Colors.BOLD}Production DB:{Colors.END} {PROD_DB}")
-    print(f"{Colors.BOLD}Test DB:{Colors.END} {TEST_DB}")
+    print(f"{Colors.BOLD}Test DB:{Colors.END} {TEST_DB} (timezone: UTC)")
     print()
     print(f"{Colors.BOLD}Ready to run tests:{Colors.END}")
-    print(f"  pytest tests/test_a_api_layer/ -v")
+    print(f"  pytest test/database_layer/ -v")
+    print(f"  pytest test/integration/ -v")
+    print(f"  pytest test/ -v  {Colors.YELLOW}# Run all tests{Colors.END}")
     print()
 
 

@@ -105,11 +105,8 @@ async def detect_intents(
             enriched=enriched
         )
         
-        # Step 6: Fill template
-        filled_template = template_string
-        for key, value in variables.items():
-            placeholder = "{{" + key + "}}"
-            filled_template = filled_template.replace(placeholder, str(value))
+        # Step 6: Fill template using template service (BUG FIX #4)
+        filled_template = fill_template(template_string, variables)
         
         logger.info(
             "intent_detection:template_filled",
@@ -120,10 +117,10 @@ async def detect_intents(
             }
         )
         
-        # Step 7: Call LLM with correct config
+        # Step 7: Call LLM with correct config (BUG FIX #1: provider → runtime)
         llm_response = await call_llm_async(
             prompt=filled_template,
-            provider=provider,
+            runtime=provider,  # FIX: Changed from 'provider' to 'runtime'
             model=api_model_name,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -141,7 +138,7 @@ async def detect_intents(
         # Step 8: Parse LLM response
         intent_output = parse_intent_response(llm_response["content"])
         
-        # Step 9: Build result
+        # Step 9: Build result (BUG FIX #5: Log reasoning)
         result = {
             "intents": [intent.model_dump() for intent in intent_output.intents],
             "self_response": intent_output.self_response,
@@ -149,6 +146,16 @@ async def detect_intents(
             "reasoning": intent_output.reasoning,
             "token_usage": llm_response.get("token_usage", {})
         }
+        
+        # Log reasoning for analysis (BUG FIX #5)
+        logger.info(
+            "intent_detection:reasoning",
+            extra={
+                "trace_id": trace_id,
+                "reasoning": intent_output.reasoning,
+                "intents": [i.intent_type.value for i in intent_output.intents]
+            }
+        )
         
         # Step 10: Trigger cold paths (async, non-blocking)
         _trigger_cold_paths_async(
@@ -259,7 +266,8 @@ def _build_template_variables(
         "session_summary": enriched.session_summary or "[No session summary]",
         "previous_messages": format_messages(enriched.previous_messages),
         "active_task": format_active_task(enriched.active_task),
-        "next_narrative": enriched.next_narrative or "[No narrative guidance]"
+        "next_narrative": enriched.next_narrative or "[No narrative guidance]",
+        "expected_response": "[No expected response]"  # Placeholder - will be populated by brain
     }
 
 

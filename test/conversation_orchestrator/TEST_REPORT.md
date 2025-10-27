@@ -14,7 +14,7 @@
 | **Total Tests** | 123 | ⚠️ Partial |
 | **Passed** | 62 | ✅ |
 | **Failed** | 0 | ✅ |
-| **Errors** | 61 | ❌ |
+| **Errors** | 61 | ❌ |   
 | **Pass Rate** | 50.4% | ⚠️ |
 | **Test Duration** | 3.32s | ✅ |
 

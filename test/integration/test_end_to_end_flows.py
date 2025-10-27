@@ -55,7 +55,7 @@ class TestNewUserFirstMessage:
             }
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_orchestrator_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_orchestrator_response)):
             response = client.post("/api/messages", json=payload)
 
         # Assertions
@@ -150,7 +150,7 @@ class TestExistingUserNewMessage:
             }
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -191,7 +191,7 @@ class TestIdempotentRequest:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -200,18 +200,28 @@ class TestIdempotentRequest:
     @pytest.mark.asyncio
     async def test_duplicate_request_returns_409(self, client, test_instance, test_user, test_session, db_session):
         """✓ Duplicate request → 409 with cached response"""
+        from message_handler.services.idempotency_service import create_idempotency_key
+
         request_id = str(uuid.uuid4())
 
-        # Create a message with request_id
+        # Create idempotency key (scoped key: instance_id::request_id)
+        idempotency_key = create_idempotency_key(
+            request_id=request_id,
+            instance_id=str(test_instance.id),
+            session_id=None  # API handler doesn't include session_id
+        )
+
+        # Create a message with the idempotency_key in the request_id field
+        # (MessageModel.request_id stores the idempotency_key, not the plain request_id)
         message = MessageModel(
             session_id=test_session.id,
             user_id=test_user.id,
             instance_id=test_instance.id,
             role="user",
             content="Test",
+            request_id=idempotency_key,  # ✅ Store idempotency_key here (confusing naming!)
+            processed=True,               # ✅ Direct column field
             metadata_json={
-                "request_id": request_id,
-                "processed": True,
                 "cached_response": {
                     "response_text": "Cached response",
                     "message_id": str(uuid.uuid4())
@@ -254,14 +264,14 @@ class TestWhatsAppMessage:
 
         payload = {
             "request_id": request_id,
-            "whatsapp_message": {
+            "message": {  # Changed from whatsapp_message to message (Pydantic model field name)
                 "from": "+11234567890",
                 "to": "+9876543210",  # Matches test_whatsapp_instance.recipient_number
-                "type": "text",
-                "text": {
+                "text": {  # Removed "type" field, presence of "text" indicates type
                     "body": "Hello from WhatsApp"
                 }
-            }
+            },
+            "instance_id": str(test_whatsapp_instance.id)  # Added missing instance_id
         }
 
         mock_response = {
@@ -270,7 +280,7 @@ class TestWhatsAppMessage:
             "token_usage": {"prompt_tokens": 20, "completion_tokens": 10, "total_tokens": 30}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response = client.post("/api/whatsapp/messages", json=payload)
 
         assert response.status_code == 200
@@ -370,7 +380,7 @@ class TestGuestUser:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -464,7 +474,7 @@ class TestBrandScopedIdentity:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response_a = client.post("/api/messages", json=payload_a)
 
         assert response_a.status_code == 200
@@ -482,7 +492,7 @@ class TestBrandScopedIdentity:
             "user_details": {"phone_e164": shared_phone}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response_b = client.post("/api/messages", json=payload_b)
 
         assert response_b.status_code == 200
@@ -531,7 +541,7 @@ class TestSessionTimeout:
             "token_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
@@ -576,7 +586,7 @@ class TestTokenBudget:
             }
         }
 
-        with patch('conversation_orchestrator.orchestrator.process_message', return_value=mock_response):
+        with patch('message_handler.core.processor.process_orchestrator_message', new=AsyncMock(return_value=mock_response)):
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
