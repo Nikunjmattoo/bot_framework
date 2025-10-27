@@ -5,7 +5,7 @@
 
 import pytest
 import uuid
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -32,7 +32,8 @@ from message_handler.exceptions import (
 class TestProcessCoreInputValidation:
     """Test input validation in process_core."""
     
-    def test_missing_content_raises_validation_error(self, db_session, test_user, test_instance, test_session):
+    @pytest.mark.asyncio
+    async def test_missing_content_raises_validation_error(self, db_session, test_user, test_instance, test_session):
         """✓ Missing content → ValidationError"""
         # Get real config from database
         from db.models.instance_configs import InstanceConfigModel
@@ -47,7 +48,7 @@ class TestProcessCoreInputValidation:
         test_user.instance_config = config
         
         with pytest.raises(ValidationError) as exc_info:
-            process_core(
+            await process_core(
                 db=db_session,
                 content="",  # Empty
                 instance_id=str(test_instance.id),
@@ -56,7 +57,8 @@ class TestProcessCoreInputValidation:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_content_exceeds_max_length_raises_validation_error(self, db_session, test_user, test_instance, test_session):
+    @pytest.mark.asyncio
+    async def test_content_exceeds_max_length_raises_validation_error(self, db_session, test_user, test_instance, test_session):
         """✓ Content > 10000 → ValidationError"""
         from db.models.instance_configs import InstanceConfigModel
         config = db_session.query(InstanceConfigModel).filter(
@@ -71,7 +73,7 @@ class TestProcessCoreInputValidation:
         long_content = "x" * 10001
         
         with pytest.raises(ValidationError) as exc_info:
-            process_core(
+            await process_core(
                 db=db_session,
                 content=long_content,
                 instance_id=str(test_instance.id),
@@ -80,10 +82,11 @@ class TestProcessCoreInputValidation:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_missing_user_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_user_raises_validation_error(self, db_session, test_instance):
         """✓ Missing user → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            process_core(
+            await process_core(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -93,7 +96,8 @@ class TestProcessCoreInputValidation:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "user" in str(exc_info.value).lower()
     
-    def test_missing_session_raises_resource_not_found(self, db_session, test_user, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_session_raises_resource_not_found(self, db_session, test_user, test_instance):
         """✓ Missing session → ResourceNotFoundError"""
         from db.models.instance_configs import InstanceConfigModel
         config = db_session.query(InstanceConfigModel).filter(
@@ -105,7 +109,7 @@ class TestProcessCoreInputValidation:
         test_user.instance_config = config
         
         with pytest.raises(ResourceNotFoundError) as exc_info:
-            process_core(
+            await process_core(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -115,7 +119,8 @@ class TestProcessCoreInputValidation:
         assert exc_info.value.error_code == ErrorCode.RESOURCE_NOT_FOUND
         assert "session" in str(exc_info.value).lower()
     
-    def test_missing_instance_raises_resource_not_found(self, db_session, test_user, test_session):
+    @pytest.mark.asyncio
+    async def test_missing_instance_raises_resource_not_found(self, db_session, test_user, test_session):
         """✓ Missing instance → ResourceNotFoundError"""
         from db.models.instance_configs import InstanceConfigModel
         
@@ -125,7 +130,7 @@ class TestProcessCoreInputValidation:
         test_user.instance_config = None
         
         with pytest.raises(ResourceNotFoundError) as exc_info:
-            process_core(
+            await process_core(
                 db=db_session,
                 content="Test",
                 instance_id=str(uuid.uuid4()),
@@ -135,7 +140,8 @@ class TestProcessCoreInputValidation:
         assert exc_info.value.error_code == ErrorCode.RESOURCE_NOT_FOUND
         assert "instance" in str(exc_info.value).lower()
     
-    def test_missing_config_raises_resource_not_found(self, db_session, test_user, test_instance, test_session):
+    @pytest.mark.asyncio
+    async def test_missing_config_raises_resource_not_found(self, db_session, test_user, test_instance, test_session):
         """✓ Missing config → ResourceNotFoundError"""
         test_user.session = test_session
         test_user.session_id = test_session.id
@@ -143,7 +149,7 @@ class TestProcessCoreInputValidation:
         test_user.instance_config = None  # No config
         
         with pytest.raises(ResourceNotFoundError) as exc_info:
-            process_core(
+            await process_core(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -187,7 +193,7 @@ class TestProcessCoreMessageSaving:
         
         request_id = str(uuid.uuid4())
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test message",
             instance_id=str(test_instance.id),
@@ -228,7 +234,7 @@ class TestProcessCoreMessageSaving:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -272,7 +278,7 @@ class TestProcessCoreMessageSaving:
             "auth_token": "xyz"  # Should be stripped
         }
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -330,7 +336,7 @@ class TestProcessCoreAdapterBuilding:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -368,7 +374,7 @@ class TestProcessCoreAdapterBuilding:
         test_user.instance_config = config
         
         # This should not raise validation error
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -407,7 +413,7 @@ class TestProcessCoreOrchestratorIntegration:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -443,7 +449,7 @@ class TestProcessCoreOrchestratorIntegration:
         
         # BUG: Empty string is treated as development, should raise OrchestrationError
         with pytest.raises(OrchestrationError):
-            process_core(
+            await process_core(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -479,7 +485,7 @@ class TestProcessCoreOrchestratorIntegration:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -512,7 +518,7 @@ class TestProcessCoreOrchestratorIntegration:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -551,7 +557,7 @@ class TestProcessCoreOrchestratorIntegration:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -716,7 +722,7 @@ class TestProcessCoreTokenUsage:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -762,7 +768,7 @@ class TestProcessCoreOutboundMessage:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -802,7 +808,7 @@ class TestProcessCoreOutboundMessage:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -839,7 +845,7 @@ class TestProcessCoreOutboundMessage:
         
         old_timestamp = test_session.last_message_at
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -868,7 +874,7 @@ class TestProcessCoreOutboundMessage:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -909,7 +915,7 @@ class TestProcessCoreLangfuseTelemetry:
         
         trace_id = str(uuid.uuid4())
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -941,7 +947,7 @@ class TestProcessCoreLangfuseTelemetry:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -972,7 +978,7 @@ class TestProcessCoreLangfuseTelemetry:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -1005,7 +1011,7 @@ class TestProcessCoreLangfuseTelemetry:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -1034,7 +1040,7 @@ class TestProcessCoreLangfuseTelemetry:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        process_core(
+        await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -1077,7 +1083,7 @@ class TestProcessCorePerformance:
         
         start = time.time()
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),
@@ -1109,7 +1115,7 @@ class TestProcessCorePerformance:
         test_user.instance = test_instance
         test_user.instance_config = config
         
-        result = process_core(
+        result = await process_core(
             db=db_session,
             content="Test",
             instance_id=str(test_instance.id),

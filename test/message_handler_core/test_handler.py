@@ -5,7 +5,7 @@
 
 import pytest
 import uuid
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime, timezone
 
 from message_handler.handler import (
@@ -30,17 +30,18 @@ from message_handler.exceptions import (
 class TestProcessMessage:
     """Test process_message function."""
     
-    def test_valid_inputs_success(self, db_session, test_instance, test_user):
+    @pytest.mark.asyncio
+    async def test_valid_inputs_success(self, db_session, test_instance, test_user):
         """✓ Valid inputs → success"""
         request_id = str(uuid.uuid4())
         
-        with patch('message_handler.handler.process_api_message') as mock_api:
+        with patch('message_handler.handler.process_api_message', new=AsyncMock()) as mock_api:
             mock_api.return_value = {
                 "message_id": str(uuid.uuid4()),
                 "response": {"id": str(uuid.uuid4()), "content": "Test response"}
             }
             
-            result = process_message(
+            result = await process_message(
                 db=db_session,
                 content="Hello world",
                 instance_id=str(test_instance.id),
@@ -53,10 +54,11 @@ class TestProcessMessage:
             assert "message_id" in result
             mock_api.assert_called_once()
     
-    def test_missing_instance_id_raises_validation_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_missing_instance_id_raises_validation_error(self, db_session):
         """✓ Missing instance_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            process_message(
+            await process_message(
                 db=db_session,
                 content="Hello",
                 instance_id="",  # Empty string
@@ -68,10 +70,11 @@ class TestProcessMessage:
         error_str = str(exc_info.value).lower()
         assert "instance" in error_str and "id" in error_str
     
-    def test_missing_request_id_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_request_id_raises_validation_error(self, db_session, test_instance):
         """✓ Missing request_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            process_message(
+            await process_message(
                 db=db_session,
                 content="Hello",
                 instance_id=str(test_instance.id),
@@ -81,10 +84,11 @@ class TestProcessMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "request" in str(exc_info.value).lower() and "id" in str(exc_info.value).lower()
     
-    def test_empty_content_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_empty_content_raises_validation_error(self, db_session, test_instance):
         """✓ Invalid content length → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            process_message(
+            await process_message(
                 db=db_session,
                 content="",  # Empty
                 instance_id=str(test_instance.id),
@@ -94,12 +98,13 @@ class TestProcessMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "content" in str(exc_info.value).lower()
     
-    def test_content_exceeds_max_length_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_content_exceeds_max_length_raises_validation_error(self, db_session, test_instance):
         """✓ Content > 10000 chars → ValidationError"""
         long_content = "x" * 10001
         
         with pytest.raises(ValidationError) as exc_info:
-            process_message(
+            await process_message(
                 db=db_session,
                 content=long_content,
                 instance_id=str(test_instance.id),
@@ -109,14 +114,15 @@ class TestProcessMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "10000" in str(exc_info.value)
     
-    def test_delegates_to_api_handler(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_delegates_to_api_handler(self, db_session, test_instance):
         """✓ Delegates to api_handler"""
         request_id = str(uuid.uuid4())
         
-        with patch('message_handler.handler.process_api_message') as mock_api:
+        with patch('message_handler.handler.process_api_message', new=AsyncMock()) as mock_api:
             mock_api.return_value = {"message_id": str(uuid.uuid4())}
             
-            process_message(
+            await process_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -132,15 +138,16 @@ class TestProcessMessage:
             assert call_args.kwargs['request_id'] == request_id
             assert call_args.kwargs['channel'] == "api"
     
-    def test_adds_performance_metrics_to_response(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_adds_performance_metrics_to_response(self, db_session, test_instance):
         """✓ Response includes _meta with timing"""
-        with patch('message_handler.handler.process_api_message') as mock_api:
+        with patch('message_handler.handler.process_api_message', new=AsyncMock()) as mock_api:
             mock_api.return_value = {
                 "message_id": str(uuid.uuid4()),
                 "response": {"content": "Test"}
             }
             
-            result = process_message(
+            result = await process_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -152,7 +159,8 @@ class TestProcessMessage:
             assert "trace_id" in result["_meta"]
             assert "channel" in result["_meta"]
     
-    def test_sanitizes_user_details(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_sanitizes_user_details(self, db_session, test_instance):
         """✓ User details are sanitized (strip sensitive keys)"""
         user_details = {
             "phone_e164": "+1234567890",
@@ -160,10 +168,10 @@ class TestProcessMessage:
             "token": "abc123"  # Should be stripped
         }
         
-        with patch('message_handler.handler.process_api_message') as mock_api:
+        with patch('message_handler.handler.process_api_message', new=AsyncMock()) as mock_api:
             mock_api.return_value = {"message_id": str(uuid.uuid4())}
             
-            process_message(
+            await process_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -186,7 +194,8 @@ class TestProcessMessage:
 class TestProcessWhatsappMessage:
     """Test process_whatsapp_message function."""
     
-    def test_valid_whatsapp_message_success(self, db_session, test_whatsapp_instance):
+    @pytest.mark.asyncio
+    async def test_valid_whatsapp_message_success(self, db_session, test_whatsapp_instance):
         """✓ Valid WhatsApp message → success"""
         whatsapp_message = {
             "from": "+1234567890",
@@ -203,7 +212,7 @@ class TestProcessWhatsappMessage:
                 "response": {"content": "Response"}
             }
             
-            result = process_whatsapp_message(
+            result = await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=whatsapp_message,
                 metadata=metadata,
@@ -214,7 +223,8 @@ class TestProcessWhatsappMessage:
             assert "message_id" in result
             mock_wa.assert_called_once()
     
-    def test_missing_request_id_raises_validation_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_missing_request_id_raises_validation_error(self, db_session):
         """✓ Missing request_id → ValidationError"""
         whatsapp_message = {
             "from": "+1234567890",
@@ -222,7 +232,7 @@ class TestProcessWhatsappMessage:
         }
         
         with pytest.raises(ValidationError) as exc_info:
-            process_whatsapp_message(
+            await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=whatsapp_message,
                 request_id=None  # Missing
@@ -231,10 +241,11 @@ class TestProcessWhatsappMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "request" in str(exc_info.value).lower() and "id" in str(exc_info.value).lower()
     
-    def test_empty_message_raises_validation_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_empty_message_raises_validation_error(self, db_session):
         """✓ Empty message → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            process_whatsapp_message(
+            await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=None,  # Empty
                 request_id=str(uuid.uuid4())
@@ -242,7 +253,8 @@ class TestProcessWhatsappMessage:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_validates_message_structure(self, db_session):
+    @pytest.mark.asyncio
+    async def test_validates_message_structure(self, db_session):
         """✓ Do a basic validation of WhatsApp message structure"""
         invalid_message = {
             "from": "+1234567890"
@@ -250,13 +262,14 @@ class TestProcessWhatsappMessage:
         }
         
         with pytest.raises(ValidationError):
-            process_whatsapp_message(
+            await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=invalid_message,
                 request_id=str(uuid.uuid4())
             )
     
-    def test_delegates_to_whatsapp_handler(self, db_session, test_whatsapp_instance):
+    @pytest.mark.asyncio
+    async def test_delegates_to_whatsapp_handler(self, db_session, test_whatsapp_instance):
         """✓ Delegates to whatsapp_handler"""
         whatsapp_message = {
             "from": "+1234567890",
@@ -268,7 +281,7 @@ class TestProcessWhatsappMessage:
         with patch('message_handler.handler.process_whatsapp_message_internal') as mock_wa:
             mock_wa.return_value = {"message_id": str(uuid.uuid4())}
             
-            process_whatsapp_message(
+            await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=whatsapp_message,
                 request_id=request_id
@@ -279,7 +292,8 @@ class TestProcessWhatsappMessage:
             assert call_args.kwargs['whatsapp_message'] == whatsapp_message
             assert call_args.kwargs['request_id'] == request_id
     
-    def test_sanitizes_whatsapp_message(self, db_session):
+    @pytest.mark.asyncio
+    async def test_sanitizes_whatsapp_message(self, db_session):
         """✓ WhatsApp message is sanitized"""
         whatsapp_message = {
             "from": "+1234567890",
@@ -291,7 +305,7 @@ class TestProcessWhatsappMessage:
         with patch('message_handler.handler.process_whatsapp_message_internal') as mock_wa:
             mock_wa.return_value = {"message_id": str(uuid.uuid4())}
             
-            process_whatsapp_message(
+            await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=whatsapp_message,
                 request_id=str(uuid.uuid4())
@@ -301,7 +315,8 @@ class TestProcessWhatsappMessage:
             sanitized = call_args.kwargs['whatsapp_message']
             assert "password" not in sanitized
     
-    def test_adds_performance_metrics_to_response(self, db_session, test_whatsapp_instance):
+    @pytest.mark.asyncio
+    async def test_adds_performance_metrics_to_response(self, db_session, test_whatsapp_instance):
         """✓ Response includes _meta"""
         whatsapp_message = {
             "from": "+1234567890",
@@ -315,7 +330,7 @@ class TestProcessWhatsappMessage:
                 "response": {"content": "Test"}
             }
             
-            result = process_whatsapp_message(
+            result = await process_whatsapp_message(
                 db=db_session,
                 whatsapp_message=whatsapp_message,
                 request_id=str(uuid.uuid4())
@@ -334,7 +349,8 @@ class TestProcessWhatsappMessage:
 class TestBroadcastMessage:
     """Test broadcast_message function."""
     
-    def test_valid_inputs_success(self, db_session, test_instance, test_user):
+    @pytest.mark.asyncio
+    async def test_valid_inputs_success(self, db_session, test_instance, test_user):
         """✓ Valid inputs → success"""
         user_ids = [str(test_user.id)]
         request_id = str(uuid.uuid4())
@@ -345,7 +361,7 @@ class TestBroadcastMessage:
                 "summary": {"total": 1, "successful": 1, "failed": 0}
             }
             
-            result = broadcast_message(
+            result = await broadcast_message(
                 db=db_session,
                 content="Broadcast test",
                 instance_id=str(test_instance.id),
@@ -357,10 +373,11 @@ class TestBroadcastMessage:
             assert "summary" in result
             mock_bc.assert_called_once()
     
-    def test_missing_request_id_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_request_id_raises_validation_error(self, db_session, test_instance):
         """✓ Missing request_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            broadcast_message(
+            await broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -371,10 +388,11 @@ class TestBroadcastMessage:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "request" in str(exc_info.value).lower() and "id" in str(exc_info.value).lower()
     
-    def test_missing_instance_id_raises_validation_error(self, db_session):
+    @pytest.mark.asyncio
+    async def test_missing_instance_id_raises_validation_error(self, db_session):
         """✓ Missing instance_id → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            broadcast_message(
+            await broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id="",  # Empty
@@ -386,10 +404,11 @@ class TestBroadcastMessage:
         error_str = str(exc_info.value).lower()
         assert "instance" in error_str and "id" in error_str
     
-    def test_empty_content_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_empty_content_raises_validation_error(self, db_session, test_instance):
         """✓ Empty content → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            broadcast_message(
+            await broadcast_message(
                 db=db_session,
                 content="",  # Empty
                 instance_id=str(test_instance.id),
@@ -399,10 +418,11 @@ class TestBroadcastMessage:
         
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
     
-    def test_empty_user_ids_list_raises_validation_error(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_empty_user_ids_list_raises_validation_error(self, db_session, test_instance):
         """✓ Empty user_ids → ValidationError"""
         with pytest.raises(ValidationError) as exc_info:
-            broadcast_message(
+            await broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -414,7 +434,8 @@ class TestBroadcastMessage:
         error_str = str(exc_info.value).lower()
         assert "user" in error_str and "id" in error_str
     
-    def test_delegates_to_broadcast_handler(self, db_session, test_instance, test_user):
+    @pytest.mark.asyncio
+    async def test_delegates_to_broadcast_handler(self, db_session, test_instance, test_user):
         """✓ Delegates to broadcast_handler"""
         user_ids = [str(test_user.id)]
         request_id = str(uuid.uuid4())
@@ -425,7 +446,7 @@ class TestBroadcastMessage:
                 "summary": {"total": 0}
             }
             
-            broadcast_message(
+            await broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
@@ -439,7 +460,8 @@ class TestBroadcastMessage:
             assert call_args.kwargs['instance_id'] == str(test_instance.id)
             assert call_args.kwargs['request_id'] == request_id
     
-    def test_sanitizes_user_ids_list(self, db_session, test_instance):
+    @pytest.mark.asyncio
+    async def test_sanitizes_user_ids_list(self, db_session, test_instance):
         """✓ User IDs list is sanitized"""
         user_ids = [str(uuid.uuid4())] * 1001  # Over limit
         
@@ -449,7 +471,7 @@ class TestBroadcastMessage:
                 "summary": {"total": 0}
             }
             
-            broadcast_message(
+            await broadcast_message(
                 db=db_session,
                 content="Test",
                 instance_id=str(test_instance.id),
