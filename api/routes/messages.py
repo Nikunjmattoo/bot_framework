@@ -18,11 +18,11 @@ app_router = APIRouter(prefix="/app", tags=["app"])
 
 
 @api_router.post("/messages")
-def handle_api_message(request: Request, msg_request: MessageRequest, db: Session = Depends(get_db)):
+async def handle_api_message(request: Request, msg_request: MessageRequest, db: Session = Depends(get_db)):
     """Process a message through the API channel."""
     request_id = getattr(request.state, "request_id", None) or msg_request.request_id
-    
-    result = process_message(
+
+    result = await process_message(
         db=db,
         content=msg_request.content,
         instance_id=msg_request.instance_id,
@@ -31,7 +31,7 @@ def handle_api_message(request: Request, msg_request: MessageRequest, db: Sessio
         trace_id=msg_request.trace_id,
         channel="api"
     )
-    
+
     return APIResponse.success(
         data=result,
         message="Message processed successfully"
@@ -39,11 +39,11 @@ def handle_api_message(request: Request, msg_request: MessageRequest, db: Sessio
 
 
 @web_router.post("/messages")
-def handle_web_message(request: Request, msg_request: MessageRequest, db: Session = Depends(get_db)):
+async def handle_web_message(request: Request, msg_request: MessageRequest, db: Session = Depends(get_db)):
     """Process a message through the web channel."""
     request_id = getattr(request.state, "request_id", None) or msg_request.request_id
-    
-    result = process_message(
+
+    result = await process_message(
         db=db,
         content=msg_request.content,
         instance_id=msg_request.instance_id,
@@ -52,7 +52,7 @@ def handle_web_message(request: Request, msg_request: MessageRequest, db: Sessio
         trace_id=msg_request.trace_id,
         channel="web"
     )
-    
+
     return APIResponse.success(
         data=result,
         message="Web message processed successfully"
@@ -60,11 +60,11 @@ def handle_web_message(request: Request, msg_request: MessageRequest, db: Sessio
 
 
 @app_router.post("/messages")
-def handle_app_message(request: Request, msg_request: MessageRequest, db: Session = Depends(get_db)):
+async def handle_app_message(request: Request, msg_request: MessageRequest, db: Session = Depends(get_db)):
     """Process a message through the mobile app channel."""
     request_id = getattr(request.state, "request_id", None) or msg_request.request_id
-    
-    result = process_message(
+
+    result = await process_message(
         db=db,
         content=msg_request.content,
         instance_id=msg_request.instance_id,
@@ -73,7 +73,7 @@ def handle_app_message(request: Request, msg_request: MessageRequest, db: Sessio
         trace_id=msg_request.trace_id,
         channel="app"
     )
-    
+
     return APIResponse.success(
         data=result,
         message="App message processed successfully"

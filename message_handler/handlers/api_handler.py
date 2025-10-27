@@ -76,7 +76,7 @@ def validate_message(
         )
 
 
-def process_api_message(
+async def process_api_message(
     db: Session,
     content: str,
     instance_id: str,
@@ -152,10 +152,10 @@ def process_api_message(
                     except Exception as e:
                         logger.warning(f"Error initializing token plan: {str(e)}")
                 
-                result_data = process_core(
-                    tx, 
-                    content, 
-                    instance_id, 
+                result_data = await process_core(
+                    tx,
+                    content,
+                    instance_id,
                     user=user,
                     user_details=user_details,
                     request_id=idempotency_key,

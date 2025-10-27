@@ -255,7 +255,7 @@ def extract_whatsapp_data(
     return result
 
 
-def process_whatsapp_message_internal(
+async def process_whatsapp_message_internal(
     db: Session,
     whatsapp_message: Dict[str, Any],
     metadata: Optional[Dict[str, Any]] = None,
@@ -370,10 +370,10 @@ def process_whatsapp_message_internal(
                     meta_info.update(wa_data["metadata"])
                 
                 # Process the message
-                result_data = process_core(
-                    tx, 
-                    wa_data["content"], 
-                    user.instance.id if hasattr(user, 'instance') and hasattr(user.instance, 'id') else instance_id, 
+                result_data = await process_core(
+                    tx,
+                    wa_data["content"],
+                    user.instance.id if hasattr(user, 'instance') and hasattr(user.instance, 'id') else instance_id,
                     user=user,
                     request_id=idempotency_key,
                     trace_id=trace_id,

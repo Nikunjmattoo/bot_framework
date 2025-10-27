@@ -94,7 +94,7 @@ def get_handler_status() -> Dict[str, Any]:
     operation_name="process_message",
     reraise=[ValidationError, ResourceNotFoundError, OrchestrationError]
 )
-def process_message(
+async def process_message(
     db: Session,
     content: str,
     instance_id: str,
@@ -170,7 +170,7 @@ def process_message(
     logger.info(f"Processing message through {channel} channel")
     
     # Delegate to API handler
-    result = process_api_message(
+    result = await process_api_message(
         db=db,
         content=content,
         instance_id=instance_id,
@@ -200,7 +200,7 @@ def process_message(
     operation_name="process_whatsapp_message",
     reraise=[ValidationError, ResourceNotFoundError, OrchestrationError]
 )
-def process_whatsapp_message(
+async def process_whatsapp_message(
     db: Session,
     whatsapp_message: Dict[str, Any],
     metadata: Optional[Dict[str, Any]] = None,
@@ -277,7 +277,7 @@ def process_whatsapp_message(
     logger.info("Processing WhatsApp message")
     
     # Delegate to WhatsApp handler
-    result = process_whatsapp_message_internal(
+    result = await process_whatsapp_message_internal(
         db=db,
         whatsapp_message=sanitized_whatsapp_message,
         metadata=sanitized_metadata,

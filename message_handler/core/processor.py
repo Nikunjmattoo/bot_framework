@@ -42,7 +42,7 @@ except ImportError:
     ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
     
     if ENVIRONMENT == "production":
-        def process_orchestrator_message(adapter: Dict[str, Any]) -> Dict[str, Any]:
+        async def process_orchestrator_message(adapter: Dict[str, Any]) -> Dict[str, Any]:
             """Orchestrator unavailable - raise error in production."""
             raise OrchestrationError(
                 "Conversation orchestrator service is not available",
@@ -53,7 +53,7 @@ except ImportError:
                 }
             )
     else:
-        def process_orchestrator_message(adapter: Dict[str, Any]) -> Dict[str, Any]:
+        async def process_orchestrator_message(adapter: Dict[str, Any]) -> Dict[str, Any]:
             """Mock orchestrator for testing and development only."""
             import logging
             logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ except ImportError:
                 f"⚠️  Using MOCK orchestrator in {ENVIRONMENT} environment. "
                 "Real orchestrator not available!"
             )
-            
+
             message_content = adapter.get("message", {}).get("content", "")
             return {
                 "text": f"[MOCK] Response to: {message_content}",
@@ -166,7 +166,7 @@ def extract_token_usage(orchestrator_response: Dict[str, Any]) -> Dict[str, int]
     return token_usage
 
 
-def process_core(
+async def process_core(
     db: Session,
     content: str,
     instance_id: str,
@@ -304,7 +304,7 @@ def process_core(
             if not ORCHESTRATOR_AVAILABLE:
                 logger.warning("Orchestrator not available, using mock implementation")
             
-            orchestrator_response = process_orchestrator_message(adapter)
+            orchestrator_response = await process_orchestrator_message(adapter)
             orchestrator_response = validate_orchestrator_response(
                 orchestrator_response,
                 trace_id=trace_id
