@@ -63,11 +63,18 @@ class TestNewUserFirstMessage:
         data = response.json()
         assert data["success"] is True
         assert "data" in data
-        assert data["data"]["response_text"] == "Welcome! How can I help you?"
+        assert data["data"]["response"]["content"] == "Welcome! How can I help you?"
+
+        # Get message_id from response and query database for user
+        message_id = data["data"]["message_id"]
+        inbound_message = db_session.query(MessageModel).filter(
+            MessageModel.id == message_id
+        ).first()
+        assert inbound_message is not None
 
         # Verify user was created
         user = db_session.query(UserModel).filter(
-            UserModel.id == data["data"]["user_id"]
+            UserModel.id == inbound_message.user_id
         ).first()
         assert user is not None
         assert user.user_tier == "standard"
@@ -149,8 +156,16 @@ class TestExistingUserNewMessage:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["user_id"] == str(test_user.id)
-        assert data["data"]["session_id"] == str(test_session.id)
+        assert data["data"]["response"]["content"] == "Sure, here's the answer"
+
+        # Verify message was saved with correct user and session
+        message_id = data["data"]["message_id"]
+        message = db_session.query(MessageModel).filter(
+            MessageModel.id == message_id
+        ).first()
+        assert message is not None
+        assert message.user_id == test_user.id
+        assert message.session_id == test_session.id
 
 
 class TestIdempotentRequest:
@@ -180,7 +195,7 @@ class TestIdempotentRequest:
             response = client.post("/api/messages", json=payload)
 
         assert response.status_code == 200
-        assert response.json()["data"]["response_text"] == "First response"
+        assert response.json()["data"]["response"]["content"] == "First response"
 
     @pytest.mark.asyncio
     async def test_duplicate_request_returns_409(self, client, test_instance, test_user, test_session, db_session):
@@ -261,11 +276,17 @@ class TestWhatsAppMessage:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["data"]["response_text"] == "WhatsApp response"
+        assert data["data"]["response"]["content"] == "WhatsApp response"
 
-        # Verify WhatsApp user was created
+        # Verify WhatsApp user was created by querying via message
+        message_id = data["data"]["message_id"]
+        message = db_session.query(MessageModel).filter(
+            MessageModel.id == message_id
+        ).first()
+        assert message is not None
+
         user = db_session.query(UserModel).filter(
-            UserModel.id == data["data"]["user_id"]
+            UserModel.id == message.user_id
         ).first()
         assert user is not None
         assert user.user_tier == "verified"  # WhatsApp users get verified tier
@@ -355,10 +376,17 @@ class TestGuestUser:
         assert response.status_code == 200
         data = response.json()
 
-        # Verify guest user created
-        user = db_session.query(UserModel).filter(
-            UserModel.id == data["data"]["user_id"]
+        # Verify guest user created by querying via message
+        message_id = data["data"]["message_id"]
+        message = db_session.query(MessageModel).filter(
+            MessageModel.id == message_id
         ).first()
+        assert message is not None
+
+        user = db_session.query(UserModel).filter(
+            UserModel.id == message.user_id
+        ).first()
+        assert user is not None
         assert user.user_tier == "guest"
 
     @pytest.mark.asyncio
@@ -440,7 +468,11 @@ class TestBrandScopedIdentity:
             response_a = client.post("/api/messages", json=payload_a)
 
         assert response_a.status_code == 200
-        user_id_a = response_a.json()["data"]["user_id"]
+        # Get user_id from message
+        message_a = db_session.query(MessageModel).filter(
+            MessageModel.id == response_a.json()["data"]["message_id"]
+        ).first()
+        user_id_a = message_a.user_id
 
         # Message to Brand B (same phone)
         payload_b = {
@@ -454,7 +486,11 @@ class TestBrandScopedIdentity:
             response_b = client.post("/api/messages", json=payload_b)
 
         assert response_b.status_code == 200
-        user_id_b = response_b.json()["data"]["user_id"]
+        # Get user_id from message
+        message_b = db_session.query(MessageModel).filter(
+            MessageModel.id == response_b.json()["data"]["message_id"]
+        ).first()
+        user_id_b = message_b.user_id
 
         # Different users despite same phone
         assert user_id_a != user_id_b
@@ -501,9 +537,13 @@ class TestSessionTimeout:
         assert response.status_code == 200
         data = response.json()
 
-        # Should create new session
-        new_session_id = data["data"]["session_id"]
-        assert new_session_id != str(old_session.id)
+        # Should create new session - get from message
+        message = db_session.query(MessageModel).filter(
+            MessageModel.id == data["data"]["message_id"]
+        ).first()
+        assert message is not None
+        new_session_id = message.session_id
+        assert new_session_id != old_session.id
 
 
 class TestTokenBudget:
@@ -542,8 +582,12 @@ class TestTokenBudget:
         assert response.status_code == 200
         data = response.json()
 
-        # Verify session has token plan
-        session_id = data["data"]["session_id"]
+        # Verify session has token plan - get session_id from message
+        message = db_session.query(MessageModel).filter(
+            MessageModel.id == data["data"]["message_id"]
+        ).first()
+        assert message is not None
+        session_id = message.session_id
         session = db_session.query(SessionModel).filter(SessionModel.id == session_id).first()
 
         # Token plan should be initialized

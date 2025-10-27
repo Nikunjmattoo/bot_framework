@@ -367,7 +367,7 @@ class TestInvalidRequestValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI returns 422 for validation errors
 
     @pytest.mark.asyncio
     async def test_content_too_long_returns_422(self, client, test_instance):
@@ -379,7 +379,7 @@ class TestInvalidRequestValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code == 400  # ValidationError
+        assert response.status_code == 422  # ValidationError (FastAPI returns 422 for request validation)
 
     @pytest.mark.asyncio
     async def test_invalid_request_id_format_returns_400(self, client, test_instance):
@@ -412,7 +412,7 @@ class TestWhatsAppErrors:
         }
 
         response = client.post("/api/whatsapp/messages", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI returns 422 for validation errors
 
     @pytest.mark.asyncio
     async def test_missing_to_field_returns_400(self, client):
@@ -428,7 +428,7 @@ class TestWhatsAppErrors:
         }
 
         response = client.post("/api/whatsapp/messages", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI returns 422 for validation errors
 
 
 class TestBroadcastErrors:
@@ -458,7 +458,7 @@ class TestBroadcastErrors:
         }
 
         response = client.post("/api/broadcast", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI returns 422 for validation errors
 
     @pytest.mark.asyncio
     async def test_too_many_user_ids_returns_400(self, client, test_instance):
@@ -471,4 +471,4 @@ class TestBroadcastErrors:
         }
 
         response = client.post("/api/broadcast", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI returns 422 for validation errors

@@ -225,7 +225,7 @@ class TestInputValidation:
         }
 
         response = client.post("/api/messages", json=payload)
-        assert response.status_code == 400  # Validation error
+        assert response.status_code == 422  # Validation error (FastAPI returns 422)
 
     @pytest.mark.asyncio
     async def test_request_id_length_validation(self, client, test_instance):
