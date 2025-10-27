@@ -426,7 +426,7 @@ def test_messages_orchestrator(db_session, test_session_orchestrator):
 def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm_model_orchestrator, test_brand):
     """Create base adapter payload for orchestrator tests."""
     import uuid
-    
+
     return {
         "trace_id": str(uuid.uuid4()),
         "routing": {
@@ -449,6 +449,14 @@ def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm
                     "template": "intent_v1_test"
                 }
             }
+        },
+        "model": {  # ✅ ADD MISSING MODEL FIELD
+            "llm_model_id": str(test_llm_model_orchestrator.id),
+            "llm_model_name": test_llm_model_orchestrator.name,
+            "api_model_name": test_llm_model_orchestrator.api_model_name,
+            "provider": test_llm_model_orchestrator.provider,
+            "temperature": 0.7,
+            "max_tokens": test_llm_model_orchestrator.max_tokens
         },
         "token_plan": {
             "templates": {
