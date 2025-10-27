@@ -169,7 +169,8 @@ class TestProcessCoreMessageSaving:
     
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_inbound_message_saved_with_request_id(
+    @pytest.mark.asyncio
+    async def test_inbound_message_saved_with_request_id(
         self, mock_langfuse, mock_orchestrator, 
         db_session, test_session, test_user, test_instance
     ):
@@ -215,7 +216,8 @@ class TestProcessCoreMessageSaving:
     
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_message_metadata_includes_channel(
+    @pytest.mark.asyncio
+    async def test_message_metadata_includes_channel(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -253,7 +255,8 @@ class TestProcessCoreMessageSaving:
     
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_message_metadata_sanitized(
+    @pytest.mark.asyncio
+    async def test_message_metadata_sanitized(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -308,7 +311,8 @@ class TestProcessCoreAdapterBuilding:
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
     @patch('message_handler.core.processor.build_message_adapter')
-    def test_adapter_includes_required_fields(
+    @pytest.mark.asyncio
+    async def test_adapter_includes_required_fields(
         self, mock_build_adapter, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -354,7 +358,8 @@ class TestProcessCoreAdapterBuilding:
     
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_adapter_validated(
+    @pytest.mark.asyncio
+    async def test_adapter_validated(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance, test_template, test_llm_model
     ):
@@ -393,7 +398,8 @@ class TestProcessCoreOrchestratorIntegration:
     
     @patch('message_handler.core.processor.ORCHESTRATOR_AVAILABLE', False)
     @patch('message_handler.core.processor.langfuse_client')
-    def test_mock_mode_in_development_returns_mock(
+    @pytest.mark.asyncio
+    async def test_mock_mode_in_development_returns_mock(
         self, mock_langfuse, monkeypatch,
         db_session, test_session, test_user, test_instance
     ):
@@ -427,7 +433,8 @@ class TestProcessCoreOrchestratorIntegration:
     @pytest.mark.xfail(reason="🔴 CRITICAL BUG: Empty ENVIRONMENT not handled")
     @patch('message_handler.core.processor.ORCHESTRATOR_AVAILABLE', False)
     @patch('message_handler.core.processor.langfuse_client')
-    def test_empty_environment_string_should_fail_in_production(
+    @pytest.mark.asyncio
+    async def test_empty_environment_string_should_fail_in_production(
         self, mock_langfuse, monkeypatch,
         db_session, test_session, test_user, test_instance
     ):
@@ -459,7 +466,8 @@ class TestProcessCoreOrchestratorIntegration:
     @patch('message_handler.core.processor.ORCHESTRATOR_AVAILABLE', True)
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_orchestrator_success_processes_response(
+    @pytest.mark.asyncio
+    async def test_orchestrator_success_processes_response(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -498,7 +506,8 @@ class TestProcessCoreOrchestratorIntegration:
     
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_orchestrator_error_returns_default_response(
+    @pytest.mark.asyncio
+    async def test_orchestrator_error_returns_default_response(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -531,7 +540,8 @@ class TestProcessCoreOrchestratorIntegration:
     
     @patch('message_handler.core.processor.process_orchestrator_message')
     @patch('message_handler.core.processor.langfuse_client')
-    def test_orchestrator_timeout_returns_default_response(
+    @pytest.mark.asyncio
+    async def test_orchestrator_timeout_returns_default_response(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -574,56 +584,64 @@ class TestProcessCoreOrchestratorIntegration:
 class TestValidateOrchestratorResponse:
     """Test validate_orchestrator_response function."""
     
-    def test_extract_text_from_response(self):
+    @pytest.mark.asyncio
+    async def test_extract_text_from_response(self):
         """✓ Extract text from response"""
         response = {"text": "Hello world"}
         result = validate_orchestrator_response(response)
         
         assert result["text"] == "Hello world"
     
-    def test_fallback_to_llm_response_field(self):
+    @pytest.mark.asyncio
+    async def test_fallback_to_llm_response_field(self):
         """✓ Fallback fields: llm_response"""
         response = {"llm_response": "From LLM"}
         result = validate_orchestrator_response(response)
         
         assert result["text"] == "From LLM"
     
-    def test_fallback_to_message_field(self):
+    @pytest.mark.asyncio
+    async def test_fallback_to_message_field(self):
         """✓ Fallback fields: message"""
         response = {"message": "From message"}
         result = validate_orchestrator_response(response)
         
         assert result["text"] == "From message"
     
-    def test_fallback_to_content_field(self):
+    @pytest.mark.asyncio
+    async def test_fallback_to_content_field(self):
         """✓ Fallback fields: content"""
         response = {"content": "From content"}
         result = validate_orchestrator_response(response)
         
         assert result["text"] == "From content"
     
-    def test_default_text_if_no_field_found(self):
+    @pytest.mark.asyncio
+    async def test_default_text_if_no_field_found(self):
         """✓ Default text if no field found"""
         response = {"other": "data"}
         result = validate_orchestrator_response(response)
         
         assert result["text"] == DEFAULT_RESPONSE_TEXT
     
-    def test_none_response_returns_default(self):
+    @pytest.mark.asyncio
+    async def test_none_response_returns_default(self):
         """✓ None response → default"""
         result = validate_orchestrator_response(None)
         
         assert result["text"] == DEFAULT_RESPONSE_TEXT
         assert "error" in result
     
-    def test_invalid_response_type_returns_default(self):
+    @pytest.mark.asyncio
+    async def test_invalid_response_type_returns_default(self):
         """✓ Invalid type → default"""
         result = validate_orchestrator_response("not a dict")
         
         assert result["text"] == DEFAULT_RESPONSE_TEXT
         assert "error" in result
     
-    def test_adds_timestamp_if_missing(self):
+    @pytest.mark.asyncio
+    async def test_adds_timestamp_if_missing(self):
         """✓ Adds timestamp if missing"""
         response = {"text": "Test"}
         result = validate_orchestrator_response(response)
@@ -638,7 +656,8 @@ class TestValidateOrchestratorResponse:
 class TestExtractTokenUsage:
     """Test extract_token_usage function."""
     
-    def test_extract_token_usage_from_response(self):
+    @pytest.mark.asyncio
+    async def test_extract_token_usage_from_response(self):
         """✓ Extract token_usage from response"""
         response = {
             "token_usage": {
@@ -652,7 +671,8 @@ class TestExtractTokenUsage:
         assert result["prompt_in"] == 100
         assert result["completion_out"] == 50
     
-    def test_map_prompt_tokens_to_prompt_in(self):
+    @pytest.mark.asyncio
+    async def test_map_prompt_tokens_to_prompt_in(self):
         """✓ Map prompt_tokens → prompt_in"""
         response = {
             "usage": {
@@ -666,7 +686,8 @@ class TestExtractTokenUsage:
         assert result["prompt_in"] == 150
         assert result["completion_out"] == 75
     
-    def test_map_completion_tokens_to_completion_out(self):
+    @pytest.mark.asyncio
+    async def test_map_completion_tokens_to_completion_out(self):
         """✓ Map completion_tokens → completion_out"""
         response = {
             "usage": {
@@ -680,12 +701,14 @@ class TestExtractTokenUsage:
         assert result["prompt_in"] == 200
         assert result["completion_out"] == 100
     
-    def test_empty_response_returns_empty_dict(self):
+    @pytest.mark.asyncio
+    async def test_empty_response_returns_empty_dict(self):
         """✓ Empty response → empty dict"""
         result = extract_token_usage({})
         assert result == {}
     
-    def test_none_response_returns_empty_dict(self):
+    @pytest.mark.asyncio
+    async def test_none_response_returns_empty_dict(self):
         """✓ None response → empty dict"""
         result = extract_token_usage(None)
         assert result == {}
@@ -696,7 +719,8 @@ class TestExtractTokenUsage:
 class TestProcessCoreTokenUsage:
     """Test token usage recording in process_core."""
     
-    def test_record_usage_to_session_token_usage(
+    @pytest.mark.asyncio
+    async def test_record_usage_to_session_token_usage(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -749,7 +773,8 @@ class TestProcessCoreTokenUsage:
 class TestProcessCoreOutboundMessage:
     """Test outbound message saving in process_core."""
     
-    def test_save_with_role_assistant(
+    @pytest.mark.asyncio
+    async def test_save_with_role_assistant(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -784,7 +809,8 @@ class TestProcessCoreOutboundMessage:
         assert outbound is not None
         assert outbound.content == "Assistant response"
     
-    def test_save_orchestrator_response_in_metadata(
+    @pytest.mark.asyncio
+    async def test_save_orchestrator_response_in_metadata(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -824,7 +850,8 @@ class TestProcessCoreOutboundMessage:
         assert outbound.metadata_json is not None
         assert "orchestrator_response" in outbound.metadata_json
     
-    def test_update_session_last_message_at(
+    @pytest.mark.asyncio
+    async def test_update_session_last_message_at(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -855,7 +882,8 @@ class TestProcessCoreOutboundMessage:
         db_session.refresh(test_session)
         assert test_session.last_message_at > old_timestamp
     
-    def test_update_session_last_assistant_message_at(
+    @pytest.mark.asyncio
+    async def test_update_session_last_assistant_message_at(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -894,7 +922,8 @@ class TestProcessCoreOutboundMessage:
 class TestProcessCoreLangfuseTelemetry:
     """Test Langfuse telemetry in process_core."""
     
-    def test_create_trace_with_trace_id(
+    @pytest.mark.asyncio
+    async def test_create_trace_with_trace_id(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -928,7 +957,8 @@ class TestProcessCoreLangfuseTelemetry:
         call_args = mock_langfuse.trace.call_args
         assert call_args.kwargs['id'] == trace_id
     
-    def test_span_save_inbound_message(
+    @pytest.mark.asyncio
+    async def test_span_save_inbound_message(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -959,7 +989,8 @@ class TestProcessCoreLangfuseTelemetry:
         span_names = [call.kwargs['name'] for call in mock_trace.span.call_args_list]
         assert "save_inbound_message" in span_names
     
-    def test_span_build_adapter(
+    @pytest.mark.asyncio
+    async def test_span_build_adapter(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -988,7 +1019,8 @@ class TestProcessCoreLangfuseTelemetry:
         span_names = [call.kwargs['name'] for call in mock_trace.span.call_args_list]
         assert "build_adapter" in span_names
     
-    def test_span_orchestrator_with_token_metadata(
+    @pytest.mark.asyncio
+    async def test_span_orchestrator_with_token_metadata(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -1021,7 +1053,8 @@ class TestProcessCoreLangfuseTelemetry:
         span_names = [call.kwargs['name'] for call in mock_trace.span.call_args_list]
         assert "orchestrator" in span_names
     
-    def test_trace_updated_with_success(
+    @pytest.mark.asyncio
+    async def test_trace_updated_with_success(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -1060,7 +1093,8 @@ class TestProcessCoreLangfuseTelemetry:
 class TestProcessCorePerformance:
     """Test performance characteristics of process_core."""
     
-    def test_total_processing_time_under_30_seconds(
+    @pytest.mark.asyncio
+    async def test_total_processing_time_under_30_seconds(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -1096,7 +1130,8 @@ class TestProcessCorePerformance:
         assert "_meta" in result
         assert "processing_time_seconds" in result["_meta"]
     
-    def test_metadata_includes_timing_breakdown(
+    @pytest.mark.asyncio
+    async def test_metadata_includes_timing_breakdown(
         self, mock_langfuse, mock_orchestrator,
         db_session, test_session, test_user, test_instance
     ):
@@ -1134,12 +1169,14 @@ class TestProcessCorePerformance:
 class TestValidateContentLength:
     """Test validate_content_length function."""
     
-    def test_valid_content_returns_normalized(self):
+    @pytest.mark.asyncio
+    async def test_valid_content_returns_normalized(self):
         """✓ Valid content → normalized"""
         result = validate_content_length("  Hello world  ")
         assert result == "Hello world"
     
-    def test_content_exceeds_max_length_raises_error(self):
+    @pytest.mark.asyncio
+    async def test_content_exceeds_max_length_raises_error(self):
         """✓ Content > 10000 → ValidationError"""
         long_content = "x" * 10001
         
@@ -1149,12 +1186,14 @@ class TestValidateContentLength:
         assert exc_info.value.error_code == ErrorCode.VALIDATION_ERROR
         assert "10000" in str(exc_info.value)
     
-    def test_empty_content_returns_empty_string(self):
+    @pytest.mark.asyncio
+    async def test_empty_content_returns_empty_string(self):
         """✓ Empty content → empty string"""
         result = validate_content_length("")
         assert result == ""
     
-    def test_whitespace_only_returns_empty_string(self):
+    @pytest.mark.asyncio
+    async def test_whitespace_only_returns_empty_string(self):
         """✓ Whitespace only → empty string"""
         result = validate_content_length("   \n\t   ")
         assert result == ""
