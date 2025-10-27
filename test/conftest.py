@@ -4,6 +4,7 @@
 # ============================================================================
 
 import pytest
+import pytest_asyncio
 import os
 import sys
 from pathlib import Path
@@ -104,13 +105,16 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture
 async def async_client(db_session):
     """
     Provide async FastAPI test client for testing async endpoints.
 
     This is the CORRECT way to test async endpoints. Use this fixture
     for endpoints that are defined as 'async def' (like our message endpoints).
+
+    Note: Using pytest_asyncio.fixture instead of pytest.fixture to properly
+    handle async generator fixtures in pytest-asyncio.
     """
     from main import create_app
     app = create_app()
