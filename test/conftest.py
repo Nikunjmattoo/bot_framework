@@ -45,9 +45,13 @@ def test_engine():
         TEST_DATABASE_URL,
         pool_size=5,
         max_overflow=10,
-        pool_pre_ping=True
+        pool_pre_ping=True,
+        pool_recycle=300  # Recycle connections after 5 minutes
     )
-    return engine
+    yield engine
+
+    # CRITICAL: Dispose engine to close all connections
+    engine.dispose()
 
 @pytest.fixture(scope="session")
 def setup_test_database(test_engine):
@@ -56,26 +60,33 @@ def setup_test_database(test_engine):
     Base.metadata.drop_all(bind=test_engine)
     # Create all tables
     Base.metadata.create_all(bind=test_engine)
-    
+
     yield
-    
+
     # Cleanup after all tests
     Base.metadata.drop_all(bind=test_engine)
+    # Force dispose to release all connections
+    test_engine.dispose()
 
 @pytest.fixture(scope="function")
 def db_session(test_engine, setup_test_database):
     """Provide a transactional database session per test."""
     connection = test_engine.connect()
     transaction = connection.begin()
-    
+
     SessionLocal = sessionmaker(bind=connection)
     session = SessionLocal()
-    
+
     yield session
-    
+
+    # Proper cleanup order
     session.close()
     transaction.rollback()
     connection.close()
+
+    # Force connection to be returned to pool
+    del session
+    del connection
 
 @pytest.fixture(scope="function")
 def client(db_session):
@@ -872,3 +883,33 @@ def mock_cold_paths():
     """Mock cold path triggers."""
     with patch('conversation_orchestrator.cold_path.trigger_manager.trigger_cold_paths') as mock:
         yield mock
+
+
+# ============================================================================
+# PYTEST HOOKS FOR PROPER CLEANUP (Fixes Windows Hanging Issue)
+# ============================================================================
+
+def pytest_sessionfinish(session, exitstatus):
+    """
+    Called after whole test run finished, right before returning the exit status.
+    CRITICAL: Dispose all database engines to prevent hanging on Windows.
+    """
+    import gc
+    from sqlalchemy import pool
+
+    # Force garbage collection
+    gc.collect()
+
+    # Dispose all connection pools
+    pool.clear_all_pools()
+
+
+def pytest_runtest_teardown(item, nextitem):
+    """
+    Called after each test teardown.
+    Ensures connections are returned to pool between tests.
+    """
+    import gc
+
+    # Force garbage collection to clean up any lingering connections
+    gc.collect()

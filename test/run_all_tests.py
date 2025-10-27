@@ -98,12 +98,12 @@ def parse_pytest_output(output):
 def run_test_suite(name, test_dir, description):
     """
     Run a single test suite and capture detailed results.
-    
+
     Args:
         name: Name of the test suite
         test_dir: Directory containing tests
         description: Short description
-    
+
     Returns:
         dict: {
             'passed': bool,
@@ -117,9 +117,9 @@ def run_test_suite(name, test_dir, description):
     print(f"  📁 Directory: {test_dir}")
     print(f"  📝 Description: {description}")
     print()
-    
+
     start_time = time.time()
-    
+
     # Run pytest and capture output
     result = subprocess.run([
         sys.executable, "-m", "pytest",
@@ -130,22 +130,27 @@ def run_test_suite(name, test_dir, description):
         # NO -x flag - run all tests
         "--durations=5",         # Show 5 slowest tests
         "-W", "ignore::DeprecationWarning",  # Ignore deprecation warnings
-    ], 
+    ],
     cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     capture_output=True,
-    text=True)
-    
+    text=True,
+    timeout=300)  # 5 minute timeout per suite
+
     duration = time.time() - start_time
     passed = result.returncode == 0
-    
+
     # Print the output
     print(result.stdout)
     if result.stderr:
         print(result.stderr)
-    
+
     # Parse test results
     test_results = parse_pytest_output(result.stdout)
-    
+
+    # CRITICAL: Add delay to allow connections to fully close (Windows fix)
+    print(f"\n  ⏳ Cleaning up database connections...")
+    time.sleep(2)  # 2 second delay between suites
+
     return {
         'name': name,
         'passed': passed,
