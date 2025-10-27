@@ -105,18 +105,16 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
 
-@pytest_asyncio.fixture
-async def async_client(db_session):
+@pytest.fixture
+def async_client(db_session):
     """
     Provide async FastAPI test client for testing async endpoints.
 
-    This is the CORRECT way to test async endpoints. Use this fixture
-    for endpoints that are defined as 'async def' (like our message endpoints).
-
-    Note: Using pytest_asyncio.fixture instead of pytest.fixture to properly
-    handle async generator fixtures in pytest-asyncio.
+    Note: Despite the name, this returns a regular TestClient which can handle
+    async endpoints automatically. FastAPI's TestClient uses anyio to run async
+    endpoints synchronously, so you don't need await in your tests.
     """
-    from main import create_app
+    # Simply return the same as the client fixture - TestClient handles async endpoints
     app = create_app()
 
     # Override database dependency
@@ -129,10 +127,8 @@ async def async_client(db_session):
     from db.db import get_db
     app.dependency_overrides[get_db] = override_get_db
 
-    # Use AsyncClient with ASGITransport for proper async support
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+    with TestClient(app) as test_client:
+        yield test_client
 
 @pytest.fixture
 def test_brand(db_session):

@@ -75,14 +75,6 @@ def validate_content_length(content: str) -> str:
     """Validate and normalize content length."""
     normalized_content = content.strip() if content else ""
 
-    # Check for empty content
-    if not normalized_content:
-        raise ValidationError(
-            "Message content cannot be empty",
-            error_code=ErrorCode.VALIDATION_ERROR,
-            field="content"
-        )
-
     if len(normalized_content) > MAX_CONTENT_LENGTH:
         raise ValidationError(
             f"Content exceeds maximum length of {MAX_CONTENT_LENGTH} characters",
