@@ -450,11 +450,17 @@ def base_adapter_payload(test_session_orchestrator, test_template_full, test_llm
                 }
             }
         },
-        "model": {  # ✅ ADD MISSING MODEL FIELD
+        "model": {
             "llm_model_id": str(test_llm_model_orchestrator.id),
             "llm_model_name": test_llm_model_orchestrator.name,
             "api_model_name": test_llm_model_orchestrator.api_model_name,
             "provider": test_llm_model_orchestrator.provider,
+            "temperature": 0.7,
+            "max_tokens": test_llm_model_orchestrator.max_tokens
+        },
+        "llm_runtime": {  # ✅ ADD MISSING LLM_RUNTIME FIELD
+            "provider": test_llm_model_orchestrator.provider,
+            "api_model_name": test_llm_model_orchestrator.api_model_name,
             "temperature": 0.7,
             "max_tokens": test_llm_model_orchestrator.max_tokens
         },
