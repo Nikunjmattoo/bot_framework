@@ -13,9 +13,10 @@ class TestWhatsAppEndpoints:
     # MESSAGE TYPES
     # ========================================================================
     
-    def test_text_message(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_text_message(self, async_client, test_instance):
         """✓ Text message"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -27,9 +28,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_image_message(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_image_message(self, async_client, test_instance):
         """✓ Image message"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -46,9 +48,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_audio_message(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_audio_message(self, async_client, test_instance):
         """✓ Audio message"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -64,9 +67,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_document_message(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_document_message(self, async_client, test_instance):
         """✓ Document message"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -84,9 +88,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_location_message(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_location_message(self, async_client, test_instance):
         """✓ Location message"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -104,9 +109,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_contact_message(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_contact_message(self, async_client, test_instance):
         """✓ Contact message"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -133,9 +139,10 @@ class TestWhatsAppEndpoints:
     # REQUIRED FIELDS
     # ========================================================================
     
-    def test_missing_from_field(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_from_field(self, async_client, test_instance):
         """✓ Missing 'from' → 422"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "to": "+9876543210",
                 "text": {"body": "Hello"}
@@ -145,9 +152,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 422
     
-    def test_missing_to_field(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_missing_to_field(self, async_client, test_instance):
         """✓ Missing 'to' → 422"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "text": {"body": "Hello"}
@@ -157,9 +165,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 422
     
-    def test_invalid_phone_format(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_invalid_phone_format(self, async_client, test_instance):
         """✓ Invalid phone format → 422"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "invalid-phone",
                 "to": "+9876543210",
@@ -174,9 +183,10 @@ class TestWhatsAppEndpoints:
     # INSTANCE RESOLUTION
     # ========================================================================
     
-    def test_resolve_instance_by_recipient_number(self, client, test_whatsapp_instance):  # ← Changed fixture
+    @pytest.mark.asyncio
+    async def test_resolve_instance_by_recipient_number(self, async_client, test_whatsapp_instance):  # ← Changed fixture
         """✓ Resolve instance by recipient_number (to field)"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": test_whatsapp_instance.recipient_number,  # ← This will be "+9876543210"
@@ -187,9 +197,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_resolve_instance_by_instance_id(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_resolve_instance_by_instance_id(self, async_client, test_instance):
         """✓ Resolve instance by instance_id in metadata"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -200,9 +211,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_no_matching_instance(self, client):
+    @pytest.mark.asyncio
+    async def test_no_matching_instance(self, client):
         """✓ No matching instance → 404"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+1999999999",  # ← Valid format, but no instance with this number
@@ -216,9 +228,10 @@ class TestWhatsAppEndpoints:
     # USER RESOLUTION
     # ========================================================================
     
-    def test_existing_whatsapp_user(self, client, test_instance, test_user):
+    @pytest.mark.asyncio
+    async def test_existing_whatsapp_user(self, async_client, test_instance, test_user):
         """✓ Existing WhatsApp user → resolve"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",  # test_user's phone
                 "to": "+9876543210",
@@ -229,9 +242,10 @@ class TestWhatsAppEndpoints:
         })
         assert response.status_code == 200
     
-    def test_new_whatsapp_user(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_new_whatsapp_user(self, async_client, test_instance):
         """✓ New WhatsApp user → create with phone"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+9999999999",  # New phone number
                 "to": "+9876543210",
@@ -247,9 +261,10 @@ class TestWhatsAppEndpoints:
     # CONTENT EXTRACTION
     # ========================================================================
     
-    def test_extract_text_body(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_extract_text_body(self, async_client, test_instance):
         """✓ Extract text body"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -262,9 +277,10 @@ class TestWhatsAppEndpoints:
         assert response.status_code == 200
         # Content should be extracted from text.body
     
-    def test_extract_caption_from_media(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_extract_caption_from_media(self, async_client, test_instance):
         """✓ Extract caption from media"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -281,9 +297,10 @@ class TestWhatsAppEndpoints:
         assert response.status_code == 200
         # Caption should be extracted as content
     
-    def test_extract_location_coordinates(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_extract_location_coordinates(self, async_client, test_instance):
         """✓ Extract location coordinates"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",
@@ -301,9 +318,10 @@ class TestWhatsAppEndpoints:
         assert response.status_code == 200
         # Location should be formatted as content
     
-    def test_extract_contact_names(self, client, test_instance):
+    @pytest.mark.asyncio
+    async def test_extract_contact_names(self, async_client, test_instance):
         """✓ Extract contact names"""
-        response = client.post("/api/whatsapp/messages", json={
+        response = await async_client.post("/api/whatsapp/messages", json={
             "message": {
                 "from": "+1234567890",
                 "to": "+9876543210",

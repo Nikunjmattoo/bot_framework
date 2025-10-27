@@ -16,6 +16,7 @@ from unittest.mock import patch, MagicMock
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 from dotenv import load_dotenv
 import uuid
 
@@ -102,6 +103,32 @@ def client(db_session):
     
     with TestClient(app) as test_client:
         yield test_client
+
+@pytest.fixture
+async def async_client(db_session):
+    """
+    Provide async FastAPI test client for testing async endpoints.
+
+    This is the CORRECT way to test async endpoints. Use this fixture
+    for endpoints that are defined as 'async def' (like our message endpoints).
+    """
+    from main import create_app
+    app = create_app()
+
+    # Override database dependency
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    from db.db import get_db
+    app.dependency_overrides[get_db] = override_get_db
+
+    # Use AsyncClient with ASGITransport for proper async support
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
 
 @pytest.fixture
 def test_brand(db_session):
