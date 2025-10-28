@@ -83,7 +83,8 @@ class LLMService:
         prompt: str,
         model: str,
         max_tokens: int,
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        response_format: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Call Groq API.
@@ -101,13 +102,19 @@ class LLMService:
                 extra={"model": model, "max_tokens": max_tokens}
             )
             
-            response = client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-                temperature=temperature,
-                response_format={"type": "json_object"}
-            )
+            # Build request parameters
+            kwargs = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature
+            }
+            
+            # Only add response_format if explicitly requested
+            if response_format:
+                kwargs["response_format"] = response_format
+            
+            response = client.chat.completions.create(**kwargs)
             
             content = response.choices[0].message.content
             token_usage = {
@@ -142,7 +149,8 @@ class LLMService:
         prompt: str,
         model: str,
         max_tokens: int,
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        response_format: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Call Gemini API.
@@ -163,14 +171,20 @@ class LLMService:
             # Create model
             gemini_model = genai.GenerativeModel(model)
             
+            # Build generation config
+            gen_config = {
+                "max_output_tokens": max_tokens,
+                "temperature": temperature
+            }
+            
+            # Only add JSON format if explicitly requested
+            if response_format:
+                gen_config["response_mime_type"] = "application/json"
+            
             # Generate
             response = gemini_model.generate_content(
                 prompt,
-                generation_config={
-                    "max_output_tokens": max_tokens,
-                    "temperature": temperature,
-                    "response_mime_type": "application/json"
-                }
+                generation_config=gen_config
             )
             
             content = response.text
@@ -209,7 +223,8 @@ class LLMService:
         prompt: str,
         model: str,
         max_tokens: int,
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        response_format: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Call Anthropic API.
@@ -266,7 +281,8 @@ class LLMService:
         prompt: str,
         model: str,
         max_tokens: int,
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        response_format: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
         """
         Call Ollama (local).
@@ -284,15 +300,23 @@ class LLMService:
                 extra={"model": model, "max_tokens": max_tokens}
             )
             
-            response = ollama.chat(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                options={
-                    "temperature": temperature,
-                    "num_predict": max_tokens
-                },
-                format="json"
-            )
+            # Build options
+            options = {
+                "temperature": temperature,
+                "num_predict": max_tokens
+            }
+            
+            kwargs = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "options": options
+            }
+            
+            # Only add JSON format if explicitly requested
+            if response_format:
+                kwargs["format"] = "json"
+            
+            response = ollama.chat(**kwargs)
             
             content = response['message']['content']
             
@@ -329,7 +353,6 @@ class LLMService:
 _llm_service = LLMService()
 
 
-# BUG FIX #3: Changed to proper async function, returns Dict instead of Future
 async def call_llm_async(
     prompt: str,
     model: str,
@@ -345,11 +368,12 @@ async def call_llm_async(
     Args:
         prompt: Prompt text
         model: Model name
-        runtime: Runtime ('groq', 'gemini', 'anthropic', 'ollama', 'openai')
+        runtime: Runtime ('groq', 'gemini', 'anthropic', 'ollama')
         max_tokens: Maximum output tokens
         temperature: Temperature (default: 0.1)
         trace_id: Trace ID for logging
-        response_format: Response format dict (ignored for some providers)
+        response_format: Response format dict (e.g., {"type": "json_object"})
+                        Only used if caller explicitly requests JSON
     
     Returns:
         Dict with content and token_usage
@@ -361,13 +385,13 @@ async def call_llm_async(
     
     # Route to appropriate provider
     if runtime == "groq":
-        return await _llm_service.call_groq(prompt, model, max_tokens, temperature)
+        return await _llm_service.call_groq(prompt, model, max_tokens, temperature, response_format)
     elif runtime == "gemini":
-        return await _llm_service.call_gemini(prompt, model, max_tokens, temperature)
+        return await _llm_service.call_gemini(prompt, model, max_tokens, temperature, response_format)
     elif runtime == "anthropic":
-        return await _llm_service.call_anthropic(prompt, model, max_tokens, temperature)
+        return await _llm_service.call_anthropic(prompt, model, max_tokens, temperature, response_format)
     elif runtime == "ollama":
-        return await _llm_service.call_ollama(prompt, model, max_tokens, temperature)
+        return await _llm_service.call_ollama(prompt, model, max_tokens, temperature, response_format)
     else:
         raise LLMError(
             message=f"Unsupported LLM runtime: {runtime}",
