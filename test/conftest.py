@@ -311,14 +311,6 @@ def app():
     from main import app  # Adjust import path to wherever your FastAPI app is defined
     return app
 
-@pytest.fixture(autouse=True)
-def mock_langfuse():
-    """Mock Langfuse telemetry globally for all tests."""
-    with patch('telemetry.langfuse_config.langfuse_client') as mock:
-        mock_trace = MagicMock()
-        mock.trace.return_value = mock_trace
-        yield mock
-
 
 # ============================================================================
 # ORCHESTRATOR-SPECIFIC FIXTURES

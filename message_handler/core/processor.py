@@ -26,8 +26,6 @@ from message_handler.utils.transaction import retry_transaction
 from message_handler.utils.error_handling import handle_database_error
 from message_handler.utils.datetime_utils import ensure_timezone_aware, get_current_datetime
 
-from telemetry.langfuse_config import langfuse_client
-
 DEFAULT_RESPONSE_TEXT = "I'm unable to process your request right now. Please try again later."
 TOKEN_USAGE_FIELDS = ["prompt_in", "completion_out"]
 MAX_CONTENT_LENGTH = 10000
@@ -215,20 +213,6 @@ async def process_core(
     
     logger.info(f"Processing {channel} message")
     
-    trace = langfuse_client.trace(
-        id=trace_id,
-        name="message_processing",
-        user_id=str(user.id) if user and hasattr(user, 'id') else None,
-        session_id=str(user.session_id) if hasattr(user, 'session_id') else None,
-        metadata={
-            "instance_id": instance_id,
-            "channel": channel,
-            "brand_id": str(user.instance.brand_id) if hasattr(user, 'instance') and hasattr(user.instance, 'brand_id') else None,
-            "user_tier": getattr(user, 'user_tier', 'unknown')
-        },
-        tags=[channel]
-    )
-    
     try:
         normalized_content = validate_content_length(content)
         
@@ -264,7 +248,6 @@ async def process_core(
                 resource_type="instance_config"
             )
         
-        span1 = trace.span(name="save_inbound_message")
         inbound_message = save_inbound_message(
             db,
             session_id=user.session_id,
@@ -276,12 +259,10 @@ async def process_core(
             request_id=request_id,
             trace_id=trace_id
         )
-        span1.end(metadata={"message_id": str(inbound_message.id)})
         
         message_saved_time = time.time()
         logger.debug(f"Inbound message saved in {message_saved_time - start_time:.3f}s")
         
-        span2 = trace.span(name="build_adapter")
         adapter = build_message_adapter(
             session=user.session,
             user=user,
@@ -291,12 +272,10 @@ async def process_core(
             trace_id=trace_id,
             db=db
         )
-        span2.end(metadata={"adapter_size": len(str(adapter))})
         
         adapter_built_time = time.time()
         logger.debug(f"Adapter built in {adapter_built_time - message_saved_time:.3f}s")
         
-        span3 = trace.span(name="orchestrator")
         orchestrator_response = None
         try:
             logger.info("Sending to orchestrator")
@@ -320,14 +299,6 @@ async def process_core(
         
         token_usage = extract_token_usage(orchestrator_response)
         
-        span3.end(
-            metadata={
-                "tokens_in": token_usage.get("prompt_in", 0),
-                "tokens_out": token_usage.get("completion_out", 0),
-                "response_length": len(orchestrator_response.get("text", ""))
-            }
-        )
-        
         orchestration_time = time.time()
         logger.debug(f"Orchestration completed in {orchestration_time - adapter_built_time:.3f}s")
         
@@ -335,7 +306,6 @@ async def process_core(
         if orchestrator_response and isinstance(orchestrator_response, dict):
             response_text = orchestrator_response.get("text", DEFAULT_RESPONSE_TEXT)
         
-        span4 = trace.span(name="save_outbound_message")
         response_message = save_outbound_message(
             db,
             session_id=user.session_id,
@@ -346,7 +316,6 @@ async def process_core(
             meta_info=meta_info,
             trace_id=trace_id
         )
-        span4.end(metadata={"response_id": str(response_message.id)})
         
         response_saved_time = time.time()
         logger.debug(f"Response message saved in {response_saved_time - orchestration_time:.3f}s")
@@ -398,46 +367,20 @@ async def process_core(
             "timestamp": get_current_datetime().isoformat()
         }
         
-        trace.update(
-            output={
-                "message_id": str(inbound_message.id),
-                "response_id": str(response_message.id)
-            },
-            metadata={
-                "processing_time_ms": round(total_time * 1000, 2)
-            }
-        )
-        
         logger.info(f"Processed message successfully in {total_time:.3f}s")
         return result_data
         
     except ValidationError as e:
         logger.warning(f"Validation error: {str(e)}")
-        trace.update(
-            level="ERROR",
-            status_message=f"Validation error: {str(e)}"
-        )
         raise
     except ResourceNotFoundError as e:
         logger.warning(f"Resource not found: {str(e)}")
-        trace.update(
-            level="ERROR",
-            status_message=f"Resource not found: {str(e)}"
-        )
         raise
     except SQLAlchemyError as e:
-        trace.update(
-            level="ERROR",
-            status_message=f"Database error: {str(e)}"
-        )
         handle_database_error(e, "process_core", logger, trace_id=trace_id)
     except Exception as e:
         error_msg = f"Unexpected error in core processing: {str(e)}"
         logger.exception(error_msg)
-        trace.update(
-            level="ERROR",
-            status_message=error_msg
-        )
         raise OrchestrationError(
             error_msg,
             error_code=ErrorCode.ORCHESTRATION_ERROR,
