@@ -11,3 +11,8 @@ from db.models.messages import MessageModel
 from db.models.session_token_usage import SessionTokenUsageModel
 from db.models.templates import TemplateModel
 from db.models.idempotency_locks import IdempotencyLockModel
+from db.models.intent_types import IntentTypeModel
+from db.models.intent_ledger import IntentLedgerModel
+from db.models.actions import ActionModel
+from db.models.schemas import SchemaModel
+from db.models.workflows import WorkflowModel

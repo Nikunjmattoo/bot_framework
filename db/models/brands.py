@@ -20,5 +20,5 @@ class BrandModel(Base):
     
     # Relationships
     instances = relationship("InstanceModel", back_populates="brand", cascade="all, delete-orphan")
-    # Update this relationship with back_populates to resolve the warning
     user_identifiers = relationship("UserIdentifierModel", back_populates="brand")
+    schemas = relationship("SchemaModel", back_populates="brand", cascade="all, delete-orphan")

@@ -24,4 +24,6 @@ class InstanceModel(Base):
     configs = relationship("InstanceConfigModel", back_populates="instance", cascade="all, delete-orphan")
     messages = relationship("MessageModel", back_populates="instance")
     sessions = relationship("SessionModel", back_populates="instance")
+    actions = relationship("ActionModel", back_populates="instance", cascade="all, delete-orphan")
+    workflows = relationship("WorkflowModel", back_populates="instance", cascade="all, delete-orphan")
 

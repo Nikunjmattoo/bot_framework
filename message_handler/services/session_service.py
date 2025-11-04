@@ -173,6 +173,9 @@ def get_or_create_session(
                 last_message_at=now,
                 token_plan_json=None  # Will be initialized by token service
             )
+
+            new_session.initialize_default_state()
+
             tx.add(new_session)
             tx.flush()
             
