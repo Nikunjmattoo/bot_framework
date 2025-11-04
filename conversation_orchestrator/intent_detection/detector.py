@@ -127,7 +127,8 @@ async def detect_intents(
             model=api_model_name,
             temperature=temperature,
             max_tokens=max_tokens,
-            trace_id=trace_id
+            trace_id=trace_id,
+            response_format={"type": "json_object"}  # Force JSON output (no markdown)
         )
         
         logger.info(

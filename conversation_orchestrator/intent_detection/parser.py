@@ -33,6 +33,19 @@ def parse_intent_response(response_content: str) -> IntentOutput:
         IntentDetectionError: If parsing fails
     """
     try:
+        # Strip whitespace
+        response_content = response_content.strip()
+        
+        # Remove markdown code fences if present (defensive parsing)
+        if response_content.startswith('```'):
+            lines = response_content.split('\n')
+            # Remove first line (```json or ``` or ```JSON)
+            lines = lines[1:]
+            # Remove last line if it's ```
+            if lines and lines[-1].strip() == '```':
+                lines = lines[:-1]
+            response_content = '\n'.join(lines).strip()
+        
         # Parse JSON
         data = json.loads(response_content)
         
