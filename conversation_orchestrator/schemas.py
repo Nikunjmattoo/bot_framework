@@ -47,7 +47,19 @@ class EnrichedContext(BaseModel):
         None,
         description="Next narrative guidance from previous turn"
     )
-
+    
+    # NEW: Brain state and popular actions
+    brain_state: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Brain state containing 6 wires"
+    )
+    popular_actions: List[str] = Field(
+        default_factory=list,
+        description="Popular actions for this instance"
+    )
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 class TemplateVariables(BaseModel):
     """Variables to fill in template."""

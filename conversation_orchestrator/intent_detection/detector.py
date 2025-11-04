@@ -15,7 +15,9 @@ from conversation_orchestrator.services.db_service import (
     fetch_previous_messages,
     fetch_active_task,
     fetch_next_narrative,
-    fetch_template_string
+    fetch_template_string,
+    fetch_brain_state,
+    fetch_popular_actions
 )
 from conversation_orchestrator.services.template_service import (
     fill_template,
@@ -90,7 +92,8 @@ async def detect_intents(
         
         # Step 4: Fetch enrichment data
         session_id = adapter_payload.get("session_id")
-        enriched = _fetch_enrichment_data(session_id, trace_id)
+        instance_id = adapter_payload.get("routing", {}).get("instance_id")
+        enriched = _fetch_enrichment_data(session_id, instance_id, trace_id)
         
         # Step 5: Build template variables
         user_message = adapter_payload.get("message", {}).get("content", "")
@@ -195,12 +198,13 @@ async def detect_intents(
         ) from e
 
 
-def _fetch_enrichment_data(session_id: str, trace_id: str) -> EnrichedContext:
+def _fetch_enrichment_data(session_id: str, instance_id: str, trace_id: str) -> EnrichedContext:
     """
     Fetch enrichment data from database.
     
     Args:
         session_id: Session identifier
+        instance_id: Instance identifier  # ← ADD THIS PARAMETER
         trace_id: Trace ID for logging
     
     Returns:
@@ -214,8 +218,14 @@ def _fetch_enrichment_data(session_id: str, trace_id: str) -> EnrichedContext:
     # Fetch all data
     session_summary = fetch_session_summary(session_id)
     previous_messages = fetch_previous_messages(session_id, limit=4)
-    active_task = fetch_active_task(session_id)
+    active_task = fetch_active_task(session_id)  # ← DEPRECATED: Will be replaced by brain state
     next_narrative = fetch_next_narrative(session_id)
+    
+    # NEW: Fetch brain state (6 wires)
+    brain_state = fetch_brain_state(session_id)
+    
+    # NEW: Fetch popular actions (wire 7)
+    popular_actions = fetch_popular_actions(instance_id)
     
     enriched = EnrichedContext(
         session_summary=session_summary,
@@ -224,6 +234,11 @@ def _fetch_enrichment_data(session_id: str, trace_id: str) -> EnrichedContext:
         next_narrative=next_narrative
     )
     
+    # Store brain state and popular actions in enriched context
+    # We'll access these directly in _build_template_variables
+    enriched.brain_state = brain_state
+    enriched.popular_actions = popular_actions
+    
     logger.info(
         "intent_detection:enrichment_fetched",
         extra={
@@ -231,12 +246,14 @@ def _fetch_enrichment_data(session_id: str, trace_id: str) -> EnrichedContext:
             "has_summary": session_summary is not None,
             "messages_count": len(previous_messages),
             "has_task": active_task is not None,
-            "has_narrative": next_narrative is not None
+            "has_narrative": next_narrative is not None,
+            "has_brain_state": bool(brain_state),
+            "expecting_response": brain_state.get("expecting_response", False),
+            "popular_actions_count": len(popular_actions)
         }
     )
     
     return enriched
-
 
 def _build_template_variables(
     user_message: str,
@@ -258,18 +275,35 @@ def _build_template_variables(
     Returns:
         Dict of template variables
     """
+    # Extract brain state from enriched context
+    brain_state = getattr(enriched, 'brain_state', {})
+    popular_actions = getattr(enriched, 'popular_actions', [])
+    
     return {
+        # Basic context (5 variables) - EXISTING ✅
         "user_message": user_message,
         "user_id": user_id,
         "session_id": session_id,
         "user_type": user_type,
         "session_summary": enriched.session_summary or "[No session summary]",
+        
+        # Message history (1 variable) - EXISTING ✅
         "previous_messages": format_messages(enriched.previous_messages),
-        "active_task": format_active_task(enriched.active_task),
+        
+        # Brain wires (6 variables) - NEW ✅
+        "expecting_response": brain_state.get("expecting_response", False),
+        "answer_sheet": brain_state.get("answer_sheet"),
+        "active_task": brain_state.get("active_task") or format_active_task(enriched.active_task),  # Fallback to old column
+        "previous_intents": brain_state.get("previous_intents", []),
+        "available_signals": brain_state.get("available_signals", []),
+        "conversation_context": brain_state.get("conversation_context", {}),
+        
+        # Brain output (1 variable) - EXISTING ✅
         "next_narrative": enriched.next_narrative or "[No narrative guidance]",
-        "expected_response": "[No expected response]"  # Placeholder - will be populated by brain
+        
+        # Instance config (1 variable) - NEW ✅
+        "popular_actions": popular_actions
     }
-
 
 def _trigger_cold_paths_async(
     session_id: str,

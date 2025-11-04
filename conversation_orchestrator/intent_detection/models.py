@@ -12,27 +12,19 @@ from pydantic import BaseModel, Field
 # Intent type enum must be defined first
 class IntentType(str, Enum):
     """
-    10 core intent types.
+    8 core intent types (matches intents.md).
     """
-    # Session management
+    # Self-Respond Intents (4)
     GREETING = "greeting"
     GOODBYE = "goodbye"
-    
-    # System
-    HELP = "help"
-    FALLBACK = "fallback"
-    
-    # Confirmation
-    AFFIRM = "affirm"
-    DENY = "deny"
-    
-    # Conversational
-    CHITCHAT = "chitchat"
     GRATITUDE = "gratitude"
-    CLARIFICATION = "clarification"
+    CHITCHAT = "chitchat"
     
-    # Functional (requires brain)
+    # Brain-Required Intents (4)
     ACTION = "action"
+    HELP = "help"
+    RESPONSE = "response"
+    UNKNOWN = "unknown"
 
 
 # Constants for intent classification (using IntentType enum)
@@ -44,12 +36,10 @@ SELF_RESPOND_INTENTS = {
 }
 
 BRAIN_REQUIRED_INTENTS = {
+    IntentType.ACTION,
     IntentType.HELP,
-    IntentType.FALLBACK,
-    IntentType.AFFIRM,
-    IntentType.DENY,
-    IntentType.CLARIFICATION,
-    IntentType.ACTION
+    IntentType.RESPONSE,
+    IntentType.UNKNOWN
 }
 
 MIN_CONFIDENCE = 0.7

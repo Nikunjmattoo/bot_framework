@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 import asyncio
+import logging
 
 from db.models.actions import ActionModel
 from db.models.workflows import WorkflowModel
@@ -43,6 +44,8 @@ from .action_planner import (
     check_params,
     should_skip_workflow_action
 )
+
+logger = logging.getLogger(__name__)
 
 
 # Timeout configuration (seconds)
@@ -450,7 +453,83 @@ async def process_with_brain(
         'queue_paused': False
     }, db)
     
-    # Step 9: Process queue
+    # Step 9: POPULATE BRAIN STATE FOR INTENT DETECTOR ✅
+    # This populates the 6 wires that Intent Detector needs for next turn
+    
+    # Wire 3: active_task
+    active_task_state = None
+    if action_queue:
+        first_action = action_queue[0]
+        active_task_state = {
+            "task_id": first_action.get("intent_id"),
+            "canonical_action": first_action.get("canonical_action"),
+            "params_collected": first_action.get("params_collected", {}),
+            "params_missing": first_action.get("params_missing", []),
+            "status": first_action.get("status", "queued"),
+            "created_at": first_action.get("created_at"),
+            "last_activity_at": first_action.get("last_activity_at")
+        }
+    
+    # Wire 4: previous_intents
+    previous_intents_state = []
+    for i, action_data in enumerate(ordered_actions):
+        previous_intents_state.append({
+            "intent_type": action_data['intent'].get('intent_type'),
+            "canonical_action": action_data['action'].canonical_name,
+            "confidence": action_data['intent'].get('confidence'),
+            "sequence": action_data['intent'].get('sequence'),
+            "turn": turn_number
+        })
+    
+    # Wire 6: conversation_context
+    conversation_context_state = {
+        "domain": "general",  # TODO: Derive from instance config later
+        "user_state": "queued_actions" if action_queue else "idle",
+        "last_action": previous_intents_state[-1].get("canonical_action") if previous_intents_state else None,
+        "pending_confirmation": False,  # Will be set when we implement confirmation logic
+        "turn_number": turn_number
+    }
+    
+    # Wire 1: expecting_response (default False for now, will be set when collecting params)
+    expecting_response_state = False
+    
+    # Wire 2: answer_sheet (default None for now, will be set when collecting params)
+    answer_sheet_state = None
+    
+    # Wire 5: available_signals (derived from answer_sheet)
+    available_signals_state = []
+    if answer_sheet_state:
+        # Extract all signal variants from answer_sheet options
+        options = answer_sheet_state.get("options", {})
+        for key, variants in options.items():
+            available_signals_state.append(key)
+            available_signals_state.extend(variants)
+        # Remove duplicates
+        available_signals_state = list(set(available_signals_state))
+    
+    # Update session state with all 6 wires
+    update_session_state(session_id, {
+        "expecting_response": expecting_response_state,
+        "answer_sheet": answer_sheet_state,
+        "active_task": active_task_state,
+        "previous_intents": previous_intents_state,
+        "conversation_context": conversation_context_state,
+        "available_signals": available_signals_state
+    }, db)
+    
+    logger.info(
+        "brain:state_populated",
+        extra={
+            "session_id": session_id,
+            "expecting_response": expecting_response_state,
+            "has_answer_sheet": answer_sheet_state is not None,
+            "has_active_task": active_task_state is not None,
+            "previous_intents_count": len(previous_intents_state),
+            "available_signals_count": len(available_signals_state)
+        }
+    )
+    
+    # Step 10: Process queue (COMMENTED OUT - TO BE IMPLEMENTED LATER)
     # NOTE: Actual queue processing would go here
     # For now, returning placeholder
     
@@ -461,4 +540,4 @@ async def process_with_brain(
         'status': 'completed',
         'actions_completed': [],
         'actions_pending': [a['canonical_action'] for a in action_queue]
-    }   
+    }

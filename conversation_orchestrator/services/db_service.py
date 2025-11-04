@@ -499,3 +499,133 @@ async def fetch_template_config(template_key: str) -> Dict[str, Any]:
             error_code="DB_FETCH_ERROR",
             details={"template_key": template_key}
         ) from e
+    
+def fetch_brain_state(session_id: str) -> Dict[str, Any]:
+    """
+    Fetch brain state from sessions.state JSONB column.
+    
+    Returns all 6 brain wires:
+    - expecting_response
+    - answer_sheet
+    - active_task
+    - previous_intents
+    - conversation_context
+    - available_signals
+    
+    Args:
+        session_id: Session identifier
+    
+    Returns:
+        Dictionary with brain state or empty dict if not found
+    
+    Raises:
+        DatabaseError: If database operation fails
+    """
+    try:
+        db: Session = next(get_db())
+        
+        try:
+            # Fetch session
+            session = db.query(SessionModel).filter(
+                SessionModel.id == session_id
+            ).first()
+            
+            if not session:
+                logger.warning(
+                    "db_service:session_not_found_for_brain_state",
+                    extra={"session_id": session_id}
+                )
+                return {}
+            
+            # Get state or return empty dict
+            state = session.state if session.state else {}
+            
+            logger.debug(
+                "db_service:brain_state_fetched",
+                extra={
+                    "session_id": session_id,
+                    "has_state": bool(state),
+                    "expecting_response": state.get("expecting_response", False)
+                }
+            )
+            
+            return state
+        
+        finally:
+            db.close()
+    
+    except Exception as e:
+        logger.error(
+            "db_service:fetch_brain_state_error",
+            extra={"session_id": session_id, "error": str(e)}
+        )
+        raise DatabaseError(
+            message=f"Failed to fetch brain state: {str(e)}",
+            error_code="DB_FETCH_ERROR",
+            details={"session_id": session_id}
+        ) from e
+
+
+def fetch_popular_actions(instance_id: str) -> List[str]:
+    """
+    Fetch popular_actions from instance_configs.config JSONB column.
+    
+    Returns list of 3-7 most common action names for this instance.
+    Falls back to empty list if not configured.
+    
+    Args:
+        instance_id: Instance UUID
+    
+    Returns:
+        List of action names (e.g., ["apply_job", "search_jobs"])
+        Empty list if not configured or instance not found
+    
+    Raises:
+        DatabaseError: If database operation fails
+    """
+    try:
+        db: Session = next(get_db())
+        
+        try:
+            from db.models.instance_configs import InstanceConfigModel
+            
+            # Fetch active config for instance
+            config = db.query(InstanceConfigModel).filter(
+                InstanceConfigModel.instance_id == instance_id,
+                InstanceConfigModel.is_active == True
+            ).first()
+            
+            if not config:
+                logger.debug(
+                    "db_service:instance_config_not_found",
+                    extra={"instance_id": instance_id}
+                )
+                return []
+            
+            # Use helper method to get popular_actions
+            popular_actions = config.get_popular_actions()
+            
+            logger.debug(
+                "db_service:popular_actions_fetched",
+                extra={
+                    "instance_id": instance_id,
+                    "actions_count": len(popular_actions),
+                    "actions": popular_actions
+                }
+            )
+            
+            return popular_actions
+        
+        finally:
+            db.close()
+    
+    except Exception as e:
+        logger.error(
+            "db_service:fetch_popular_actions_error",
+            extra={"instance_id": instance_id, "error": str(e)}
+        )
+        raise DatabaseError(
+            message=f"Failed to fetch popular actions: {str(e)}",
+            error_code="DB_FETCH_ERROR",
+            details={"instance_id": instance_id}
+        ) from e
