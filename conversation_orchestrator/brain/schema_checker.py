@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import requests
 from sqlalchemy.orm import Session
 
+from db.db import get_db
 from db.models.schemas import SchemaModel
 from db.models.brands import BrandModel
 
@@ -24,7 +25,6 @@ def fetch_schema_data(
     schema_key: str,
     user_id: str,
     brand_id: str,
-    db: Session,
     force_refresh: bool = False
 ) -> Optional[Dict[str, Any]]:
     """
@@ -36,7 +36,6 @@ def fetch_schema_data(
         schema_key: Schema identifier (e.g., "user_profile")
         user_id: User UUID
         brand_id: Brand UUID
-        db: Database session
         force_refresh: Skip cache and fetch fresh data
         
     Returns:
@@ -55,51 +54,61 @@ def fetch_schema_data(
             # Cache still valid
             return cached['data']
     
-    # Load schema definition
-    schema = db.query(SchemaModel).filter(
-        SchemaModel.schema_key == schema_key,
-        SchemaModel.brand_id == brand_id
-    ).first()
-    
-    if not schema:
-        return None
-    
-    # Load brand for API base URL
-    brand = db.query(BrandModel).filter(BrandModel.id == brand_id).first()
-    
-    if not brand or not brand.extra_config:
-        return None
-    
-    brand_api_base = brand.extra_config.get('api_base_url')
-    
-    if not brand_api_base:
-        return None
-    
-    # Build API endpoint
-    api_endpoint = schema.api_endpoint.replace('{user_id}', str(user_id))
-    api_url = f"{brand_api_base}{api_endpoint}"
-    
-    # Fetch data
     try:
-        response = requests.get(api_url, timeout=5)
-        
-        if response.status_code == 200:
-            data = response.json()
+        db: Session = next(get_db())
+        try:
+            # Load schema definition
+            schema = db.query(SchemaModel).filter(
+                SchemaModel.schema_key == schema_key,
+                SchemaModel.brand_id == brand_id
+            ).first()
             
-            # Cache the result
-            _schema_cache[cache_key] = {
-                'data': data,
-                'fetched_at': datetime.utcnow(),
-                'ttl': schema.cache_ttl_seconds
-            }
+            if not schema:
+                return None
             
-            return data
-        else:
-            return None
-    
+            # Load brand for API base URL
+            brand = db.query(BrandModel).filter(BrandModel.id == brand_id).first()
+            
+            if not brand or not brand.extra_config:
+                return None
+            
+            brand_api_base = brand.extra_config.get('api_base_url')
+            
+            if not brand_api_base:
+                return None
+            
+            # Build API endpoint
+            api_endpoint = schema.api_endpoint.replace('{user_id}', str(user_id))
+            api_url = f"{brand_api_base}{api_endpoint}"
+            
+            # Fetch data
+            try:
+                response = requests.get(api_url, timeout=5)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Cache the result
+                    _schema_cache[cache_key] = {
+                        'data': data,
+                        'fetched_at': datetime.utcnow(),
+                        'ttl': schema.cache_ttl_seconds
+                    }
+                    
+                    return data
+                else:
+                    return None
+            
+            except Exception as e:
+                # Log error (would use proper logging in production)
+                print(f"Error fetching schema {schema_key}: {str(e)}")
+                return None
+                
+        finally:
+            db.close()
+            
     except Exception as e:
-        # Log error (would use proper logging in production)
-        print(f"Error fetching schema {schema_key}: {str(e)}")
+        print(f"Error in fetch_schema_data: {str(e)}")
         return None
 
 
@@ -107,8 +116,7 @@ def check_schema_completeness(
     schema_key: str,
     required_fields: List[str],
     user_id: str,
-    brand_id: str,
-    db: Session
+    brand_id: str
 ) -> Tuple[bool, List[str]]:
     """
     Check if all required fields exist in schema data.
@@ -118,13 +126,12 @@ def check_schema_completeness(
         required_fields: List of field names that must exist
         user_id: User UUID
         brand_id: Brand UUID
-        db: Database session
         
     Returns:
         Tuple of (is_complete, missing_fields)
     """
     # Fetch schema data
-    data = fetch_schema_data(schema_key, user_id, brand_id, db)
+    data = fetch_schema_data(schema_key, user_id, brand_id)
     
     if data is None:
         # Fetch failed - all fields are missing
@@ -148,8 +155,7 @@ def check_schema_completeness(
 def check_multiple_schemas(
     schema_dependencies: List[Dict[str, Any]],
     user_id: str,
-    brand_id: str,
-    db: Session
+    brand_id: str
 ) -> Tuple[bool, List[str]]:
     """
     Check multiple schema dependencies at once.
@@ -159,7 +165,6 @@ def check_multiple_schemas(
                             Each: {"schema_key": "...", "required_fields": [...]}
         user_id: User UUID
         brand_id: Brand UUID
-        db: Database session
         
     Returns:
         Tuple of (all_complete, blocking_reasons)
@@ -187,8 +192,7 @@ def check_multiple_schemas(
             schema_key,
             required_fields,
             user_id,
-            brand_id,
-            db
+            brand_id
         )
         
         if not is_complete:
@@ -209,8 +213,7 @@ def check_multiple_schemas(
 def check_schema_exists(
     schema_key: str,
     user_id: str,
-    brand_id: str,
-    db: Session
+    brand_id: str
 ) -> bool:
     """
     Check if schema data exists for user (any data, regardless of completeness).
@@ -221,12 +224,11 @@ def check_schema_exists(
         schema_key: Schema identifier
         user_id: User UUID
         brand_id: Brand UUID
-        db: Database session
         
     Returns:
         True if schema data exists
     """
-    data = fetch_schema_data(schema_key, user_id, brand_id, db)
+    data = fetch_schema_data(schema_key, user_id, brand_id)
     
     # Consider it "exists" if we got any non-empty data
     if data and len(data) > 0:
@@ -239,8 +241,7 @@ def check_data_exists(
     schema_key: str,
     field_name: str,
     user_id: str,
-    brand_id: str,
-    db: Session
+    brand_id: str
 ) -> bool:
     """
     Check if specific data field exists for user.
@@ -252,12 +253,11 @@ def check_data_exists(
         field_name: Field name to check (supports dot notation)
         user_id: User UUID
         brand_id: Brand UUID
-        db: Database session
         
     Returns:
         True if field exists and is not null/empty
     """
-    data = fetch_schema_data(schema_key, user_id, brand_id, db)
+    data = fetch_schema_data(schema_key, user_id, brand_id)
     
     if data is None:
         return False
@@ -340,8 +340,7 @@ def _get_nested_value(data: Dict[str, Any], field_path: str) -> Any:
 def get_schema_summary(
     schema_key: str,
     user_id: str,
-    brand_id: str,
-    db: Session
+    brand_id: str
 ) -> Dict[str, Any]:
     """
     Get summary of schema completeness for debugging.
@@ -350,55 +349,67 @@ def get_schema_summary(
         schema_key: Schema identifier
         user_id: User UUID
         brand_id: Brand UUID
-        db: Database session
         
     Returns:
         Summary dictionary with completeness info
     """
-    # Load schema definition
-    schema = db.query(SchemaModel).filter(
-        SchemaModel.schema_key == schema_key,
-        SchemaModel.brand_id == brand_id
-    ).first()
-    
-    if not schema:
+    try:
+        db: Session = next(get_db())
+        try:
+            # Load schema definition
+            schema = db.query(SchemaModel).filter(
+                SchemaModel.schema_key == schema_key,
+                SchemaModel.brand_id == brand_id
+            ).first()
+            
+            if not schema:
+                return {
+                    'schema_key': schema_key,
+                    'exists': False,
+                    'error': 'schema_not_defined'
+                }
+            
+            # Fetch data
+            data = fetch_schema_data(schema_key, user_id, brand_id)
+            
+            if data is None:
+                return {
+                    'schema_key': schema_key,
+                    'exists': True,
+                    'data_fetched': False,
+                    'error': 'fetch_failed'
+                }
+            
+            # Check required fields
+            required_fields = schema.required_fields or []
+            field_status = {}
+            
+            for field in required_fields:
+                value = _get_nested_value(data, field)
+                field_status[field] = {
+                    'exists': value is not None and value != '',
+                    'value_preview': str(value)[:50] if value else None
+                }
+            
+            missing_count = sum(1 for f in field_status.values() if not f['exists'])
+            
+            return {
+                'schema_key': schema_key,
+                'exists': True,
+                'data_fetched': True,
+                'required_fields_count': len(required_fields),
+                'complete_fields_count': len(required_fields) - missing_count,
+                'missing_fields_count': missing_count,
+                'is_complete': missing_count == 0,
+                'fields': field_status
+            }
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
         return {
             'schema_key': schema_key,
             'exists': False,
-            'error': 'schema_not_defined'
+            'error': f'exception: {str(e)}'
         }
-    
-    # Fetch data
-    data = fetch_schema_data(schema_key, user_id, brand_id, db)
-    
-    if data is None:
-        return {
-            'schema_key': schema_key,
-            'exists': True,
-            'data_fetched': False,
-            'error': 'fetch_failed'
-        }
-    
-    # Check required fields
-    required_fields = schema.required_fields or []
-    field_status = {}
-    
-    for field in required_fields:
-        value = _get_nested_value(data, field)
-        field_status[field] = {
-            'exists': value is not None and value != '',
-            'value_preview': str(value)[:50] if value else None
-        }
-    
-    missing_count = sum(1 for f in field_status.values() if not f['exists'])
-    
-    return {
-        'schema_key': schema_key,
-        'exists': True,
-        'data_fetched': True,
-        'required_fields_count': len(required_fields),
-        'complete_fields_count': len(required_fields) - missing_count,
-        'missing_fields_count': missing_count,
-        'is_complete': missing_count == 0,
-        'fields': field_status
-    }

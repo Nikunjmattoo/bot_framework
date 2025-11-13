@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 import asyncio
 import logging
+from db.db import get_db
 
 from db.models.actions import ActionModel
 from db.models.workflows import WorkflowModel
@@ -56,7 +57,7 @@ TIMEOUT_CONFIG = {
 }
 
 
-async def check_and_handle_timeouts(session_id: str, db: Session) -> Dict[str, Any]:
+async def check_and_handle_timeouts(session_id: str) -> Dict[str, Any]:
     """
     Check action queue for expired actions and clean them up.
     
@@ -69,7 +70,7 @@ async def check_and_handle_timeouts(session_id: str, db: Session) -> Dict[str, A
             'should_notify': bool
         }
     """
-    state = get_session_state(session_id, db)
+    state = get_session_state(session_id)
     action_queue = state.get('action_queue', [])
     
     now = datetime.utcnow()
@@ -90,12 +91,12 @@ async def check_and_handle_timeouts(session_id: str, db: Session) -> Dict[str, A
                 queued_action['status'] = 'expired'
                 queued_action['expired_at'] = now.isoformat()
                 queued_action['expiry_reason'] = f'timeout_in_{status}'
-                update_action_in_queue(session_id, i, queued_action, db)
+                update_action_in_queue(session_id, i, queued_action)
                 
                 # Update intent ledger
                 intent_id = queued_action.get('intent_id')
                 if intent_id:
-                    update_intent_status(intent_id, 'cancelled', db, blocked_reason=f'timeout_{status}')
+                    update_intent_status(intent_id, 'cancelled', blocked_reason=f'timeout_{status}')
                 
                 expired_actions.append(queued_action['canonical_action'])
         
@@ -107,11 +108,11 @@ async def check_and_handle_timeouts(session_id: str, db: Session) -> Dict[str, A
             queued_action['status'] = 'expired'
             queued_action['expired_at'] = now.isoformat()
             queued_action['expiry_reason'] = 'max_queue_age_exceeded'
-            update_action_in_queue(session_id, i, queued_action, db)
+            update_action_in_queue(session_id, i, queued_action)
             
             intent_id = queued_action.get('intent_id')
             if intent_id:
-                update_intent_status(intent_id, 'cancelled', db, blocked_reason='queue_expired')
+                update_intent_status(intent_id, 'cancelled', blocked_reason='queue_expired')
             
             expired_actions.append(queued_action['canonical_action'])
     
@@ -121,7 +122,7 @@ async def check_and_handle_timeouts(session_id: str, db: Session) -> Dict[str, A
         update_session_state(session_id, {
             'action_queue': action_queue,
             'current_action_index': 0
-        }, db)
+        })
     
     return {
         'cleaned_count': len(expired_actions),
@@ -160,147 +161,132 @@ def detect_conflicts(actions_data: List[Dict[str, Any]]) -> List[Dict[str, str]]
 
 def order_actions_by_dependencies(
     actions_data: List[Dict[str, Any]],
-    user_id: str,
-    db: Session
+    user_id: str
 ) -> List[Dict[str, Any]]:
     """
     Order actions by dependency resolution.
     
     Uses topological sort to ensure dependencies execute first.
     """
-    # Build dependency graph
-    graph = {}
-    action_map = {}
-    
-    for action_data in actions_data:
-        action = action_data['action']
-        canonical_name = action.canonical_name
-        
-        action_map[canonical_name] = action_data
-        
-        # Get dependencies
-        prereqs = action.get_prerequisites()
-        depends_on = prereqs.get('depends_on_actions', [])
-        
-        # Filter out already fulfilled dependencies
-        unfulfilled_deps = [
-            dep for dep in depends_on
-            if not check_action_completed(dep, user_id, db)
-        ]
-        
-        graph[canonical_name] = unfulfilled_deps
-    
-    # Topological sort
-    sorted_names = topological_sort(graph)
-    
-    # Rebuild actions_data in sorted order
-    sorted_actions = []
-    for name in sorted_names:
-        if name in action_map:
-            sorted_actions.append(action_map[name])
-    
-    return sorted_actions
+    try:
+        db: Session = next(get_db())
+        try:
+            # Build dependency graph
+            graph = {}
+            action_map = {}
+            
+            for action_data in actions_data:
+                action = action_data['action']
+                canonical_name = action.canonical_name
+                
+                action_map[canonical_name] = action_data
+                graph[canonical_name] = action.prerequisite_actions or []
+            
+            # Topological sort
+            visited = set()
+            sorted_actions = []
+            
+            def visit(action_name):
+                if action_name in visited:
+                    return
+                
+                visited.add(action_name)
+                
+                # Visit dependencies first
+                for dep in graph.get(action_name, []):
+                    if dep in action_map:
+                        visit(dep)
+                
+                # Then add this action
+                if action_name in action_map:
+                    sorted_actions.append(action_map[action_name])
+            
+            # Visit all actions
+            for action_name in graph.keys():
+                visit(action_name)
+            
+            return sorted_actions
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error ordering actions: {e}")
+        # If ordering fails, return original order
+        return actions_data
 
 
-def topological_sort(graph: Dict[str, List[str]]) -> List[str]:
-    """
-    Topological sort using Kahn's algorithm.
-    """
-    # Calculate in-degree
-    in_degree = {node: 0 for node in graph}
-    for deps in graph.values():
-        for dep in deps:
-            if dep in in_degree:
-                in_degree[dep] += 1
-    
-    # Find nodes with no dependencies
-    queue = [node for node, degree in in_degree.items() if degree == 0]
-    sorted_list = []
-    
-    while queue:
-        current = queue.pop(0)
-        sorted_list.append(current)
-        
-        # Reduce in-degree for dependents
-        for dependent in graph.get(current, []):
-            if dependent in in_degree:
-                in_degree[dependent] -= 1
-                if in_degree[dependent] == 0:
-                    queue.append(dependent)
-    
-    return sorted_list
-
-
-def expand_workflow_into_queue(
+def expand_workflow(
     action: ActionModel,
-    user_id: str,
-    brand_id: str,
     session_id: str,
-    db: Session
+    user_id: str,
+    brand_id: str
 ) -> List[Dict[str, Any]]:
     """
-    Expand workflow into individual action queue items.
+    Expand workflow action into individual steps.
     
-    Args:
-        action: The action that triggers the workflow
-        user_id: User UUID
-        brand_id: Brand UUID
-        session_id: Session UUID
-        db: Database session
-        
     Returns:
         List of action data dictionaries to add to queue
     """
-    if not action.workflow_id:
+    try:
+        db: Session = next(get_db())
+        try:
+            if not action.workflow_id:
+                return []
+            
+            # Load workflow actions
+            workflow_actions = db.query(ActionModel).filter(
+                ActionModel.workflow_id == action.workflow_id,
+                ActionModel.is_active == True
+            ).order_by(ActionModel.sequence_number).all()
+            
+            queue_additions = []
+            
+            for wf_action in workflow_actions:
+                # Check if should skip
+                should_skip, skip_reason = should_skip_workflow_action(wf_action, user_id, brand_id)
+                
+                if should_skip:
+                    # Log as skipped
+                    log_intent(
+                        session_id=session_id,
+                        intent_type_id='action',
+                        canonical_action=wf_action.canonical_name,
+                        confidence=1.0,
+                        turn_number=0,  # Workflow actions don't have turn numbers
+                        sequence_order=wf_action.sequence_number,
+                        entities={},
+                        reasoning=f'Skipped: {skip_reason}',
+                        response_type='brain_required',
+                        status='skipped'
+                    )
+                    continue
+                
+                # Add to queue
+                queue_additions.append({
+                    'intent_id': None,  # Workflow actions don't have original intents
+                    'canonical_action': wf_action.canonical_name,
+                    'sequence': wf_action.sequence_number,
+                    'priority': wf_action.sequence_number,
+                    'status': 'queued',
+                    'mode': 'execute',
+                    'source': 'workflow',
+                    'params_collected': {},
+                    'params_missing': [],
+                    'blocked_reasons': [],
+                    'stuck_count': 0,
+                    'created_at': datetime.utcnow().isoformat(),
+                    'last_activity_at': datetime.utcnow().isoformat()
+                })
+            
+            return queue_additions
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error expanding workflow: {e}")
         return []
-    
-    # Load workflow actions
-    workflow_actions = db.query(ActionModel).filter(
-        ActionModel.workflow_id == action.workflow_id,
-        ActionModel.is_active == True
-    ).order_by(ActionModel.sequence_number).all()
-    
-    queue_additions = []
-    
-    for wf_action in workflow_actions:
-        # Check if should skip
-        should_skip, skip_reason = should_skip_workflow_action(wf_action, user_id, brand_id, db)
-        
-        if should_skip:
-            # Log as skipped
-            log_intent(
-                session_id=session_id,
-                intent_type_id='action',
-                canonical_action=wf_action.canonical_name,
-                confidence=1.0,
-                turn_number=0,  # Workflow actions don't have turn numbers
-                sequence_order=wf_action.sequence_number,
-                entities={},
-                reasoning=f'Skipped: {skip_reason}',
-                response_type='brain_required',
-                db=db,
-                status='skipped'
-            )
-            continue
-        
-        # Add to queue
-        queue_additions.append({
-            'intent_id': None,  # Workflow actions don't have original intents
-            'canonical_action': wf_action.canonical_name,
-            'sequence': wf_action.sequence_number,
-            'priority': wf_action.sequence_number,
-            'status': 'queued',
-            'mode': 'execute',
-            'source': 'workflow',
-            'params_collected': {},
-            'params_missing': [],
-            'blocked_reasons': [],
-            'stuck_count': 0,
-            'created_at': datetime.utcnow().isoformat(),
-            'last_activity_at': datetime.utcnow().isoformat()
-        })
-    
-    return queue_additions
 
 
 async def process_with_brain(
@@ -309,242 +295,252 @@ async def process_with_brain(
     user_id: str,
     instance_id: str,
     brand_id: str,
-    turn_number: int,
-    db: Session
+    turn_number: int
 ) -> Dict[str, Any]:
     """
     Main Brain entry point.
     
     Processes intents detected by LLM and orchestrates action execution.
     
+    Flow:
+    1. Check for stuck/expired actions (timeouts)
+    2. For each detected intent:
+       a. Log to intent_ledger
+       b. Map to canonical_action
+       c. Check eligibility (auth, limits, prerequisites, schemas)
+       d. Add to action_queue or respond with blocker
+    3. Process action_queue (if not paused)
+    4. Return response (text + metadata)
+    
     Args:
-        intent_result: Result from intent detector
+        intent_result: Output from intent detector
         session_id: Session UUID
         user_id: User UUID
         instance_id: Instance UUID
-        brand_id: Brand UUID
-        turn_number: Current conversation turn
-        db: Database session
+        brand_id: Brand identifier
+        turn_number: Current turn number
         
     Returns:
         {
-            'text': str,  # Response to user
-            'status': str,  # 'completed', 'waiting_input', 'error'
+            'text': str,
+            'status': str,
             'actions_completed': List[str],
             'actions_pending': List[str]
         }
     """
-    # Step 1: Check for expired actions
-    timeout_result = await check_and_handle_timeouts(session_id, db)
-    
-    response_parts = []
-    
-    if timeout_result['should_notify']:
-        expired_list = ', '.join(timeout_result['expired_actions'])
-        response_parts.append(f"⏰ Previous actions expired: {expired_list}")
-    
-    # Step 2: Load user
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
-    
-    # Step 3: Extract intents
-    intents = intent_result.get('intents', [])
-    
-    if not intents:
-        return {
-            'text': "I didn't detect any intent.",
-            'status': 'error',
-            'actions_completed': [],
-            'actions_pending': []
-        }
-    
-    # Step 4: Log all intents
-    intent_ids = []
-    for intent in intents:
-        intent_id = log_intent(
-            session_id=session_id,
-            intent_type_id=intent.get('intent_type', 'action'),
-            canonical_action=intent.get('canonical_intent'),  # ← FIXED: was canonical_action
-            confidence=intent.get('confidence', 0.0),
-            turn_number=turn_number,
-            sequence_order=intent.get('sequence', 0),
-            entities=intent.get('entities', {}),
-            reasoning=intent.get('reasoning'),
-            response_type='brain_required',
-            db=db
-        )
-        intent_ids.append(intent_id)
-    
-    # Step 5: Load actions from database
-    actions_data = []
-    
-    for i, intent in enumerate(intents):
-        canonical_action = intent.get('canonical_intent')  # ← FIXED: was canonical_action
-        
-        if not canonical_action:
-            continue
-        
-        action = db.query(ActionModel).filter(
-            ActionModel.canonical_name == canonical_action,
-            ActionModel.instance_id == instance_id,
-            ActionModel.is_active == True
-        ).first()
-        
-        if not action:
-            update_intent_status(intent_ids[i], 'failed', db, blocked_reason='action_not_found')
-            response_parts.append(f"❌ I don't know how to {canonical_action}")
-            continue
-        
-        actions_data.append({
-            'intent': intent,
-            'intent_id': intent_ids[i],
-            'action': action,
-            'sequence': intent.get('sequence', 0)
-        })
-    
-    if not actions_data:
-        return {
-            'text': '\n'.join(response_parts),
-            'status': 'error',
-            'actions_completed': [],
-            'actions_pending': []
-        }
-    
-    # Step 6: Detect conflicts
-    conflicts = detect_conflicts(actions_data)
-    
-    if conflicts:
-        conflict_text = f"You want to both {conflicts[0]['action_1']} and {conflicts[0]['action_2']}. Which one?"
-        response_parts.append(conflict_text)
-        return {
-            'text': '\n'.join(response_parts),
-            'status': 'waiting_input',
-            'actions_completed': [],
-            'actions_pending': []
-        }
-    
-    # Step 7: Order by dependencies
-    ordered_actions = order_actions_by_dependencies(actions_data, user_id, db)
-    
-    # Step 8: Build action queue
-    action_queue = []
-    
-    for action_data in ordered_actions:
-        action = action_data['action']
-        intent = action_data['intent']
-        
-        # Check if triggers workflow
-        if action.workflow_id:
-            workflow_steps = expand_workflow_into_queue(action, user_id, brand_id, session_id, db)
-            action_queue.extend(workflow_steps)
-        else:
-            action_queue.append({
-                'intent_id': action_data['intent_id'],
-                'canonical_action': action.canonical_name,
-                'sequence': intent.get('sequence', 0),
-                'priority': len(action_queue) + 1,
-                'status': 'queued',
-                'mode': intent.get('mode', 'execute'),
-                'source': 'intent',
-                'params_collected': intent.get('entities', {}),
-                'params_missing': [],
-                'blocked_reasons': [],
-                'stuck_count': 0,
-                'created_at': datetime.utcnow().isoformat(),
-                'last_activity_at': datetime.utcnow().isoformat()
+    try:
+        db: Session = next(get_db())
+        try:
+            response_parts = []
+            
+            # Step 1: Check for timeouts FIRST
+            timeout_result = await check_and_handle_timeouts(session_id)
+            
+            if timeout_result['should_notify']:
+                expired_list = ', '.join(timeout_result['expired_actions'])
+                response_parts.append(f"⏰ Cancelled {timeout_result['cleaned_count']} expired action(s): {expired_list}")
+            
+            # Step 2: Load user for authorization checks
+            user = db.query(UserModel).filter(UserModel.id == user_id).first()
+            if not user:
+                logger.error(f"User not found: {user_id}")
+                return {
+                    'text': "I'm having trouble accessing your account. Please try again.",
+                    'status': 'error',
+                    'error': 'user_not_found'
+                }
+            
+            # Step 3: Process each detected intent
+            intents = intent_result.get('intents', [])
+            action_queue = []
+            
+            for intent in intents:
+                intent_type = intent.get('intent_type')
+                canonical_action = intent.get('canonical_intent')
+                confidence = intent.get('confidence', 0.0)
+                entities = intent.get('entities', {})
+                
+                # Log intent to ledger
+                intent_id = log_intent(
+                    session_id=session_id,
+                    intent_type_id=intent_type,
+                    canonical_action=canonical_action,
+                    confidence=confidence,
+                    turn_number=turn_number,
+                    sequence_order=len(action_queue),
+                    entities=entities,
+                    reasoning=intent.get('reasoning', ''),
+                    response_type='brain_required'
+                )
+                
+                # Load action definition
+                action = db.query(ActionModel).filter(
+                    ActionModel.canonical_name == canonical_action,
+                    ActionModel.brand_id == brand_id,
+                    ActionModel.is_active == True
+                ).first()
+                
+                if not action:
+                    logger.warning(f"Action not found: {canonical_action}")
+                    update_intent_status(intent_id, 'failed', blocked_reason='action_not_found')
+                    response_parts.append(f"❌ Unknown action: {canonical_action}")
+                    continue
+                
+                # Step 4: Check if action already completed in this session
+                if check_action_completed(session_id, canonical_action):
+                    if not action.allow_multiple:
+                        update_intent_status(intent_id, 'skipped', blocked_reason='already_completed')
+                        response_parts.append(f"✓ Already completed: {canonical_action}")
+                        continue
+                
+                # Step 5: Check authorization
+                authorized, auth_reasons = check_authorization(action, user)
+                if not authorized:
+                    update_intent_status(intent_id, 'blocked', blocked_reason=', '.join(auth_reasons))
+                    response_parts.append(f"🔒 Not authorized: {canonical_action} ({', '.join(auth_reasons)})")
+                    continue
+                
+                # Step 6: Check execution limits
+                can_execute, limit_reason = check_execution_limits(action, session_id, user_id)
+                if not can_execute:
+                    update_intent_status(intent_id, 'blocked', blocked_reason=limit_reason)
+                    response_parts.append(f"⛔ Execution limit: {canonical_action} ({limit_reason})")
+                    continue
+                
+                # Step 7: Check schema dependencies
+                if action.required_schemas:
+                    schema_results = check_multiple_schemas(
+                        schema_dependencies=action.required_schemas,
+                        user_id=user_id,
+                        brand_id=brand_id
+                    )
+                    
+                    incomplete_schemas = [
+                        s['schema_id'] for s in schema_results 
+                        if s['status'] != 'complete'
+                    ]
+                    
+                    if incomplete_schemas:
+                        update_intent_status(intent_id, 'blocked', blocked_reason=f"schemas_incomplete: {', '.join(incomplete_schemas)}")
+                        response_parts.append(f"📋 Missing data for {canonical_action}: {', '.join(incomplete_schemas)}")
+                        continue
+                
+                # Step 8: Check prerequisites
+                prereq_met, prereq_reasons = check_prerequisites(action, session_id, user_id, brand_id)
+                if not prereq_met:
+                    update_intent_status(intent_id, 'blocked', blocked_reason=', '.join(prereq_reasons))
+                    response_parts.append(f"⚠️ Prerequisites not met: {canonical_action}")
+                    continue
+                
+                # Step 9: Check parameters
+                params_complete, missing_params = check_params(action, entities)
+                
+                # All checks passed - add to queue
+                action_data = {
+                    'intent_id': intent_id,
+                    'canonical_action': canonical_action,
+                    'sequence': len(action_queue),
+                    'priority': action.priority or 50,
+                    'status': 'queued',
+                    'mode': 'collect_params' if not params_complete else 'execute',
+                    'source': 'intent_detector',
+                    'params_collected': entities,
+                    'params_missing': missing_params,
+                    'blocked_reasons': [],
+                    'stuck_count': 0,
+                    'created_at': datetime.utcnow().isoformat(),
+                    'last_activity_at': datetime.utcnow().isoformat()
+                }
+                
+                action_queue.append(action_data)
+                update_intent_status(intent_id, 'queued')
+                
+                # If workflow action, expand workflow
+                if action.workflow_id:
+                    workflow_actions = expand_workflow(action, session_id, user_id, brand_id)
+                    action_queue.extend(workflow_actions)
+            
+            # Step 10: Persist queue to session state
+            if action_queue:
+                state = get_session_state(session_id)
+                existing_queue = state.get('action_queue', [])
+                existing_queue.extend(action_queue)
+                
+                update_session_state(session_id, {
+                    'action_queue': existing_queue
+                })
+            
+            # Step 11: Build wires for next turn
+            state = get_session_state(session_id)
+            
+            # Wire 1: expecting_response
+            expecting_response_state = state.get('queue_paused', False)
+            
+            # Wire 2: answer_sheet
+            answer_sheet_state = state.get('answer_sheet', None)
+            
+            # Wire 3: active_task
+            active_task_state = state.get('active_task', None)
+            
+            # Wire 4: previous_intents (last 10)
+            previous_intents_state = state.get('previous_intents', [])
+            previous_intents_state.extend([
+                intent.get('canonical_intent') for intent in intents
+            ])
+            previous_intents_state = previous_intents_state[-10:]
+            
+            # Wire 5: conversation_context
+            conversation_context_state = state.get('conversation_context', {})
+            
+            # Wire 6: available_signals
+            available_signals_state = []
+            if answer_sheet_state:
+                options = answer_sheet_state.get("options", {})
+                for key, variants in options.items():
+                    available_signals_state.append(key)
+                    available_signals_state.extend(variants)
+                available_signals_state = list(set(available_signals_state))
+            
+            # Update session state with all 6 wires
+            update_session_state(session_id, {
+                "expecting_response": expecting_response_state,
+                "answer_sheet": answer_sheet_state,
+                "active_task": active_task_state,
+                "previous_intents": previous_intents_state,
+                "conversation_context": conversation_context_state,
+                "available_signals": available_signals_state
             })
-    
-    # Save queue to state
-    update_session_state(session_id, {
-        'action_queue': action_queue,
-        'current_action_index': 0,
-        'queue_paused': False
-    }, db)
-    
-    # Step 9: POPULATE BRAIN STATE FOR INTENT DETECTOR ✅
-    # This populates the 6 wires that Intent Detector needs for next turn
-    
-    # Wire 3: active_task
-    active_task_state = None
-    if action_queue:
-        first_action = action_queue[0]
-        active_task_state = {
-            "task_id": first_action.get("intent_id"),
-            "canonical_action": first_action.get("canonical_action"),
-            "params_collected": first_action.get("params_collected", {}),
-            "params_missing": first_action.get("params_missing", []),
-            "status": first_action.get("status", "queued"),
-            "created_at": first_action.get("created_at"),
-            "last_activity_at": first_action.get("last_activity_at")
-        }
-    
-    # Wire 4: previous_intents
-    previous_intents_state = []
-    for i, action_data in enumerate(ordered_actions):
-        previous_intents_state.append({
-            "intent_type": action_data['intent'].get('intent_type'),
-            "canonical_action": action_data['action'].canonical_name,
-            "confidence": action_data['intent'].get('confidence'),
-            "sequence": action_data['intent'].get('sequence'),
-            "turn": turn_number
-        })
-    
-    # Wire 6: conversation_context
-    conversation_context_state = {
-        "domain": "general",  # TODO: Derive from instance config later
-        "user_state": "queued_actions" if action_queue else "idle",
-        "last_action": previous_intents_state[-1].get("canonical_action") if previous_intents_state else None,
-        "pending_confirmation": False,  # Will be set when we implement confirmation logic
-        "turn_number": turn_number
-    }
-    
-    # Wire 1: expecting_response (default False for now, will be set when collecting params)
-    expecting_response_state = False
-    
-    # Wire 2: answer_sheet (default None for now, will be set when collecting params)
-    answer_sheet_state = None
-    
-    # Wire 5: available_signals (derived from answer_sheet)
-    available_signals_state = []
-    if answer_sheet_state:
-        # Extract all signal variants from answer_sheet options
-        options = answer_sheet_state.get("options", {})
-        for key, variants in options.items():
-            available_signals_state.append(key)
-            available_signals_state.extend(variants)
-        # Remove duplicates
-        available_signals_state = list(set(available_signals_state))
-    
-    # Update session state with all 6 wires
-    update_session_state(session_id, {
-        "expecting_response": expecting_response_state,
-        "answer_sheet": answer_sheet_state,
-        "active_task": active_task_state,
-        "previous_intents": previous_intents_state,
-        "conversation_context": conversation_context_state,
-        "available_signals": available_signals_state
-    }, db)
-    
-    logger.info(
-        "brain:state_populated",
-        extra={
-            "session_id": session_id,
-            "expecting_response": expecting_response_state,
-            "has_answer_sheet": answer_sheet_state is not None,
-            "has_active_task": active_task_state is not None,
-            "previous_intents_count": len(previous_intents_state),
-            "available_signals_count": len(available_signals_state)
-        }
-    )
-    
-    # Step 10: Process queue (COMMENTED OUT - TO BE IMPLEMENTED LATER)
-    # NOTE: Actual queue processing would go here
-    # For now, returning placeholder
-    
-    response_parts.append(f"🔄 Queued {len(action_queue)} action(s) for processing")
-    
-    return {
-        'text': '\n'.join(response_parts),
-        'status': 'completed',
-        'actions_completed': [],
-        'actions_pending': [a['canonical_action'] for a in action_queue]
-    }
+            
+            logger.info(
+                "brain:state_populated",
+                extra={
+                    "session_id": session_id,
+                    "expecting_response": expecting_response_state,
+                    "has_answer_sheet": answer_sheet_state is not None,
+                    "has_active_task": active_task_state is not None,
+                    "previous_intents_count": len(previous_intents_state),
+                    "available_signals_count": len(available_signals_state)
+                }
+            )
+            
+            # Step 12: Process queue (COMMENTED OUT - TO BE IMPLEMENTED LATER)
+            # NOTE: Actual queue processing would go here
+            # For now, returning placeholder
+            
+            response_parts.append(f"🔄 Queued {len(action_queue)} action(s) for processing")
+            
+            result = {
+                'text': '\n'.join(response_parts),
+                'status': 'completed',
+                'actions_completed': [],
+                'actions_pending': [a['canonical_action'] for a in action_queue]
+            }
+            
+            return result
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Brain processing error for session {session_id}: {e}")
+        raise

@@ -1,288 +1,279 @@
 """
-Intent Logger - Helper functions for logging intents to intent_ledger table.
+Intent Logger - Tracks intent lifecycle in intent_ledger table.
+
+Logs all detected intents and tracks their status through:
+- detected → queued → executing → completed/failed/cancelled
 """
 
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
+import logging
+import uuid
 
+from db.db import get_db
 from db.models.intent_ledger import IntentLedgerModel
+from db.models.sessions import SessionModel
+
+logger = logging.getLogger(__name__)
 
 
 def log_intent(
     session_id: str,
     intent_type_id: str,
-    canonical_action: Optional[str],
+    canonical_action: str,
     confidence: float,
     turn_number: int,
-    sequence_order: Optional[int],
+    sequence_order: int,
     entities: Dict[str, Any],
-    reasoning: Optional[str],
+    reasoning: str,
     response_type: str,
-    db: Session,
-    status: str = "new"
+    status: str = 'detected'
 ) -> str:
     """
-    Log a new intent to intent_ledger.
+    Log detected intent to intent_ledger.
     
     Args:
         session_id: Session UUID
-        intent_type_id: Intent type (e.g., "action", "response", "clarification")
-        canonical_action: Action name (if intent_type is "action")
-        confidence: Confidence score (0.0-1.0)
-        turn_number: Conversation turn number
-        sequence_order: Order within multi-intent detection
-        entities: Extracted entities as dict
-        reasoning: LLM reasoning for this intent
-        response_type: Type of response generated
-        db: Database session
-        status: Initial status (default: "new")
+        intent_type_id: Type of intent
+        canonical_action: Canonical action name
+        confidence: Confidence score
+        turn_number: Turn number
+        sequence_order: Sequence in multi-intent
+        entities: Extracted entities
+        reasoning: LLM reasoning
+        response_type: self_respond or brain_required
+        status: Initial status (default: detected)
         
     Returns:
-        Intent ID (UUID as string)
+        intent_id (UUID as string)
     """
-    intent = IntentLedgerModel(
-        session_id=session_id,
-        intent_type_id=intent_type_id,
-        canonical_action=canonical_action,
-        confidence=confidence,
-        turn_number=turn_number,
-        sequence_order=sequence_order,
-        entities=entities or {},
-        reasoning=reasoning,
-        status=status,
-        response_type=response_type,
-        response_text=None,
-        blocked_reason=None,
-        triggered_action_ids=[]
-    )
-    
-    db.add(intent)
-    db.commit()
-    db.refresh(intent)
-    
-    return str(intent.id)
+    try:
+        db: Session = next(get_db())
+        try:
+            intent = IntentLedgerModel(
+                id=str(uuid.uuid4()),
+                session_id=session_id,
+                intent_type_id=intent_type_id,
+                canonical_action=canonical_action,
+                confidence=confidence,
+                turn_number=turn_number,
+                sequence_order=sequence_order,
+                entities=entities,
+                reasoning=reasoning,
+                response_type=response_type,
+                status=status
+            )
+            
+            db.add(intent)
+            db.commit()
+            db.refresh(intent)
+            
+            return str(intent.id)
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error logging intent for session {session_id}: {e}")
+        raise
 
 
 def update_intent_status(
     intent_id: str,
-    new_status: str,
-    db: Session,
-    blocked_reason: Optional[str] = None,
-    response_text: Optional[str] = None
+    status: str,
+    blocked_reason: Optional[str] = None
 ) -> None:
     """
-    Update intent status.
+    Update intent status in ledger.
     
     Args:
         intent_id: Intent UUID
-        new_status: New status value
-        db: Database session
-        blocked_reason: Optional reason if status is "blocked" or "failed"
-        response_text: Optional response text
+        status: New status
+        blocked_reason: Optional reason if blocked
     """
-    intent = db.query(IntentLedgerModel).filter(IntentLedgerModel.id == intent_id).first()
-    
-    if not intent:
-        raise ValueError(f"Intent {intent_id} not found")
-    
-    intent.status = new_status
-    intent.updated_at = datetime.utcnow()
-    
-    if blocked_reason:
-        intent.blocked_reason = blocked_reason
-    
-    if response_text:
-        intent.response_text = response_text
-    
-    db.commit()
+    try:
+        db: Session = next(get_db())
+        try:
+            intent = db.query(IntentLedgerModel).filter(
+                IntentLedgerModel.id == intent_id
+            ).first()
+            
+            if intent:
+                intent.status = status
+                if blocked_reason:
+                    intent.blocked_reason = blocked_reason
+                db.commit()
+            else:
+                logger.warning(f"Intent not found: {intent_id}")
+                
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error updating intent status for {intent_id}: {e}")
+        raise
 
 
-def get_intent(intent_id: str, db: Session) -> Optional[IntentLedgerModel]:
+def check_action_completed(session_id: str, canonical_action: str) -> bool:
     """
-    Get intent by ID.
+    Check if action was already completed in this session.
     
     Args:
-        intent_id: Intent UUID
-        db: Database session
+        session_id: Session UUID
+        canonical_action: Action name
         
     Returns:
-        IntentLedgerModel or None
+        True if action was completed
     """
-    return db.query(IntentLedgerModel).filter(IntentLedgerModel.id == intent_id).first()
+    try:
+        db: Session = next(get_db())
+        try:
+            completed = db.query(IntentLedgerModel).filter(
+                IntentLedgerModel.session_id == session_id,
+                IntentLedgerModel.canonical_action == canonical_action,
+                IntentLedgerModel.status == 'completed'
+            ).first()
+            
+            return completed is not None
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error checking action completion for {canonical_action}: {e}")
+        raise
 
 
-def get_session_intents(
-    session_id: str,
-    db: Session,
-    limit: Optional[int] = None
-) -> List[IntentLedgerModel]:
+def count_action_executions(session_id: str, canonical_action: str) -> int:
+    """
+    Count how many times action was executed in this session.
+    
+    Args:
+        session_id: Session UUID
+        canonical_action: Action name
+        
+    Returns:
+        Execution count
+    """
+    try:
+        db: Session = next(get_db())
+        try:
+            count = db.query(IntentLedgerModel).filter(
+                IntentLedgerModel.session_id == session_id,
+                IntentLedgerModel.canonical_action == canonical_action,
+                IntentLedgerModel.status.in_(['completed', 'executing'])
+            ).count()
+            
+            return count
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error counting executions for {canonical_action}: {e}")
+        raise
+
+
+def count_action_executions_today(user_id: str, canonical_action: str) -> int:
+    """
+    Count how many times action was executed today by this user.
+    
+    Args:
+        user_id: User UUID
+        canonical_action: Action name
+        
+    Returns:
+        Execution count for today
+    """
+    try:
+        db: Session = next(get_db())
+        try:
+            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            count = db.query(IntentLedgerModel).join(
+                SessionModel,
+                IntentLedgerModel.session_id == SessionModel.id
+            ).filter(
+                SessionModel.user_id == user_id,
+                IntentLedgerModel.canonical_action == canonical_action,
+                IntentLedgerModel.status == 'completed',
+                IntentLedgerModel.created_at >= today_start
+            ).count()
+            
+            return count
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error counting today's executions for {canonical_action}: {e}")
+        raise
+
+
+def get_last_execution(session_id: str, canonical_action: str) -> Optional[datetime]:
+    """
+    Get timestamp of last execution of this action.
+    
+    Args:
+        session_id: Session UUID
+        canonical_action: Action name
+        
+    Returns:
+        Datetime of last execution or None
+    """
+    try:
+        db: Session = next(get_db())
+        try:
+            last = db.query(IntentLedgerModel).filter(
+                IntentLedgerModel.session_id == session_id,
+                IntentLedgerModel.canonical_action == canonical_action,
+                IntentLedgerModel.status == 'completed'
+            ).order_by(desc(IntentLedgerModel.created_at)).first()
+            
+            return last.created_at if last else None
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error getting last execution for {canonical_action}: {e}")
+        raise
+
+
+def get_session_intents(session_id: str) -> List[Dict[str, Any]]:
     """
     Get all intents for a session.
     
     Args:
         session_id: Session UUID
-        db: Database session
-        limit: Optional limit on number of results
         
     Returns:
-        List of IntentLedgerModel
+        List of intent dictionaries
     """
-    query = db.query(IntentLedgerModel).filter(
-        IntentLedgerModel.session_id == session_id
-    ).order_by(IntentLedgerModel.created_at.desc())
-    
-    if limit:
-        query = query.limit(limit)
-    
-    return query.all()
-
-
-def check_action_completed(
-    canonical_action: str,
-    user_id: str,
-    db: Session,
-    session_id: Optional[str] = None
-) -> bool:
-    """
-    Check if action was completed before.
-    
-    Args:
-        canonical_action: Action name
-        user_id: User UUID (need to join through sessions)
-        db: Database session
-        session_id: Optional - restrict to specific session
-        
-    Returns:
-        True if action was completed
-    """
-    from db.models.sessions import SessionModel
-    
-    query = db.query(IntentLedgerModel).join(
-        SessionModel,
-        IntentLedgerModel.session_id == SessionModel.id
-    ).filter(
-        SessionModel.user_id == user_id,
-        IntentLedgerModel.canonical_action == canonical_action,
-        IntentLedgerModel.status == 'completed'
-    )
-    
-    if session_id:
-        query = query.filter(IntentLedgerModel.session_id == session_id)
-    
-    return query.first() is not None
-
-
-def count_action_executions(
-    canonical_action: str,
-    session_id: str,
-    db: Session,
-    status: str = 'completed'
-) -> int:
-    """
-    Count how many times action was executed in session.
-    
-    Args:
-        canonical_action: Action name
-        session_id: Session UUID
-        db: Database session
-        status: Status to count (default: "completed")
-        
-    Returns:
-        Count of executions
-    """
-    return db.query(IntentLedgerModel).filter(
-        IntentLedgerModel.session_id == session_id,
-        IntentLedgerModel.canonical_action == canonical_action,
-        IntentLedgerModel.status == status
-    ).count()
-
-
-def count_action_executions_today(
-    canonical_action: str,
-    user_id: str,
-    db: Session,
-    status: str = 'completed'
-) -> int:
-    """
-    Count how many times action was executed today for user.
-    
-    Args:
-        canonical_action: Action name
-        user_id: User UUID
-        db: Database session
-        status: Status to count (default: "completed")
-        
-    Returns:
-        Count of executions today
-    """
-    from db.models.sessions import SessionModel
-    from sqlalchemy import func, cast, Date
-    
-    today = datetime.utcnow().date()
-    
-    count = db.query(IntentLedgerModel).join(
-        SessionModel,
-        IntentLedgerModel.session_id == SessionModel.id
-    ).filter(
-        SessionModel.user_id == user_id,
-        IntentLedgerModel.canonical_action == canonical_action,
-        IntentLedgerModel.status == status,
-        cast(IntentLedgerModel.created_at, Date) == today
-    ).count()
-    
-    return count
-
-
-def get_last_execution(
-    canonical_action: str,
-    session_id: str,
-    db: Session,
-    status: str = 'completed'
-) -> Optional[IntentLedgerModel]:
-    """
-    Get last execution of action in session.
-    
-    Args:
-        canonical_action: Action name
-        session_id: Session UUID
-        db: Database session
-        status: Status to filter (default: "completed")
-        
-    Returns:
-        IntentLedgerModel or None
-    """
-    return db.query(IntentLedgerModel).filter(
-        IntentLedgerModel.session_id == session_id,
-        IntentLedgerModel.canonical_action == canonical_action,
-        IntentLedgerModel.status == status
-    ).order_by(IntentLedgerModel.created_at.desc()).first()
-
-
-def add_triggered_action(
-    intent_id: str,
-    triggered_action_id: str,
-    db: Session
-) -> None:
-    """
-    Add triggered action ID to intent's triggered_action_ids array.
-    
-    Used when one action triggers another (e.g., workflow steps).
-    
-    Args:
-        intent_id: Intent UUID
-        triggered_action_id: Action UUID that was triggered
-        db: Database session
-    """
-    intent = db.query(IntentLedgerModel).filter(IntentLedgerModel.id == intent_id).first()
-    
-    if not intent:
-        raise ValueError(f"Intent {intent_id} not found")
-    
-    triggered_ids = intent.triggered_action_ids or []
-    
-    if triggered_action_id not in triggered_ids:
-        triggered_ids.append(triggered_action_id)
-        intent.triggered_action_ids = triggered_ids
-        intent.updated_at = datetime.utcnow()
-        db.commit()
+    try:
+        db: Session = next(get_db())
+        try:
+            intents = db.query(IntentLedgerModel).filter(
+                IntentLedgerModel.session_id == session_id
+            ).order_by(IntentLedgerModel.turn_number, IntentLedgerModel.sequence_order).all()
+            
+            return [
+                {
+                    'intent_id': str(intent.id),
+                    'intent_type': intent.intent_type_id,
+                    'canonical_action': intent.canonical_action,
+                    'confidence': intent.confidence,
+                    'status': intent.status,
+                    'turn_number': intent.turn_number
+                }
+                for intent in intents
+            ]
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error getting session intents for {session_id}: {e}")
+        raise

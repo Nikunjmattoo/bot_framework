@@ -283,7 +283,7 @@ async def process_core(
             if not ORCHESTRATOR_AVAILABLE:
                 logger.warning("Orchestrator not available, using mock implementation")
             
-            orchestrator_response = await process_orchestrator_message(adapter, db=db)
+            orchestrator_response = await process_orchestrator_message(adapter)
             orchestrator_response = validate_orchestrator_response(
                 orchestrator_response,
                 trace_id=trace_id
