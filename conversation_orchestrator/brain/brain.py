@@ -239,8 +239,15 @@ def expand_workflow_into_queue(
     db: Session
 ) -> List[Dict[str, Any]]:
     """
-    Expand workflow into individual actions with skip logic.
+    Expand workflow into individual action queue items.
     
+    Args:
+        action: The action that triggers the workflow
+        user_id: User UUID
+        brand_id: Brand UUID
+        session_id: Session UUID
+        db: Database session
+        
     Returns:
         List of action data dictionaries to add to queue
     """
@@ -356,7 +363,7 @@ async def process_with_brain(
         intent_id = log_intent(
             session_id=session_id,
             intent_type_id=intent.get('intent_type', 'action'),
-            canonical_action=intent.get('canonical_action'),
+            canonical_action=intent.get('canonical_intent'),  # ← FIXED: was canonical_action
             confidence=intent.get('confidence', 0.0),
             turn_number=turn_number,
             sequence_order=intent.get('sequence', 0),
@@ -371,7 +378,7 @@ async def process_with_brain(
     actions_data = []
     
     for i, intent in enumerate(intents):
-        canonical_action = intent.get('canonical_action')
+        canonical_action = intent.get('canonical_intent')  # ← FIXED: was canonical_action
         
         if not canonical_action:
             continue

@@ -8,6 +8,7 @@ import logging
 import time
 import uuid
 from typing import Dict, Any
+from sqlalchemy.orm import Session  # ← ADD THIS IMPORT
 
 from conversation_orchestrator.exceptions import (
     OrchestratorError,
@@ -20,7 +21,10 @@ from conversation_orchestrator.utils.validation import validate_adapter_payload
 logger = get_logger(__name__)
 
 
-async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
+async def process_message(
+    adapter_payload: Dict[str, Any],
+    db: Session  # ← ADD THIS PARAMETER
+) -> Dict[str, Any]:
     """
     Main entry point for conversation orchestrator.
     
@@ -31,30 +35,23 @@ async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
     4. Post-processing
     
     Args:
-        adapter_payload: Payload from message_handler with:
-            - routing: {instance_id, brand_id}
-            - message: {text, sender_user_id, channel, ...}
-            - session_id
-            - policy: {auth_state, can_call_tools, ...}
-            - template: {json: {intent_detection: "...", response_generation: "..."}}
-            - token_plan: {intent_detection: {input: 800, output: 150}, ...}
-            - model, engine_ref, llm_runtime
-            - plan_key
-    
+        adapter_payload: Message adapter from message_handler
+        db: Database session for persistence
+        
     Returns:
-        Dict with:
-            - text: Final response text
-            - intents: Detected intents
-            - self_response: Whether response was self-generated
-            - token_usage: Token usage stats
-            - latency_ms: Processing latency
-            - trace_id: Trace ID for logging
-    
-    Raises:
-        OrchestratorError: If processing fails
-        ValidationError: If adapter payload is invalid
+        {
+            "text": str,
+            "intents": List[Dict],
+            "self_response": bool,
+            "reasoning": str,
+            "token_usage": Dict,
+            "latency_ms": float,
+            "trace_id": str
+        }
     """
     start_time = time.time()
+    
+    # Extract or generate trace_id
     trace_id = adapter_payload.get("trace_id") or str(uuid.uuid4())
     
     logger.info(
@@ -62,7 +59,7 @@ async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
         extra={
             "trace_id": trace_id,
             "session_id": adapter_payload.get("session_id"),
-            "channel": adapter_payload.get("message", {}).get("channel")
+            "user_id": adapter_payload.get("message", {}).get("sender_user_id")
         }
     )
     
@@ -70,35 +67,60 @@ async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
         # Validate adapter payload
         validate_adapter_payload(adapter_payload)
         
+        # Get turn number from session
+        session_id = adapter_payload.get("session_id")
+        turn_number = 1  # Default
+        
+        if session_id:
+            from db.models.messages import MessageModel
+            # Count existing messages in this session
+            turn_number = db.query(MessageModel).filter(
+                MessageModel.session_id == session_id
+            ).count() + 1
+        
         # Step 1: Intent Detection
         intent_result = await detect_intents(adapter_payload, trace_id)
         
         logger.info(
-            "orchestrator:intent_detection_complete",
+            "orchestrator:intents_detected",
             extra={
                 "trace_id": trace_id,
-                "intents_count": len(intent_result["intents"]),
                 "intents": [i["intent_type"] for i in intent_result["intents"]],
                 "self_response": intent_result.get("self_response", False)
             }
         )
         
-        # Step 2: Check if self-response
-        self_response = intent_result.get("self_response", False)
-        response_text = intent_result.get("response_text")
+        # Step 2: Route based on intent type
+        from conversation_orchestrator.intent_detection.models import is_self_respond_only
         
-        if self_response:
-            # Self-respond: Use response_text from intent detection
+        self_response = intent_result.get("self_response", False)
+        intents = intent_result.get("intents", [])
+        
+        # Convert dict intents to SingleIntent objects for helper function
+        from conversation_orchestrator.intent_detection.models import SingleIntent, IntentType
+        intent_objects = []
+        for intent_dict in intents:
+            intent_objects.append(SingleIntent(
+                intent_type=IntentType(intent_dict["intent_type"]),
+                canonical_intent=intent_dict.get("canonical_intent"),
+                confidence=intent_dict["confidence"],
+                entities=intent_dict.get("entities", {}),
+                sequence_order=intent_dict.get("sequence_order"),
+                reasoning=intent_dict.get("reasoning")
+            ))
+        
+        if is_self_respond_only(intent_objects):
+            # Self-respond path: Use LLM-generated response directly
             logger.info(
-                "orchestrator:self_response_path",
+                "orchestrator:self_respond_path",
                 extra={
                     "trace_id": trace_id,
-                    "response_length": len(response_text) if response_text else 0
+                    "intents": [i["intent_type"] for i in intent_result["intents"]]
                 }
             )
             
-            final_text = response_text or "I'm here to help!"
-            
+            final_text = intent_result.get("response_text") or "Hello! How can I help you?"
+        
         else:
             # Brain-required: Pass to brain for processing
             logger.info(
@@ -109,14 +131,23 @@ async def process_message(adapter_payload: Dict[str, Any]) -> Dict[str, Any]:
                 }
             )
             
-            # TODO: Step 3 - Brain Processing
-            # brain_result = process_brain(intent_result, adapter_payload, trace_id)
+            # Step 3: Brain Processing
+            from conversation_orchestrator.brain import process_with_brain
             
-            # TODO: Step 4 - Response Generation
-            # response_result = generate_response(brain_result, adapter_payload, trace_id)
+            brain_result = await process_with_brain(
+                intent_result=intent_result,
+                session_id=adapter_payload["session_id"],
+                user_id=adapter_payload["message"]["sender_user_id"],
+                instance_id=adapter_payload["routing"]["instance_id"],
+                brand_id=adapter_payload["routing"]["brand_id"],
+                turn_number=turn_number,
+                db=db
+            )
             
-            # Placeholder for now
-            final_text = "Brain processing not implemented yet. Your intent has been detected and will be processed soon."
+            final_text = brain_result["text"]
+            
+            # TODO: Step 4 - Response Generation (if needed)
+            # For now, Brain returns the final text
         
         # Calculate total latency
         total_latency_ms = (time.time() - start_time) * 1000
