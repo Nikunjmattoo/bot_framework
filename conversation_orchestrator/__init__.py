@@ -10,8 +10,6 @@ Orchestrates multi-stage conversation processing:
 
 __version__ = "0.1.0"
 
-from conversation_orchestrator.orchestrator import process_message
+from conversation_orchestrator.brain.brain import process_brain
 
-__all__ = [
-    "process_message",
-]
+__all__ = ["process_brain"]

@@ -29,11 +29,13 @@ from conversation_orchestrator.cold_path.trigger_manager import trigger_cold_pat
 from conversation_orchestrator.intent_detection.parser import parse_intent_response
 from conversation_orchestrator.exceptions import IntentDetectionError
 from conversation_orchestrator.utils.logging import get_logger
+from sqlalchemy.orm import Session
 
 logger = get_logger(__name__)
 
 
 async def detect_intents(
+    db: Session,
     adapter_payload: Dict[str, Any],
     trace_id: str
 ) -> Dict[str, Any]:
@@ -88,12 +90,12 @@ async def detect_intents(
         )
         
         # Step 3: Fetch template from DB
-        template_string = await fetch_template_string(template_key)
+        template_string = await fetch_template_string(db, template_key, trace_id)
         
         # Step 4: Fetch enrichment data
         session_id = adapter_payload.get("session_id")
         instance_id = adapter_payload.get("routing", {}).get("instance_id")
-        enriched = _fetch_enrichment_data(session_id, instance_id, trace_id)
+        enriched = _fetch_enrichment_data(db, session_id, instance_id, trace_id)
         
         # Step 5: Build template variables
         user_message = adapter_payload.get("message", {}).get("content", "")
@@ -199,7 +201,7 @@ async def detect_intents(
         ) from e
 
 
-def _fetch_enrichment_data(session_id: str, instance_id: str, trace_id: str) -> EnrichedContext:
+def _fetch_enrichment_data(db: Session, session_id: str, instance_id: str, trace_id: str) -> EnrichedContext:
     """
     Fetch enrichment data from database.
     
@@ -217,16 +219,12 @@ def _fetch_enrichment_data(session_id: str, instance_id: str, trace_id: str) -> 
     )
     
     # Fetch all data
-    session_summary = fetch_session_summary(session_id)
-    previous_messages = fetch_previous_messages(session_id, limit=4)
-    active_task = fetch_active_task(session_id)  # ← DEPRECATED: Will be replaced by brain state
-    next_narrative = fetch_next_narrative(session_id)
-    
-    # NEW: Fetch brain state (6 wires)
-    brain_state = fetch_brain_state(session_id)
-    
-    # NEW: Fetch popular actions (wire 7)
-    popular_actions = fetch_popular_actions(instance_id)
+    session_summary = fetch_session_summary(db, session_id, trace_id)
+    previous_messages = fetch_previous_messages(db, session_id, limit=4, trace_id=trace_id)
+    active_task = fetch_active_task(db, session_id, trace_id)
+    next_narrative = fetch_next_narrative(db, session_id, trace_id)
+    brain_state = fetch_brain_state(db, session_id, trace_id)
+    popular_actions = fetch_popular_actions(db, instance_id, trace_id)
     
     enriched = EnrichedContext(
         session_summary=session_summary,

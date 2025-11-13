@@ -21,6 +21,7 @@ class TestEndToEndIntegration:
     @pytest.mark.asyncio
     async def test_greeting_end_to_end(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -34,7 +35,7 @@ class TestEndToEndIntegration:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         # Verify full result
         assert result["self_response"] is True
@@ -49,6 +50,7 @@ class TestEndToEndIntegration:
     @pytest.mark.asyncio
     async def test_action_end_to_end(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_action
     ):
@@ -56,24 +58,42 @@ class TestEndToEndIntegration:
         
         base_adapter_payload["message"]["content"] = "Check my order"
         
+        # Create session for brain tests
+        from db.models.sessions import SessionModel
+        session = db_session.query(SessionModel).filter_by(
+            id=base_adapter_payload["session_id"]
+        ).first()
+        if not session:
+            session = SessionModel(
+                id=base_adapter_payload["session_id"],
+                user_id=base_adapter_payload["message"]["sender_user_id"],
+                instance_id=base_adapter_payload["routing"]["instance_id"]
+            )
+            session.initialize_default_state()
+            db_session.add(session)
+            db_session.flush()
+        
         with patch('conversation_orchestrator.intent_detection.detector.fetch_template_string', new=AsyncMock(return_value="Template: {{user_message}}")), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_session_summary', return_value=None), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_previous_messages', return_value=[]), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_active_task', return_value=None), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_next_narrative', return_value=None), \
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_action)), \
-             patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
+             patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'), \
+             patch('conversation_orchestrator.brain.process_brain', new=AsyncMock(return_value={"text": "Your order #12345 is being processed"})) as mock_brain:
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         assert result["self_response"] is False
         assert result["intents"][0]["intent_type"] == "action"
         assert result["intents"][0]["canonical_intent"] == "check_order_status"
-        assert "Brain processing not implemented yet" in result["text"]
+        assert mock_brain.called
+        assert "12345" in result["text"]
     
     @pytest.mark.asyncio
     async def test_multi_intent_end_to_end(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_multi_intent_mixed
     ):
@@ -81,20 +101,37 @@ class TestEndToEndIntegration:
         
         base_adapter_payload["message"]["content"] = "Thanks, check my order"
         
+        # Create session for brain tests
+        from db.models.sessions import SessionModel
+        session = db_session.query(SessionModel).filter_by(
+            id=base_adapter_payload["session_id"]
+        ).first()
+        if not session:
+            session = SessionModel(
+                id=base_adapter_payload["session_id"],
+                user_id=base_adapter_payload["message"]["sender_user_id"],
+                instance_id=base_adapter_payload["routing"]["instance_id"]
+            )
+            session.initialize_default_state()
+            db_session.add(session)
+            db_session.flush()
+        
         with patch('conversation_orchestrator.intent_detection.detector.fetch_template_string', new=AsyncMock(return_value="Template: {{user_message}}")), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_session_summary', return_value=None), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_previous_messages', return_value=[]), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_active_task', return_value=None), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_next_narrative', return_value=None), \
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_multi_intent_mixed)), \
-             patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
+             patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'), \
+             patch('conversation_orchestrator.brain.process_brain', new=AsyncMock(return_value={"text": "Thanks noted! Checking your order..."})) as mock_brain:
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         assert result["self_response"] is False
         assert len(result["intents"]) == 2
         assert result["intents"][0]["intent_type"] == "gratitude"
         assert result["intents"][1]["intent_type"] == "action"
+        assert mock_brain.called
 
 
 # ============================================================================
@@ -107,6 +144,7 @@ class TestTemplateIntegration:
     @pytest.mark.asyncio
     async def test_template_fetched_and_filled(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -137,7 +175,7 @@ CLASSIFY THIS MESSAGE"""
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=mock_llm_call), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         # Verify template was filled
         filled_prompt = filled_prompt_capture[0]
@@ -156,6 +194,7 @@ CLASSIFY THIS MESSAGE"""
     @pytest.mark.asyncio
     async def test_template_sections_ordered_correctly(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -182,7 +221,7 @@ CLASSIFY THIS MESSAGE"""
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=mock_llm_call), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         filled_prompt = filled_prompt_capture[0]
         
@@ -207,6 +246,7 @@ class TestSessionContextIntegration:
     @pytest.mark.asyncio
     async def test_previous_messages_included_in_context(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -226,7 +266,7 @@ class TestSessionContextIntegration:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=mock_llm_call), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         filled_prompt = filled_prompt_capture[0]
         
@@ -244,6 +284,7 @@ class TestColdPathIntegration:
     @pytest.mark.asyncio
     async def test_cold_paths_triggered_with_correct_data(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting,
         mock_cold_paths
@@ -258,7 +299,7 @@ class TestColdPathIntegration:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths', mock_cold_paths):
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         # Verify cold paths called
         assert mock_cold_paths.called
@@ -284,6 +325,7 @@ class TestPerformanceIntegration:
     @pytest.mark.asyncio
     async def test_latency_under_reasonable_time(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -303,7 +345,7 @@ class TestPerformanceIntegration:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=mock_llm_call), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
         
         # With mocked LLM, total latency should be < 1000ms (1 second)
         assert result["latency_ms"] < 1000
@@ -311,6 +353,7 @@ class TestPerformanceIntegration:
     @pytest.mark.asyncio
     async def test_multiple_requests_sequential(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -327,7 +370,7 @@ class TestPerformanceIntegration:
             # Process 5 messages sequentially
             for i in range(5):
                 base_adapter_payload["message"]["content"] = f"Hello {i}"
-                result = await process_message(base_adapter_payload)
+                result = await process_message(db_session, base_adapter_payload)
                 assert result["self_response"] is True
                 assert "Hello" in result["text"]
 
@@ -342,6 +385,7 @@ class TestErrorRecoveryIntegration:
     @pytest.mark.asyncio
     async def test_recovery_after_llm_timeout(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -366,8 +410,8 @@ class TestErrorRecoveryIntegration:
             
             # First call should fail
             with pytest.raises(Exception):
-                await process_message(base_adapter_payload)
+                await process_message(db_session, base_adapter_payload)
             
             # Second call should succeed
-            result = await process_message(base_adapter_payload)
+            result = await process_message(db_session, base_adapter_payload)
             assert result["self_response"] is True

@@ -7,6 +7,8 @@ Orchestrates all cold path tasks (session_summary, judges) fired in parallel.
 import logging
 import asyncio
 from typing import List, Dict, Any
+from sqlalchemy.orm import Session
+from db.db import session_scope
 
 from conversation_orchestrator.cold_path.session_summary_generator import generate_session_summary
 
@@ -54,7 +56,7 @@ def trigger_cold_paths(
         
         if "session_summary_generator" in cold_paths:
             tasks.append(
-                _run_session_summary(session_id, conversation_history, trace_id)
+                _run_session_summary_with_db(session_id, conversation_history, trace_id)
             )
         
         if "judge_topic" in cold_paths:
@@ -99,37 +101,20 @@ def trigger_cold_paths(
         # Don't raise - cold paths should not break main flow
 
 
-async def _run_session_summary(
+async def _run_session_summary_with_db(
     session_id: str,
     conversation_history: List[Dict[str, str]],
     trace_id: str = None
 ) -> None:
-    """Run session summary generation."""
-    try:
-        logger.info(
-            "cold_path:session_summary_started",
-            extra={"trace_id": trace_id, "session_id": session_id}
-        )
-        
-        # Call real implementation
-        await generate_session_summary(  # ← NEW (removed asyncio.to_thread, function is already async)
+    """Wrapper to provide db session for session summary."""
+    from db.db import session_scope
+    
+    with session_scope() as db:
+        await generate_session_summary(
+            db=db,
             session_id=session_id,
             conversation_history=conversation_history,
             trace_id=trace_id
-        )
-        
-        logger.info(
-            "cold_path:session_summary_completed",
-            extra={"trace_id": trace_id, "session_id": session_id}
-        )
-    except Exception as e:
-        logger.error(
-            "cold_path:session_summary_error",
-            extra={
-                "trace_id": trace_id,
-                "session_id": session_id,
-                "error": str(e)
-            }
         )
 
 async def _run_judge_stub(

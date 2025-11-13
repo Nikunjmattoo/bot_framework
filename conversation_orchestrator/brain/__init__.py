@@ -1,10 +1,10 @@
 """
 Brain module - Action orchestration and eligibility checking.
 
-Main entry point: process_with_brain()
+Main entry point: process_brain()
 """
 
-from .brain import process_with_brain, check_and_handle_timeouts
+from .brain import process_brain, check_and_handle_timeouts
 from .state_manager import (
     get_session_state,
     update_session_state,
@@ -31,7 +31,7 @@ from .action_planner import (
 
 __all__ = [
     # Main entry point
-    'process_with_brain',
+    'process_brain',
     'check_and_handle_timeouts',
     
     # State management

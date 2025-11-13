@@ -649,7 +649,29 @@ def llm_response_help():
         }
     }
 
-
+@pytest.fixture
+def llm_response_fallback():
+    """LLM response for fallback intent."""
+    return {
+        "content": """{
+            "intents": [{
+                "intent_type": "unknown",
+                "canonical_intent": "unknown_query",
+                "confidence": 0.92,
+                "entities": {},
+                "sequence_order": 1,
+                "reasoning": "User query not understood, needs fallback handling"
+            }],
+            "response_text": null,
+            "self_response": false,
+            "reasoning": "Fallback intent requires brain processing"
+        }""",
+        "token_usage": {
+            "prompt_tokens": 500,
+            "completion_tokens": 50,
+            "total": 550
+        }
+    }
 @pytest.fixture
 def llm_response_multi_intent_mixed():
     """LLM response for mixed multiple intents."""

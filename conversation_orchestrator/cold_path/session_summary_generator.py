@@ -10,15 +10,18 @@ from typing import List, Dict, Any, Optional
 
 from conversation_orchestrator.services.summarizer_service import summarize_conversation
 from conversation_orchestrator.services.db_service import save_session_summary
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 
 async def generate_session_summary(
+    db: Session,
     session_id: str,
     conversation_history: List[Dict[str, str]],
     trace_id: Optional[str] = None
 ) -> None:
+
     """
     Generate and save session summary.
     
@@ -101,7 +104,7 @@ async def generate_session_summary(
             return
         
         # Save to database
-        save_session_summary(session_id, summary)
+        save_session_summary(db, session_id, summary, trace_id)
         
         logger.info(
             "cold_path:session_summary_completed",

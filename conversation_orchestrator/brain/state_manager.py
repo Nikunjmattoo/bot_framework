@@ -13,9 +13,9 @@ This module manages the sessions.state JSONB column which contains:
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 import logging
 
-from db.db import get_db
 from db.models.sessions import SessionModel
 
 logger = logging.getLogger(__name__)
@@ -43,35 +43,32 @@ def get_default_state() -> Dict[str, Any]:
     }
 
 
-def get_session_state(session_id: str) -> Dict[str, Any]:
+def get_session_state(db: Session, session_id: str) -> Dict[str, Any]:
     """
     Get current session state.
     
     Args:
+        db: Database session
         session_id: Session UUID
         
     Returns:
         Dictionary with state fields, or default empty state
     """
     try:
-        db: Session = next(get_db())
-        try:
-            session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
-            
-            if not session:
-                raise ValueError(f"Session {session_id} not found")
-            
-            return session.state or get_default_state()
-            
-        finally:
-            db.close()
-            
-    except Exception as e:
+        session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
+        
+        return session.state or get_default_state()
+        
+    except SQLAlchemyError as e:
         logger.error(f"Error getting session state for {session_id}: {e}")
         raise
 
 
 def update_session_state(
+    db: Session,
     session_id: str,
     updates: Dict[str, Any]
 ) -> Dict[str, Any]:
@@ -81,6 +78,7 @@ def update_session_state(
     Merges updates into existing state and persists to database.
     
     Args:
+        db: Database session
         session_id: Session UUID
         updates: Dictionary of fields to update
         
@@ -88,26 +86,20 @@ def update_session_state(
         Updated state dictionary
     """
     try:
-        db: Session = next(get_db())
-        try:
-            session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
-            
-            if not session:
-                raise ValueError(f"Session {session_id} not found")
-            
-            current_state = session.state or get_default_state()
-            current_state.update(updates)
-            
-            session.state = current_state
-            db.commit()
-            db.refresh(session)
-            
-            return current_state
-            
-        finally:
-            db.close()
-            
-    except Exception as e:
+        session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
+        
+        current_state = session.state or get_default_state()
+        current_state.update(updates)
+        
+        session.state = current_state
+        db.flush()
+        
+        return current_state
+        
+    except SQLAlchemyError as e:
         logger.error(f"Error updating session state for {session_id}: {e}")
         raise
 
@@ -125,6 +117,7 @@ def initialize_session_state(session: SessionModel) -> None:
 
 
 def update_action_in_queue(
+    db: Session,
     session_id: str,
     action_index: int,
     updated_action: Dict[str, Any]
@@ -133,24 +126,20 @@ def update_action_in_queue(
     Update a specific action in the queue.
     
     Args:
+        db: Database session
         session_id: Session UUID
         action_index: Index of action in queue
         updated_action: Updated action dictionary
     """
     try:
-        db: Session = next(get_db())
-        try:
-            state = get_session_state(session_id)
-            action_queue = state.get('action_queue', [])
-            
-            if 0 <= action_index < len(action_queue):
-                action_queue[action_index] = updated_action
-                update_session_state(session_id, {'action_queue': action_queue})
-            else:
-                logger.warning(f"Invalid action index {action_index} for session {session_id}")
-                
-        finally:
-            db.close()
+        state = get_session_state(db, session_id)
+        action_queue = state.get('action_queue', [])
+        
+        if 0 <= action_index < len(action_queue):
+            action_queue[action_index] = updated_action
+            update_session_state(db, session_id, {'action_queue': action_queue})
+        else:
+            logger.warning(f"Invalid action index {action_index} for session {session_id}")
             
     except Exception as e:
         logger.error(f"Error updating action in queue for {session_id}: {e}")
@@ -158,6 +147,7 @@ def update_action_in_queue(
 
 
 def add_action_to_queue(
+    db: Session,
     session_id: str,
     action_data: Dict[str, Any]
 ) -> None:
@@ -165,146 +155,122 @@ def add_action_to_queue(
     Add a new action to the queue.
     
     Args:
+        db: Database session
         session_id: Session UUID
         action_data: Action dictionary to add
     """
     try:
-        db: Session = next(get_db())
-        try:
-            state = get_session_state(session_id)
-            action_queue = state.get('action_queue', [])
-            action_queue.append(action_data)
-            update_session_state(session_id, {'action_queue': action_queue})
-            
-        finally:
-            db.close()
-            
+        state = get_session_state(db, session_id)
+        action_queue = state.get('action_queue', [])
+        action_queue.append(action_data)
+        update_session_state(db, session_id, {'action_queue': action_queue})
+        
     except Exception as e:
         logger.error(f"Error adding action to queue for {session_id}: {e}")
         raise
 
 
-def get_current_action(session_id: str) -> Optional[Dict[str, Any]]:
+def get_current_action(db: Session, session_id: str) -> Optional[Dict[str, Any]]:
     """
     Get the current action being processed.
     
     Args:
+        db: Database session
         session_id: Session UUID
         
     Returns:
         Current action dictionary or None
     """
     try:
-        db: Session = next(get_db())
-        try:
-            state = get_session_state(session_id)
-            action_queue = state.get('action_queue', [])
-            current_index = state.get('current_action_index', 0)
-            
-            if 0 <= current_index < len(action_queue):
-                return action_queue[current_index]
-            
-            return None
-            
-        finally:
-            db.close()
-            
+        state = get_session_state(db, session_id)
+        action_queue = state.get('action_queue', [])
+        current_index = state.get('current_action_index', 0)
+        
+        if 0 <= current_index < len(action_queue):
+            return action_queue[current_index]
+        
+        return None
+        
     except Exception as e:
         logger.error(f"Error getting current action for {session_id}: {e}")
         raise
 
 
-def pause_queue(session_id: str, reason: str) -> None:
+def pause_queue(db: Session, session_id: str, reason: str) -> None:
     """
     Pause the action queue.
     
     Args:
+        db: Database session
         session_id: Session UUID
         reason: Reason for pausing
     """
     try:
-        db: Session = next(get_db())
-        try:
-            update_session_state(session_id, {
-                'queue_paused': True,
-                'queue_paused_reason': reason
-            })
-            
-        finally:
-            db.close()
-            
+        update_session_state(db, session_id, {
+            'queue_paused': True,
+            'queue_paused_reason': reason
+        })
+        
     except Exception as e:
         logger.error(f"Error pausing queue for {session_id}: {e}")
         raise
 
 
-def resume_queue(session_id: str) -> None:
+def resume_queue(db: Session, session_id: str) -> None:
     """
     Resume the action queue.
     
     Args:
+        db: Database session
         session_id: Session UUID
     """
     try:
-        db: Session = next(get_db())
-        try:
-            update_session_state(session_id, {
-                'queue_paused': False,
-                'queue_paused_reason': None
-            })
-            
-        finally:
-            db.close()
-            
+        update_session_state(db, session_id, {
+            'queue_paused': False,
+            'queue_paused_reason': None
+        })
+        
     except Exception as e:
         logger.error(f"Error resuming queue for {session_id}: {e}")
         raise
 
 
-def increment_current_action_index(session_id: str) -> None:
+def increment_current_action_index(db: Session, session_id: str) -> None:
     """
     Move to the next action in queue.
     
     Args:
+        db: Database session
         session_id: Session UUID
     """
     try:
-        db: Session = next(get_db())
-        try:
-            state = get_session_state(session_id)
-            current_index = state.get('current_action_index', 0)
-            update_session_state(session_id, {'current_action_index': current_index + 1})
-            
-        finally:
-            db.close()
-            
+        state = get_session_state(db, session_id)
+        current_index = state.get('current_action_index', 0)
+        update_session_state(db, session_id, {'current_action_index': current_index + 1})
+        
     except Exception as e:
         logger.error(f"Error incrementing action index for {session_id}: {e}")
         raise
 
 
-def has_more_actions(session_id: str) -> bool:
+def has_more_actions(db: Session, session_id: str) -> bool:
     """
     Check if there are more actions to process.
     
     Args:
+        db: Database session
         session_id: Session UUID
         
     Returns:
         True if more actions exist
     """
     try:
-        db: Session = next(get_db())
-        try:
-            state = get_session_state(session_id)
-            action_queue = state.get('action_queue', [])
-            current_index = state.get('current_action_index', 0)
-            
-            return current_index < len(action_queue)
-            
-        finally:
-            db.close()
-            
+        state = get_session_state(db, session_id)
+        action_queue = state.get('action_queue', [])
+        current_index = state.get('current_action_index', 0)
+        
+        return current_index < len(action_queue)
+        
     except Exception as e:
         logger.error(f"Error checking more actions for {session_id}: {e}")
         raise

@@ -22,8 +22,8 @@ logger = get_logger(__name__)
 
 
 async def process_message(
-    adapter_payload: Dict[str, Any],
-    db: Session  # ← ADD THIS PARAMETER
+    db: Session,
+    adapter_payload: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     Main entry point for conversation orchestrator.
@@ -79,7 +79,7 @@ async def process_message(
             ).count() + 1
         
         # Step 1: Intent Detection
-        intent_result = await detect_intents(adapter_payload, trace_id)
+        intent_result = await detect_intents(db, adapter_payload, trace_id)
         
         logger.info(
             "orchestrator:intents_detected",
@@ -132,16 +132,16 @@ async def process_message(
             )
             
             # Step 3: Brain Processing
-            from conversation_orchestrator.brain import process_with_brain
+            from conversation_orchestrator.brain import process_brain
             
-            brain_result = await process_with_brain(
+            brain_result = await process_brain(
+                db=db,  # ADD THIS
                 intent_result=intent_result,
                 session_id=adapter_payload["session_id"],
                 user_id=adapter_payload["message"]["sender_user_id"],
                 instance_id=adapter_payload["routing"]["instance_id"],
                 brand_id=adapter_payload["routing"]["brand_id"],
-                turn_number=turn_number,
-                db=db
+                turn_number=turn_number
             )
             
             final_text = brain_result["text"]

@@ -8,8 +8,8 @@ import logging
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
+from sqlalchemy.exc import SQLAlchemyError
 
-from db.db import get_db
 from db.models.messages import MessageModel
 from db.models.sessions import SessionModel
 from conversation_orchestrator.schemas import Message, ActiveTask
@@ -18,12 +18,14 @@ from conversation_orchestrator.exceptions import DatabaseError
 logger = logging.getLogger(__name__)
 
 
-def fetch_session_summary(session_id: str) -> Optional[str]:
+def fetch_session_summary(db: Session, session_id: str, trace_id: Optional[str] = None) -> Optional[str]:
     """
     Fetch session summary from database.
     
     Args:
+        db: Database session
         session_id: Session identifier
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         Session summary string (100-150 tokens) or None if not found
@@ -32,44 +34,38 @@ def fetch_session_summary(session_id: str) -> Optional[str]:
         DatabaseError: If database operation fails
     """
     try:
-        db: Session = next(get_db())
+        # Fetch session
+        session = db.query(SessionModel).filter(
+            SessionModel.id == session_id
+        ).first()
         
-        try:
-            # Fetch session
-            session = db.query(SessionModel).filter(
-                SessionModel.id == session_id
-            ).first()
-            
-            if not session:
-                logger.warning(
-                    "db_service:session_not_found",
-                    extra={"session_id": session_id}
-                )
-                return None
-            
-            # Get session_summary from session model
-            summary = getattr(session, 'session_summary', None)
-            
-            if summary:
-                logger.debug(
-                    "db_service:session_summary_found",
-                    extra={"session_id": session_id, "summary_length": len(summary)}
-                )
-            else:
-                logger.debug(
-                    "db_service:session_summary_not_found",
-                    extra={"session_id": session_id}
-                )
-            
-            return summary
+        if not session:
+            logger.warning(
+                "db_service:session_not_found",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
+            return None
         
-        finally:
-            db.close()
+        # Get session_summary from session model
+        summary = getattr(session, 'session_summary', None)
+        
+        if summary:
+            logger.debug(
+                "db_service:session_summary_found",
+                extra={"session_id": session_id, "summary_length": len(summary), "trace_id": trace_id}
+            )
+        else:
+            logger.debug(
+                "db_service:session_summary_not_found",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
+        
+        return summary
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_session_summary_error",
-            extra={"session_id": session_id, "error": str(e)}
+            extra={"session_id": session_id, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch session summary: {str(e)}",
@@ -78,15 +74,17 @@ def fetch_session_summary(session_id: str) -> Optional[str]:
         ) from e
 
 
-def fetch_previous_messages(session_id: str, limit: int = 4) -> List[Message]:
+def fetch_previous_messages(db: Session, session_id: str, limit: int = 4, trace_id: Optional[str] = None) -> List[Message]:
     """
     Fetch previous messages from database.
     
     Returns last N messages (default: 4 = 2 turns).
     
     Args:
+        db: Database session
         session_id: Session identifier
         limit: Number of messages to fetch (default: 4)
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         List of Message objects (ordered chronologically, oldest first)
@@ -95,47 +93,41 @@ def fetch_previous_messages(session_id: str, limit: int = 4) -> List[Message]:
         DatabaseError: If database operation fails
     """
     try:
-        db: Session = next(get_db())
+        # Fetch last N messages, ordered by created_at desc
+        messages_query = db.query(MessageModel).filter(
+            MessageModel.session_id == session_id
+        ).order_by(desc(MessageModel.created_at)).limit(limit)
         
-        try:
-            # Fetch last N messages, ordered by created_at desc
-            messages_query = db.query(MessageModel).filter(
-                MessageModel.session_id == session_id
-            ).order_by(desc(MessageModel.created_at)).limit(limit)
-            
-            messages = messages_query.all()
-            
-            if not messages:
-                logger.debug(
-                    "db_service:no_previous_messages",
-                    extra={"session_id": session_id}
-                )
-                return []
-            
-            # Convert to Message objects and reverse to chronological order
-            message_list = [
-                Message(
-                    role=msg.role,
-                    content=msg.content,
-                    timestamp=msg.created_at
-                )
-                for msg in reversed(messages)
-            ]
-            
+        messages = messages_query.all()
+        
+        if not messages:
             logger.debug(
-                "db_service:previous_messages_found",
-                extra={"session_id": session_id, "count": len(message_list)}
+                "db_service:no_previous_messages",
+                extra={"session_id": session_id, "trace_id": trace_id}
             )
-            
-            return message_list
+            return []
         
-        finally:
-            db.close()
+        # Convert to Message objects and reverse to chronological order
+        message_list = [
+            Message(
+                role=msg.role,
+                content=msg.content,
+                timestamp=msg.created_at
+            )
+            for msg in reversed(messages)
+        ]
+        
+        logger.debug(
+            "db_service:previous_messages_found",
+            extra={"session_id": session_id, "count": len(message_list), "trace_id": trace_id}
+        )
+        
+        return message_list
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_previous_messages_error",
-            extra={"session_id": session_id, "error": str(e)}
+            extra={"session_id": session_id, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch previous messages: {str(e)}",
@@ -144,12 +136,14 @@ def fetch_previous_messages(session_id: str, limit: int = 4) -> List[Message]:
         ) from e
 
 
-def fetch_active_task(session_id: str) -> Optional[ActiveTask]:
+def fetch_active_task(db: Session, session_id: str, trace_id: Optional[str] = None) -> Optional[ActiveTask]:
     """
     Fetch active task from database.
     
     Args:
+        db: Database session
         session_id: Session identifier
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         ActiveTask object or None if no active task
@@ -158,53 +152,47 @@ def fetch_active_task(session_id: str) -> Optional[ActiveTask]:
         DatabaseError: If database operation fails
     """
     try:
-        db: Session = next(get_db())
+        # Fetch session
+        session = db.query(SessionModel).filter(
+            SessionModel.id == session_id
+        ).first()
         
-        try:
-            # Fetch session
-            session = db.query(SessionModel).filter(
-                SessionModel.id == session_id
-            ).first()
-            
-            if not session:
-                logger.warning(
-                    "db_service:session_not_found",
-                    extra={"session_id": session_id}
-                )
-                return None
-            
-            # Get active_task from session
-            task_name = getattr(session, 'active_task_name', None)
-            task_status = getattr(session, 'active_task_status', None)
-            task_started = getattr(session, 'active_task_started_at', None)
-            
-            if task_name:
-                active_task = ActiveTask(
-                    name=task_name,
-                    status=task_status,
-                    started_at=task_started
-                )
-                
-                logger.debug(
-                    "db_service:active_task_found",
-                    extra={"session_id": session_id, "task_name": task_name}
-                )
-                
-                return active_task
-            else:
-                logger.debug(
-                    "db_service:no_active_task",
-                    extra={"session_id": session_id}
-                )
-                return None
+        if not session:
+            logger.warning(
+                "db_service:session_not_found",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
+            return None
         
-        finally:
-            db.close()
+        # Get active_task from session
+        task_name = getattr(session, 'active_task_name', None)
+        task_status = getattr(session, 'active_task_status', None)
+        task_started = getattr(session, 'active_task_started_at', None)
+        
+        if task_name:
+            active_task = ActiveTask(
+                name=task_name,
+                status=task_status,
+                started_at=task_started
+            )
+            
+            logger.debug(
+                "db_service:active_task_found",
+                extra={"session_id": session_id, "task_name": task_name, "trace_id": trace_id}
+            )
+            
+            return active_task
+        else:
+            logger.debug(
+                "db_service:no_active_task",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
+            return None
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_active_task_error",
-            extra={"session_id": session_id, "error": str(e)}
+            extra={"session_id": session_id, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch active task: {str(e)}",
@@ -213,12 +201,14 @@ def fetch_active_task(session_id: str) -> Optional[ActiveTask]:
         ) from e
 
 
-def fetch_next_narrative(session_id: str) -> Optional[str]:
+def fetch_next_narrative(db: Session, session_id: str, trace_id: Optional[str] = None) -> Optional[str]:
     """
     Fetch next narrative guidance from previous turn.
     
     Args:
+        db: Database session
         session_id: Session identifier
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         Next narrative string or None if not found
@@ -227,44 +217,38 @@ def fetch_next_narrative(session_id: str) -> Optional[str]:
         DatabaseError: If database operation fails
     """
     try:
-        db: Session = next(get_db())
+        # Fetch session
+        session = db.query(SessionModel).filter(
+            SessionModel.id == session_id
+        ).first()
         
-        try:
-            # Fetch session
-            session = db.query(SessionModel).filter(
-                SessionModel.id == session_id
-            ).first()
-            
-            if not session:
-                logger.warning(
-                    "db_service:session_not_found",
-                    extra={"session_id": session_id}
-                )
-                return None
-            
-            # Get next_narrative from session
-            next_narrative = getattr(session, 'next_narrative', None)
-            
-            if next_narrative:
-                logger.debug(
-                    "db_service:next_narrative_found",
-                    extra={"session_id": session_id, "narrative_length": len(next_narrative)}
-                )
-            else:
-                logger.debug(
-                    "db_service:next_narrative_not_found",
-                    extra={"session_id": session_id}
-                )
-            
-            return next_narrative
+        if not session:
+            logger.warning(
+                "db_service:session_not_found",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
+            return None
         
-        finally:
-            db.close()
+        # Get next_narrative from session
+        next_narrative = getattr(session, 'next_narrative', None)
+        
+        if next_narrative:
+            logger.debug(
+                "db_service:next_narrative_found",
+                extra={"session_id": session_id, "narrative_length": len(next_narrative), "trace_id": trace_id}
+            )
+        else:
+            logger.debug(
+                "db_service:next_narrative_not_found",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
+        
+        return next_narrative
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_next_narrative_error",
-            extra={"session_id": session_id, "error": str(e)}
+            extra={"session_id": session_id, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch next narrative: {str(e)}",
@@ -273,14 +257,16 @@ def fetch_next_narrative(session_id: str) -> Optional[str]:
         ) from e
 
 
-async def fetch_template_string(template_key: str) -> str:
+async def fetch_template_string(db: Session, template_key: str, trace_id: Optional[str] = None) -> str:
     """
     Fetch and build template string from database.
     
     Concatenates all section contents in sequence order.
     
     Args:
+        db: Database session
         template_key: Template key (e.g., "intent_v1")
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         Complete template string with all sections combined
@@ -289,66 +275,61 @@ async def fetch_template_string(template_key: str) -> str:
         DatabaseError: If template not found or fetch fails
     """
     try:
-        db: Session = next(get_db())
+        from db.models.templates import TemplateModel
         
-        try:
-            from db.models.templates import TemplateModel
-            
-            # Fetch template
-            template = db.query(TemplateModel).filter(
-                TemplateModel.template_key == template_key,
-                TemplateModel.is_active == True
-            ).first()
-            
-            if not template:
-                raise DatabaseError(
-                    message=f"Template not found: {template_key}",
-                    error_code="TEMPLATE_NOT_FOUND",
-                    details={"template_key": template_key}
-                )
-            
-            # Get sections
-            sections = template.sections if hasattr(template, 'sections') else []
-            
-            if not sections:
-                raise DatabaseError(
-                    message=f"Template has no sections: {template_key}",
-                    error_code="TEMPLATE_EMPTY",
-                    details={"template_key": template_key}
-                )
-            
-            # Sort by sequence
-            sorted_sections = sorted(sections, key=lambda s: s.get('sequence', 0))
-            
-            # Concatenate content
-            template_parts = []
-            for section in sorted_sections:
-                content = section.get('content', '')
-                if content:
-                    template_parts.append(content)
-            
-            final_template = '\n\n'.join(template_parts)
-            
-            logger.debug(
-                "db_service:template_built",
-                extra={
-                    "template_key": template_key,
-                    "sections_count": len(sorted_sections),
-                    "template_length": len(final_template)
-                }
+        # Fetch template
+        template = db.query(TemplateModel).filter(
+            TemplateModel.template_key == template_key,
+            TemplateModel.is_active == True
+        ).first()
+        
+        if not template:
+            raise DatabaseError(
+                message=f"Template not found: {template_key}",
+                error_code="TEMPLATE_NOT_FOUND",
+                details={"template_key": template_key}
             )
-            
-            return final_template
         
-        finally:
-            db.close()
+        # Get sections
+        sections = template.sections if hasattr(template, 'sections') else []
+        
+        if not sections:
+            raise DatabaseError(
+                message=f"Template has no sections: {template_key}",
+                error_code="TEMPLATE_EMPTY",
+                details={"template_key": template_key}
+            )
+        
+        # Sort by sequence
+        sorted_sections = sorted(sections, key=lambda s: s.get('sequence', 0))
+        
+        # Concatenate content
+        template_parts = []
+        for section in sorted_sections:
+            content = section.get('content', '')
+            if content:
+                template_parts.append(content)
+        
+        final_template = '\n\n'.join(template_parts)
+        
+        logger.debug(
+            "db_service:template_built",
+            extra={
+                "template_key": template_key,
+                "sections_count": len(sorted_sections),
+                "template_length": len(final_template),
+                "trace_id": trace_id
+            }
+        )
+        
+        return final_template
     
     except DatabaseError:
         raise
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_template_error",
-            extra={"template_key": template_key, "error": str(e)}
+            extra={"template_key": template_key, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch template: {str(e)}",
@@ -357,55 +338,56 @@ async def fetch_template_string(template_key: str) -> str:
         ) from e
 
 
-def save_session_summary(session_id: str, summary: str) -> None:
+def save_session_summary(db: Session, session_id: str, summary: str, trace_id: Optional[str] = None) -> None:
     """
     Save session summary to database.
     
     Updates the session_summary column in sessions table.
     This summary will be read by intent detector in next turn.
     
+    Note: Does NOT commit. Caller must commit the transaction.
+    
     Args:
+        db: Database session
         session_id: Session identifier
         summary: Summary text (100-150 tokens typically)
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         None
     """
     try:
-        db: Session = next(get_db())
+        from sqlalchemy.sql import func
         
-        try:
-            from sqlalchemy.sql import func
+        # Update session summary
+        session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        
+        if session:
+            session.session_summary = summary
+            session.updated_at = func.now()
+            db.flush()
             
-            # Update session summary
-            session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
-            
-            if session:
-                session.session_summary = summary
-                session.updated_at = func.now()
-                db.commit()
-                
-                logger.info(
-                    "db_service:session_summary_saved",
-                    extra={
-                        "session_id": session_id,
-                        "summary_length": len(summary)
-                    }
-                )
-            else:
-                logger.warning(
-                    "db_service:session_not_found",
-                    extra={"session_id": session_id}
-                )
-        finally:
-            db.close()
+            logger.info(
+                "db_service:session_summary_saved",
+                extra={
+                    "session_id": session_id,
+                    "summary_length": len(summary),
+                    "trace_id": trace_id
+                }
+            )
+        else:
+            logger.warning(
+                "db_service:session_not_found",
+                extra={"session_id": session_id, "trace_id": trace_id}
+            )
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:save_session_summary_error",
             extra={
                 "session_id": session_id,
-                "error": str(e)
+                "error": str(e),
+                "trace_id": trace_id
             }
         )
         raise DatabaseError(
@@ -415,7 +397,7 @@ def save_session_summary(session_id: str, summary: str) -> None:
         ) from e
 
 
-async def fetch_template_config(template_key: str) -> Dict[str, Any]:
+async def fetch_template_config(db: Session, template_key: str, trace_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch LLM configuration for a template.
     
@@ -423,7 +405,9 @@ async def fetch_template_config(template_key: str) -> Dict[str, Any]:
     provider, model name, and other config needed to call LLM.
     
     Args:
+        db: Database session
         template_key: Template key (e.g., "session_summary_v1")
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         Dict with LLM config:
@@ -438,60 +422,56 @@ async def fetch_template_config(template_key: str) -> Dict[str, Any]:
         DatabaseError: If template or LLM model not found
     """
     try:
-        db: Session = next(get_db())
+        from db.models.templates import TemplateModel
+        from db.models.llm_models import LLMModel
         
-        try:
-            from db.models.templates import TemplateModel
-            from db.models.llm_models import LLMModel
-            
-            # Fetch template with joined LLM model
-            result = (
-                db.query(TemplateModel, LLMModel)
-                .join(LLMModel, TemplateModel.llm_model_id == LLMModel.id)
-                .filter(TemplateModel.template_key == template_key)
-                .filter(TemplateModel.is_active == True)
-                .first()
+        # Fetch template with joined LLM model
+        result = (
+            db.query(TemplateModel, LLMModel)
+            .join(LLMModel, TemplateModel.llm_model_id == LLMModel.id)
+            .filter(TemplateModel.template_key == template_key)
+            .filter(TemplateModel.is_active == True)
+            .first()
+        )
+        
+        if not result:
+            raise DatabaseError(
+                message=f"Template '{template_key}' not found or inactive",
+                error_code="TEMPLATE_NOT_FOUND",
+                details={"template_key": template_key}
             )
-            
-            if not result:
-                raise DatabaseError(
-                    message=f"Template '{template_key}' not found or inactive",
-                    error_code="TEMPLATE_NOT_FOUND",
-                    details={"template_key": template_key}
-                )
-            
-            template, llm_model = result
-            
-            # Build config dict
-            config = {
-                "provider": llm_model.provider,
-                "model": llm_model.api_model_name,
-                "temperature": float(llm_model.temperature) if llm_model.temperature else 0.7,
-                "max_tokens": llm_model.max_tokens
+        
+        template, llm_model = result
+        
+        # Build config dict
+        config = {
+            "provider": llm_model.provider,
+            "model": llm_model.api_model_name,
+            "temperature": float(llm_model.temperature) if llm_model.temperature else 0.7,
+            "max_tokens": llm_model.max_tokens
+        }
+        
+        logger.info(
+            "db_service:template_config_fetched",
+            extra={
+                "template_key": template_key,
+                "provider": config["provider"],
+                "model": config["model"],
+                "trace_id": trace_id
             }
-            
-            logger.info(
-                "db_service:template_config_fetched",
-                extra={
-                    "template_key": template_key,
-                    "provider": config["provider"],
-                    "model": config["model"]
-                }
-            )
-            
-            return config
+        )
         
-        finally:
-            db.close()
+        return config
     
     except DatabaseError:
         raise
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_template_config_error",
             extra={
                 "template_key": template_key,
-                "error": str(e)
+                "error": str(e),
+                "trace_id": trace_id
             }
         )
         raise DatabaseError(
@@ -499,8 +479,9 @@ async def fetch_template_config(template_key: str) -> Dict[str, Any]:
             error_code="DB_FETCH_ERROR",
             details={"template_key": template_key}
         ) from e
+
     
-def fetch_brain_state(session_id: str) -> Dict[str, Any]:
+def fetch_brain_state(db: Session, session_id: str, trace_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch brain state from sessions.state JSONB column.
     
@@ -513,7 +494,9 @@ def fetch_brain_state(session_id: str) -> Dict[str, Any]:
     - available_signals
     
     Args:
+        db: Database session
         session_id: Session identifier
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         Dictionary with brain state or empty dict if not found
@@ -522,42 +505,37 @@ def fetch_brain_state(session_id: str) -> Dict[str, Any]:
         DatabaseError: If database operation fails
     """
     try:
-        db: Session = next(get_db())
+        # Fetch session
+        session = db.query(SessionModel).filter(
+            SessionModel.id == session_id
+        ).first()
         
-        try:
-            # Fetch session
-            session = db.query(SessionModel).filter(
-                SessionModel.id == session_id
-            ).first()
-            
-            if not session:
-                logger.warning(
-                    "db_service:session_not_found_for_brain_state",
-                    extra={"session_id": session_id}
-                )
-                return {}
-            
-            # Get state or return empty dict
-            state = session.state if session.state else {}
-            
-            logger.debug(
-                "db_service:brain_state_fetched",
-                extra={
-                    "session_id": session_id,
-                    "has_state": bool(state),
-                    "expecting_response": state.get("expecting_response", False)
-                }
+        if not session:
+            logger.warning(
+                "db_service:session_not_found_for_brain_state",
+                extra={"session_id": session_id, "trace_id": trace_id}
             )
-            
-            return state
+            return {}
         
-        finally:
-            db.close()
+        # Get state or return empty dict
+        state = session.state if session.state else {}
+        
+        logger.debug(
+            "db_service:brain_state_fetched",
+            extra={
+                "session_id": session_id,
+                "has_state": bool(state),
+                "expecting_response": state.get("expecting_response", False),
+                "trace_id": trace_id
+            }
+        )
+        
+        return state
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_brain_state_error",
-            extra={"session_id": session_id, "error": str(e)}
+            extra={"session_id": session_id, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch brain state: {str(e)}",
@@ -566,7 +544,7 @@ def fetch_brain_state(session_id: str) -> Dict[str, Any]:
         ) from e
 
 
-def fetch_popular_actions(instance_id: str) -> List[str]:
+def fetch_popular_actions(db: Session, instance_id: str, trace_id: Optional[str] = None) -> List[str]:
     """
     Fetch popular_actions from instance_configs.config JSONB column.
     
@@ -574,7 +552,9 @@ def fetch_popular_actions(instance_id: str) -> List[str]:
     Falls back to empty list if not configured.
     
     Args:
+        db: Database session
         instance_id: Instance UUID
+        trace_id: Trace ID for logging (optional)
     
     Returns:
         List of action names (e.g., ["apply_job", "search_jobs"])
@@ -584,45 +564,40 @@ def fetch_popular_actions(instance_id: str) -> List[str]:
         DatabaseError: If database operation fails
     """
     try:
-        db: Session = next(get_db())
+        from db.models.instance_configs import InstanceConfigModel
         
-        try:
-            from db.models.instance_configs import InstanceConfigModel
-            
-            # Fetch active config for instance
-            config = db.query(InstanceConfigModel).filter(
-                InstanceConfigModel.instance_id == instance_id,
-                InstanceConfigModel.is_active == True
-            ).first()
-            
-            if not config:
-                logger.debug(
-                    "db_service:instance_config_not_found",
-                    extra={"instance_id": instance_id}
-                )
-                return []
-            
-            # Use helper method to get popular_actions
-            popular_actions = config.get_popular_actions()
-            
+        # Fetch active config for instance
+        config = db.query(InstanceConfigModel).filter(
+            InstanceConfigModel.instance_id == instance_id,
+            InstanceConfigModel.is_active == True
+        ).first()
+        
+        if not config:
             logger.debug(
-                "db_service:popular_actions_fetched",
-                extra={
-                    "instance_id": instance_id,
-                    "actions_count": len(popular_actions),
-                    "actions": popular_actions
-                }
+                "db_service:instance_config_not_found",
+                extra={"instance_id": instance_id, "trace_id": trace_id}
             )
-            
-            return popular_actions
+            return []
         
-        finally:
-            db.close()
+        # Use helper method to get popular_actions
+        popular_actions = config.get_popular_actions()
+        
+        logger.debug(
+            "db_service:popular_actions_fetched",
+            extra={
+                "instance_id": instance_id,
+                "actions_count": len(popular_actions),
+                "actions": popular_actions,
+                "trace_id": trace_id
+            }
+        )
+        
+        return popular_actions
     
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             "db_service:fetch_popular_actions_error",
-            extra={"instance_id": instance_id, "error": str(e)}
+            extra={"instance_id": instance_id, "error": str(e), "trace_id": trace_id}
         )
         raise DatabaseError(
             message=f"Failed to fetch popular actions: {str(e)}",

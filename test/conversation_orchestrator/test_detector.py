@@ -29,6 +29,7 @@ class TestDetectIntentsSuccess:
     @pytest.mark.asyncio
     async def test_detect_greeting_intent_success(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -43,7 +44,7 @@ class TestDetectIntentsSuccess:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert "intents" in result
         assert len(result["intents"]) == 1
@@ -54,6 +55,7 @@ class TestDetectIntentsSuccess:
     @pytest.mark.asyncio
     async def test_detect_action_intent_success(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_action
     ):
@@ -69,7 +71,7 @@ class TestDetectIntentsSuccess:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_action)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert len(result["intents"]) == 1
         assert result["intents"][0]["intent_type"] == "action"
@@ -79,6 +81,7 @@ class TestDetectIntentsSuccess:
     @pytest.mark.asyncio
     async def test_detect_multiple_intents_success(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_multi_intent_mixed
     ):
@@ -94,7 +97,7 @@ class TestDetectIntentsSuccess:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_multi_intent_mixed)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert len(result["intents"]) == 2
         assert result["intents"][0]["intent_type"] == "gratitude"
@@ -103,6 +106,7 @@ class TestDetectIntentsSuccess:
     @pytest.mark.asyncio
     async def test_token_usage_included(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -116,7 +120,7 @@ class TestDetectIntentsSuccess:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert "token_usage" in result
         assert "prompt_tokens" in result["token_usage"]
@@ -133,6 +137,7 @@ class TestTemplateHandling:
     @pytest.mark.asyncio
     async def test_template_fetched_from_db(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -148,13 +153,14 @@ class TestTemplateHandling:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            await detect_intents(base_adapter_payload, "trace-123")
+            await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         mock_fetch.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_missing_template_key_raises_error(
         self,
+        db_session,
         base_adapter_payload
     ):
         """✓ Missing template key raises error"""
@@ -163,13 +169,14 @@ class TestTemplateHandling:
         base_adapter_payload["template"] = {}
         
         with pytest.raises(IntentDetectionError) as exc:
-            await detect_intents(base_adapter_payload, "trace-123")
+            await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert exc.value.error_code == "MISSING_TEMPLATE_KEY"
     
     @pytest.mark.asyncio
     async def test_template_variables_filled_correctly(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -189,7 +196,7 @@ class TestTemplateHandling:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=capture_llm_call), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            await detect_intents(base_adapter_payload, "trace-123")
+            await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert len(captured_prompt) == 1
         assert "Hello" in captured_prompt[0]
@@ -205,6 +212,7 @@ class TestEnrichmentData:
     @pytest.mark.asyncio
     async def test_fetch_enrichment_data_success(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -218,7 +226,7 @@ class TestEnrichmentData:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert "intents" in result
     
@@ -250,6 +258,7 @@ class TestEnrichmentData:
     @pytest.mark.asyncio
     async def test_user_type_derived_from_policy(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -271,7 +280,7 @@ class TestEnrichmentData:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=capture_llm_call), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            await detect_intents(base_adapter_payload, "trace-123")
+            await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         assert "guest" in captured_variables[0]
 
@@ -286,6 +295,7 @@ class TestColdPathTrigger:
     @pytest.mark.asyncio
     async def test_cold_paths_triggered(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -301,13 +311,14 @@ class TestColdPathTrigger:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths', mock_trigger):
             
-            await detect_intents(base_adapter_payload, "trace-123")
+            await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         mock_trigger.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_cold_paths_include_session_summary_generator(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_greeting
     ):
@@ -323,7 +334,7 @@ class TestColdPathTrigger:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_greeting)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths', mock_trigger):
             
-            await detect_intents(base_adapter_payload, "trace-123")
+            await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         call_kwargs = mock_trigger.call_args[1]
         assert "session_summary_generator" in call_kwargs["cold_paths"]
@@ -339,6 +350,7 @@ class TestDetectorErrorHandling:
     @pytest.mark.asyncio
     async def test_llm_timeout_raises_error(
         self,
+        db_session,
         base_adapter_payload
     ):
         """✓ LLM timeout raises IntentDetectionError"""
@@ -357,11 +369,12 @@ class TestDetectorErrorHandling:
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
             with pytest.raises(IntentDetectionError):
-                await detect_intents(base_adapter_payload, "trace-123")
+                await detect_intents(db_session, base_adapter_payload, "trace-123")
     
     @pytest.mark.asyncio
     async def test_invalid_llm_response_raises_error(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_invalid_json
     ):
@@ -376,11 +389,12 @@ class TestDetectorErrorHandling:
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
             with pytest.raises(IntentDetectionError):
-                await detect_intents(base_adapter_payload, "trace-123")
+                await detect_intents(db_session, base_adapter_payload, "trace-123")
     
     @pytest.mark.asyncio
     async def test_missing_template_raises_error(
         self,
+        db_session,
         base_adapter_payload
     ):
         """✓ Missing template raises error"""
@@ -390,7 +404,7 @@ class TestDetectorErrorHandling:
         
         with patch('conversation_orchestrator.intent_detection.detector.fetch_template_string', new=mock_missing):
             with pytest.raises(IntentDetectionError):
-                await detect_intents(base_adapter_payload, "trace-123")
+                await detect_intents(db_session, base_adapter_payload, "trace-123")
 
 
 # ============================================================================
@@ -403,6 +417,7 @@ class TestDetectorParserIntegration:
     @pytest.mark.asyncio
     async def test_low_confidence_intents_passed_through(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_low_confidence
     ):
@@ -416,7 +431,7 @@ class TestDetectorParserIntegration:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_low_confidence)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         # Should pass through low confidence intent
         assert len(result["intents"]) == 1
@@ -425,6 +440,7 @@ class TestDetectorParserIntegration:
     @pytest.mark.asyncio
     async def test_single_medium_confidence_passed_through(
         self,
+        db_session,
         base_adapter_payload,
         llm_response_single_low_confidence
     ):
@@ -438,7 +454,7 @@ class TestDetectorParserIntegration:
              patch('conversation_orchestrator.intent_detection.detector.call_llm_async', new=AsyncMock(return_value=llm_response_single_low_confidence)), \
              patch('conversation_orchestrator.intent_detection.detector.trigger_cold_paths'):
             
-            result = await detect_intents(base_adapter_payload, "trace-123")
+            result = await detect_intents(db_session, base_adapter_payload, "trace-123")
         
         # Should pass through as-is
         assert len(result["intents"]) == 1

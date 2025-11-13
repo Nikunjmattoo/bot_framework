@@ -57,7 +57,7 @@ TIMEOUT_CONFIG = {
 }
 
 
-async def check_and_handle_timeouts(session_id: str) -> Dict[str, Any]:
+async def check_and_handle_timeouts(db: Session, session_id: str) -> Dict[str, Any]:
     """
     Check action queue for expired actions and clean them up.
     
@@ -70,7 +70,7 @@ async def check_and_handle_timeouts(session_id: str) -> Dict[str, Any]:
             'should_notify': bool
         }
     """
-    state = get_session_state(session_id)
+    state = get_session_state(db, session_id)
     action_queue = state.get('action_queue', [])
     
     now = datetime.utcnow()
@@ -91,7 +91,7 @@ async def check_and_handle_timeouts(session_id: str) -> Dict[str, Any]:
                 queued_action['status'] = 'expired'
                 queued_action['expired_at'] = now.isoformat()
                 queued_action['expiry_reason'] = f'timeout_in_{status}'
-                update_action_in_queue(session_id, i, queued_action)
+                update_action_in_queue(db, session_id, i, queued_action)
                 
                 # Update intent ledger
                 intent_id = queued_action.get('intent_id')
@@ -108,7 +108,7 @@ async def check_and_handle_timeouts(session_id: str) -> Dict[str, Any]:
             queued_action['status'] = 'expired'
             queued_action['expired_at'] = now.isoformat()
             queued_action['expiry_reason'] = 'max_queue_age_exceeded'
-            update_action_in_queue(session_id, i, queued_action)
+            update_action_in_queue(db, session_id, i, queued_action)
             
             intent_id = queued_action.get('intent_id')
             if intent_id:
@@ -119,7 +119,7 @@ async def check_and_handle_timeouts(session_id: str) -> Dict[str, Any]:
     # Remove expired actions from queue
     if expired_actions:
         action_queue = [a for a in action_queue if a.get('status') not in ['expired']]
-        update_session_state(session_id, {
+        update_session_state(db, session_id, {
             'action_queue': action_queue,
             'current_action_index': 0
         })
@@ -289,7 +289,8 @@ def expand_workflow(
         return []
 
 
-async def process_with_brain(
+async def process_brain(
+    db: Session,
     intent_result: Dict[str, Any],
     session_id: str,
     user_id: str,
@@ -334,7 +335,7 @@ async def process_with_brain(
             response_parts = []
             
             # Step 1: Check for timeouts FIRST
-            timeout_result = await check_and_handle_timeouts(session_id)
+            timeout_result = await check_and_handle_timeouts(db, session_id)
             
             if timeout_result['should_notify']:
                 expired_list = ', '.join(timeout_result['expired_actions'])
@@ -462,16 +463,16 @@ async def process_with_brain(
             
             # Step 10: Persist queue to session state
             if action_queue:
-                state = get_session_state(session_id)
+                state = get_session_state(db, session_id)
                 existing_queue = state.get('action_queue', [])
                 existing_queue.extend(action_queue)
                 
-                update_session_state(session_id, {
+                update_session_state(db, session_id, {
                     'action_queue': existing_queue
                 })
             
             # Step 11: Build wires for next turn
-            state = get_session_state(session_id)
+            state = get_session_state(db, session_id)
             
             # Wire 1: expecting_response
             expecting_response_state = state.get('queue_paused', False)
@@ -502,7 +503,7 @@ async def process_with_brain(
                 available_signals_state = list(set(available_signals_state))
             
             # Update session state with all 6 wires
-            update_session_state(session_id, {
+            update_session_state(db, session_id, {
                 "expecting_response": expecting_response_state,
                 "answer_sheet": answer_sheet_state,
                 "active_task": active_task_state,
