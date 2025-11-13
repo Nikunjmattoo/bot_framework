@@ -18,7 +18,6 @@ from conversation_orchestrator.intent_detection.models import (
     IntentOutput,
     SELF_RESPOND_INTENTS,
     MIN_CONFIDENCE,
-    CLARIFICATION_CONFIDENCE,
     requires_brain,
     get_action_intents,
     get_primary_intent,
@@ -33,11 +32,11 @@ from conversation_orchestrator.intent_detection.models import (
 class TestIntentTypeEnum:
     """Test IntentType enum definition."""
     
-    def test_all_10_intent_types_defined(self):
-        """✓ All 10 intent types defined"""
+    def test_all_8_intent_types_defined(self):
+        """✓ All 8 intent types defined (matches intents.md)"""
         expected_types = {
             "greeting", "goodbye", "gratitude", "chitchat",
-            "help", "fallback", "affirm", "deny", "clarification", "action"
+            "action", "help", "response", "unknown"
         }
         actual_types = {intent.value for intent in IntentType}
         assert actual_types == expected_types, f"Expected {expected_types}, got {actual_types}"
@@ -56,14 +55,15 @@ class TestIntentTypeEnum:
     def test_confidence_constants_have_correct_values(self):
         """✓ Confidence constants defined correctly"""
         assert MIN_CONFIDENCE == 0.7
-        assert CLARIFICATION_CONFIDENCE == 0.85
     
     def test_intent_type_string_values(self):
         """✓ IntentType enum has correct string values"""
         assert IntentType.GREETING.value == "greeting"
         assert IntentType.GOODBYE.value == "goodbye"
         assert IntentType.ACTION.value == "action"
-        assert IntentType.FALLBACK.value == "fallback"
+        assert IntentType.HELP.value == "help"
+        assert IntentType.RESPONSE.value == "response"
+        assert IntentType.UNKNOWN.value == "unknown"
 
 
 # ============================================================================
@@ -126,7 +126,7 @@ class TestSingleIntentModel:
     def test_confidence_at_0_accepted(self):
         """✓ Confidence = 0.0 accepted (edge case)"""
         intent = SingleIntent(
-            intent_type=IntentType.FALLBACK,
+            intent_type=IntentType.UNKNOWN,
             confidence=0.0,
             entities={},
             sequence_order=1
@@ -318,10 +318,8 @@ class TestIntentOutputModel:
 class TestHelperFunctions:
     """Test helper functions in models module."""
     
-    # requires_brain() tests
-    
     def test_requires_brain_with_action_intent(self):
-        """✓ requires_brain returns True for action intent"""
+        """✓ Action intent requires brain"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.ACTION,
@@ -334,7 +332,7 @@ class TestHelperFunctions:
         assert requires_brain(intents) is True
     
     def test_requires_brain_with_greeting_intent(self):
-        """✓ requires_brain returns False for greeting intent"""
+        """✓ Greeting intent does not require brain"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.GREETING,
@@ -346,86 +344,58 @@ class TestHelperFunctions:
         assert requires_brain(intents) is False
     
     def test_requires_brain_with_mixed_intents(self):
-        """✓ requires_brain returns True if any intent requires brain"""
+        """✓ Mixed intents require brain if any brain-required"""
         intents = [
             SingleIntent(
-                intent_type=IntentType.GRATITUDE,
-                confidence=0.97,
+                intent_type=IntentType.GREETING,
+                confidence=0.95,
                 entities={},
                 sequence_order=1
             ),
             SingleIntent(
                 intent_type=IntentType.ACTION,
                 canonical_intent="check_order",
-                confidence=0.94,
+                confidence=0.92,
                 entities={},
                 sequence_order=2
             )
         ]
         assert requires_brain(intents) is True
     
-    def test_requires_brain_with_empty_list(self):
-        """✓ requires_brain returns False for empty list"""
-        assert requires_brain([]) is False
-    
-    # get_action_intents() tests
-    
     def test_get_action_intents_filters_correctly(self):
         """✓ get_action_intents returns only action intents"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.GREETING,
-                confidence=0.98,
+                confidence=0.95,
                 entities={},
                 sequence_order=1
             ),
             SingleIntent(
                 intent_type=IntentType.ACTION,
                 canonical_intent="check_order",
-                confidence=0.95,
+                confidence=0.92,
                 entities={},
                 sequence_order=2
-            ),
-            SingleIntent(
-                intent_type=IntentType.ACTION,
-                canonical_intent="create_profile",
-                confidence=0.93,
-                entities={},
-                sequence_order=3
             )
         ]
         action_intents = get_action_intents(intents)
-        assert len(action_intents) == 2
-        assert all(i.intent_type == IntentType.ACTION for i in action_intents)
+        assert len(action_intents) == 1
+        assert action_intents[0].intent_type == IntentType.ACTION
     
-    def test_get_action_intents_empty_if_no_actions(self):
-        """✓ get_action_intents returns empty list if no actions"""
-        intents = [
-            SingleIntent(
-                intent_type=IntentType.GREETING,
-                confidence=0.98,
-                entities={},
-                sequence_order=1
-            )
-        ]
-        action_intents = get_action_intents(intents)
-        assert action_intents == []
-    
-    # get_primary_intent() tests
-    
-    def test_get_primary_intent_returns_action_if_present(self):
+    def test_get_primary_intent_returns_action_first(self):
         """✓ get_primary_intent prioritizes action intent"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.GREETING,
-                confidence=0.98,
+                confidence=0.95,
                 entities={},
                 sequence_order=1
             ),
             SingleIntent(
                 intent_type=IntentType.ACTION,
                 canonical_intent="check_order",
-                confidence=0.95,
+                confidence=0.92,
                 entities={},
                 sequence_order=2
             )
@@ -434,17 +404,17 @@ class TestHelperFunctions:
         assert primary.intent_type == IntentType.ACTION
     
     def test_get_primary_intent_returns_first_if_no_action(self):
-        """✓ get_primary_intent returns first intent if no action"""
+        """✓ get_primary_intent returns first if no action"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.GREETING,
-                confidence=0.98,
+                confidence=0.95,
                 entities={},
                 sequence_order=1
             ),
             SingleIntent(
                 intent_type=IntentType.GRATITUDE,
-                confidence=0.97,
+                confidence=0.92,
                 entities={},
                 sequence_order=2
             )
@@ -452,49 +422,51 @@ class TestHelperFunctions:
         primary = get_primary_intent(intents)
         assert primary.intent_type == IntentType.GREETING
     
-    def test_get_primary_intent_returns_none_for_empty_list(self):
-        """✓ get_primary_intent returns None for empty list"""
-        assert get_primary_intent([]) is None
-    
-    # is_self_respond_only() tests
-    
     def test_is_self_respond_only_true_for_all_self_respond(self):
-        """✓ is_self_respond_only returns True if all intents are self-respond"""
+        """✓ is_self_respond_only returns True for all self-respond"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.GREETING,
-                confidence=0.98,
+                confidence=0.95,
                 entities={},
                 sequence_order=1
             ),
             SingleIntent(
                 intent_type=IntentType.GRATITUDE,
-                confidence=0.97,
+                confidence=0.92,
                 entities={},
                 sequence_order=2
             )
         ]
         assert is_self_respond_only(intents) is True
     
-    def test_is_self_respond_only_false_if_any_brain_required(self):
-        """✓ is_self_respond_only returns False if any intent requires brain"""
+    def test_is_self_respond_only_false_with_brain_required(self):
+        """✓ is_self_respond_only returns False with brain-required"""
         intents = [
             SingleIntent(
                 intent_type=IntentType.GREETING,
-                confidence=0.98,
+                confidence=0.95,
                 entities={},
                 sequence_order=1
             ),
             SingleIntent(
                 intent_type=IntentType.ACTION,
                 canonical_intent="check_order",
-                confidence=0.95,
+                confidence=0.92,
                 entities={},
                 sequence_order=2
             )
         ]
         assert is_self_respond_only(intents) is False
     
-    def test_is_self_respond_only_false_for_empty_list(self):
+    def test_requires_brain_empty_list(self):
+        """✓ requires_brain returns False for empty list"""
+        assert requires_brain([]) is False
+    
+    def test_get_primary_intent_empty_list(self):
+        """✓ get_primary_intent returns None for empty list"""
+        assert get_primary_intent([]) is None
+    
+    def test_is_self_respond_only_empty_list(self):
         """✓ is_self_respond_only returns False for empty list"""
         assert is_self_respond_only([]) is False

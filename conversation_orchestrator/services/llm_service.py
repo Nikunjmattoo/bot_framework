@@ -128,6 +128,12 @@ class LLMService:
                 extra={"tokens_used": token_usage["total"]}
             )
             
+            print(f"\n{'='*80}")
+            print(f"GROQ: API call successful")
+            print(f"Content length: {len(content)}")
+            print(f"Content preview: {content[:200]}")
+            print(f"{'='*80}\n")
+            
             return {
                 "content": content,
                 "token_usage": token_usage,
@@ -381,6 +387,12 @@ async def call_llm_async(
     Raises:
         LLMError: If runtime not supported or call fails
     """
+    print(f"\n{'='*80}")
+    print(f"LLM_SERVICE: call_llm_async CALLED")
+    print(f"Runtime: {runtime}")
+    print(f"Model: {model}")
+    print(f"{'='*80}\n")
+    
     runtime = runtime.lower()
     
     # Route to appropriate provider

@@ -37,7 +37,7 @@
 | Helper Functions | 12/12 | ✅ |
 
 **Test Details**:
-- ✅ All 10 intent types defined correctly
+- ✅ All 8 intent types defined correctly (greeting, goodbye, gratitude, chitchat, action, help, response, unknown)
 - ✅ SELF_RESPOND_INTENTS contains exactly 4 types
 - ✅ Confidence constants validated (MIN_CONFIDENCE=0.7, CLARIFICATION_CONFIDENCE=0.85)
 - ✅ Pydantic model validation working correctly

@@ -401,12 +401,12 @@ class TestDetectorParserIntegration:
     """Test detector-parser integration."""
     
     @pytest.mark.asyncio
-    async def test_low_confidence_filtered_to_fallback(
+    async def test_low_confidence_intents_passed_through(
         self,
         base_adapter_payload,
         llm_response_low_confidence
     ):
-        """✓ Low confidence intents passed through (no filtering)"""
+        """✓ Low confidence intents passed through as unknown"""
         
         with patch('conversation_orchestrator.intent_detection.detector.fetch_template_string', new=AsyncMock(return_value="Template")), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_session_summary', return_value=None), \
@@ -423,7 +423,7 @@ class TestDetectorParserIntegration:
         assert result["intents"][0]["confidence"] == 0.45
     
     @pytest.mark.asyncio
-    async def test_single_medium_confidence_to_clarification(
+    async def test_single_medium_confidence_passed_through(
         self,
         base_adapter_payload,
         llm_response_single_low_confidence

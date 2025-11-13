@@ -49,13 +49,7 @@ test/conversation_orchestrator/
 - Confidence constant tests
 
 ### 2. Parser Tests (`test_parser.py`)
-- JSON parsing
-- Confidence filtering
-- Fallback intent creation
-- Clarification intent creation
-- Response text validation
-- Error handling
-- Edge cases
+
 
 ### 3. Detector Tests (`test_detector.py`)
 - Intent detection flow
@@ -111,7 +105,7 @@ pytest test/conversation_orchestrator/ -v
 pytest test/conversation_orchestrator/test_models.py -v
 
 # Specific test
-pytest test/conversation_orchestrator/test_models.py::TestIntentTypeEnum::test_all_10_intent_types_defined -v
+pytest test/conversation_orchestrator/test_models.py::TestIntentTypeEnum::test_all_8_intent_types_defined -v
 
 # With coverage
 pytest test/conversation_orchestrator/ --cov=conversation_orchestrator --cov-report=html

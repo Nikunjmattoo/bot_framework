@@ -646,12 +646,12 @@ class TestOrchestratorEdgeCases:
             assert "text" in result
     
     @pytest.mark.asyncio
-    async def test_fallback_intent_brain_required(
+    async def test_unknown_intent_brain_required(
         self,
         base_adapter_payload,
         llm_response_low_confidence
     ):
-        """✓ Low confidence intent goes to brain"""
+        """✓ Unknown intent goes to brain"""
         
         with patch('conversation_orchestrator.intent_detection.detector.fetch_template_string', new=AsyncMock(return_value="Template")), \
              patch('conversation_orchestrator.intent_detection.detector.fetch_session_summary', return_value=None), \
@@ -667,7 +667,7 @@ class TestOrchestratorEdgeCases:
         assert result["intents"][0]["intent_type"] == "action"
     
     @pytest.mark.asyncio
-    async def test_clarification_intent_brain_required(
+    async def test_response_intent_brain_required(
         self,
         base_adapter_payload,
         llm_response_single_low_confidence

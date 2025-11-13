@@ -352,7 +352,7 @@ def test_template_full(db_session, test_llm_model_orchestrator):
                 "key": "intent_types",
                 "sequence": 2,
                 "budget_tokens": 350,
-                "content": "## INTENT TYPES (10 total):\n\n**Self-Respond Intents**:\n1. greeting\n2. goodbye\n3. gratitude\n4. chitchat\n\n**Brain-Required Intents**:\n5. help\n6. fallback\n7. affirm\n8. deny\n9. clarification\n10. action"
+                "content": "## INTENT TYPES (8 total):\n\n**Self-Respond Intents (4)**:\n1. greeting\n2. goodbye\n3. gratitude\n4. chitchat\n\n**Brain-Required Intents (4)**:\n5. action\n6. help\n7. response\n8. unknown"
             },
             {
                 "key": "self_respond_logic",

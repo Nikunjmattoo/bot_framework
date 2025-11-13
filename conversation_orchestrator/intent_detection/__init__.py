@@ -13,7 +13,6 @@ from conversation_orchestrator.intent_detection.models import (
     SELF_RESPOND_INTENTS,
     BRAIN_REQUIRED_INTENTS,
     MIN_CONFIDENCE,
-    CLARIFICATION_CONFIDENCE,
     is_self_respond_only
 )
 
@@ -26,6 +25,5 @@ __all__ = [
     "SELF_RESPOND_INTENTS",
     "BRAIN_REQUIRED_INTENTS",
     "MIN_CONFIDENCE",
-    "CLARIFICATION_CONFIDENCE",
     "is_self_respond_only",
 ]
