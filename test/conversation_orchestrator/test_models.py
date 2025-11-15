@@ -203,7 +203,74 @@ class TestSingleIntentModel:
         assert intent_dict["entities"] == {"order_id": "123"}
         assert intent_dict["sequence_order"] == 1
 
+    def test_canonical_intent_candidates_optional(self):
+        """✓ canonical_intent_candidates is optional"""
+        intent = SingleIntent(
+            intent_type=IntentType.ACTION,
+            canonical_intent="apply_job",
+            confidence=0.9,
+            sequence_order=1
+        )
+        assert intent.canonical_intent_candidates is None
 
+    def test_canonical_intent_candidates_with_2_items(self):
+        """✓ canonical_intent_candidates with 2 items"""
+        intent = SingleIntent(
+            intent_type=IntentType.ACTION,
+            canonical_intent="apply_job",
+            canonical_intent_candidates=["apply_job", "submit_application"],
+            confidence=0.9,
+            sequence_order=1
+        )
+        assert len(intent.canonical_intent_candidates) == 2
+        assert intent.canonical_intent_candidates[0] == "apply_job"
+        assert intent.canonical_intent_candidates[1] == "submit_application"
+
+    def test_canonical_intent_candidates_with_1_item(self):
+        """✓ canonical_intent_candidates allows 1 item"""
+        intent = SingleIntent(
+            intent_type=IntentType.ACTION,
+            canonical_intent="apply_job",
+            canonical_intent_candidates=["apply_job"],
+            confidence=0.9,
+            sequence_order=1
+        )
+        assert len(intent.canonical_intent_candidates) == 1
+
+    def test_canonical_intent_candidates_rejects_empty_array(self):
+        """✓ canonical_intent_candidates rejects empty array"""
+        with pytest.raises(ValidationError) as exc:
+            SingleIntent(
+                intent_type=IntentType.ACTION,
+                canonical_intent="apply_job",
+                canonical_intent_candidates=[],
+                confidence=0.9,
+                sequence_order=1
+            )
+        assert "canonical_intent_candidates" in str(exc.value).lower()
+
+    def test_canonical_intent_candidates_rejects_more_than_2(self):
+        """✓ canonical_intent_candidates rejects >2 items"""
+        with pytest.raises(ValidationError) as exc:
+            SingleIntent(
+                intent_type=IntentType.ACTION,
+                canonical_intent="apply_job",
+                canonical_intent_candidates=["apply_job", "submit_application", "create_application"],
+                confidence=0.9,
+                sequence_order=1
+            )
+        assert "canonical_intent_candidates" in str(exc.value).lower()
+
+    def test_canonical_intent_candidates_null_for_non_action(self):
+        """✓ canonical_intent_candidates should be None for non-action intents"""
+        intent = SingleIntent(
+            intent_type=IntentType.GREETING,
+            canonical_intent_candidates=None,
+            confidence=0.9,
+            sequence_order=1
+        )
+        assert intent.canonical_intent_candidates is None
+        
 # ============================================================================
 # SECTION 3: IntentOutput Model Tests
 # ============================================================================

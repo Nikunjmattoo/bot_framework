@@ -508,14 +508,15 @@ Instance
 - **Auto-Response:** NO
 - **NEW:** Returns 3 canonical name candidates for fuzzy search
 
+- **NEW:** Returns 2 canonical name candidates for fuzzy search
+
 **Output Format (Updated):**
 ```json
 {
   "intent_type": "action",
   "canonical_intent_candidates": [
     "apply_job",           // Primary guess
-    "submit_application",  // Alternative 1 (synonym)
-    "create_application"   // Alternative 2 (broader)
+    "submit_application"   // Alternative (synonym)
   ],
   "confidence": 0.94,
   "entities": {
@@ -566,8 +567,7 @@ Detected Intents:
     "intent_type": "action",
     "canonical_intent_candidates": [
       "apply_job",
-      "submit_application",
-      "create_job_application"
+      "submit_application"
     ],
     "confidence": 0.94,
     "entities": {"company": "Google"},
@@ -590,14 +590,14 @@ Detected Intents:
 [
   {
     "intent_type": "action",
-    "canonical_intent_candidates": ["create_profile", "setup_profile", "register"],
+    "canonical_intent_candidates": ["create_profile", "setup_profile"],
     "confidence": 0.93,
     "sequence": 1,
     "priority": "high"
   },
   {
     "intent_type": "action",
-    "canonical_intent_candidates": ["apply_job", "submit_application", "apply_for_job"],
+    "canonical_intent_candidates": ["apply_job", "submit_application"],
     "confidence": 0.91,
     "entities": {"job_title": "software engineer"},
     "sequence": 2,
@@ -1114,22 +1114,21 @@ Applied to Google software engineer role (turn 5)."
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 2. BRAIN RECEIVES INTENTS                                       │
-│    Input: {                                                      │
+│    Input: {                                                     │
 │      "intent_type": "action",                                   │
 │      "canonical_intent_candidates": [                           │
 │        "apply_job",           # Primary guess                   │
-│        "submit_application",  # Alternative 1                   │
-│        "create_application"   # Alternative 2                   │
-│      ],                                                          │
+│        "submit_application"   # Alternative                     │
+│      ],                                                         │
 │      "confidence": 0.85,                                        │
 │      "entities": {"job_id": "123"}                              │
-│    }                                                             │
+│    }                                                            │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 3. MAP INTENT → ACTION (With Fuzzy Search & Exit Point) ⭐ NEW │
-│                                                                  │
+│                                                                 │
 │    For each candidate in canonical_intent_candidates:           │
 │      1. Try exact match on canonical_name                       │
 │      2. If not found, try fuzzy match (Levenshtein, cutoff=0.8)│

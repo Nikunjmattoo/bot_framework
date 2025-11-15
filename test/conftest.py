@@ -608,7 +608,8 @@ def llm_response_action():
             "intents": [{
                 "intent_type": "action",
                 "canonical_intent": "check_order_status",
-                "confidence": 0.95,
+                "canonical_intent_candidates": ["check_order_status", "view_order"],
+                "confidence": 0.94,
                 "entities": {},
                 "sequence_order": 1,
                 "reasoning": "User wants to check order status"
@@ -619,8 +620,8 @@ def llm_response_action():
         }""",
         "token_usage": {
             "prompt_tokens": 500,
-            "completion_tokens": 50,
-            "total": 550
+            "completion_tokens": 60,
+            "total": 560
         }
     }
 
@@ -689,6 +690,7 @@ def llm_response_multi_intent_mixed():
                 {
                     "intent_type": "action",
                     "canonical_intent": "check_order_status",
+                    "canonical_intent_candidates": ["check_order_status", "view_order_status"],
                     "confidence": 0.94,
                     "entities": {},
                     "sequence_order": 2,

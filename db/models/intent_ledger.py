@@ -41,6 +41,17 @@ class IntentLedgerModel(Base):
         nullable=True,
         comment="Action name for action intents (e.g., 'create_profile')"
     )
+    canonical_intent_candidates = Column(
+        JSONB,
+        nullable=True,
+        server_default='[]',
+        comment="List of 1-2 candidate action names from intent detector"
+    )
+    match_type = Column(
+        String(20),
+        nullable=True,
+        comment="Action matching strategy: exact, fuzzy, synonym, not_found"
+    )
     confidence = Column(
         Numeric(3, 2), 
         nullable=False,
@@ -121,6 +132,7 @@ class IntentLedgerModel(Base):
         Index('idx_intent_ledger_status', 'status'),
         Index('idx_intent_ledger_turn', 'session_id', 'turn_number'),
         Index('idx_intent_ledger_type', 'intent_type_id'),
+        Index('idx_intent_ledger_match_type', 'match_type'),
         Index('idx_intent_ledger_created_at', 'created_at', postgresql_using='btree', postgresql_ops={'created_at': 'DESC'}),
     )
     
@@ -137,6 +149,8 @@ class IntentLedgerModel(Base):
             'session_id': str(self.session_id),
             'intent_type_id': self.intent_type_id,
             'canonical_action': self.canonical_action,
+            'canonical_intent_candidates': self.canonical_intent_candidates,
+            'match_type': self.match_type,
             'confidence': float(self.confidence) if self.confidence else None,
             'turn_number': self.turn_number,
             'sequence_order': self.sequence_order,

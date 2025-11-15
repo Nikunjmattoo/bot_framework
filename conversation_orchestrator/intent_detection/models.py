@@ -55,6 +55,14 @@ class SingleIntent(BaseModel):
         description="Canonical intent name (only for action intents, e.g., 'create_profile')"
     )
     
+    canonical_intent_candidates: Optional[List[str]] = Field(
+        None,
+        min_length=1,
+        max_length=2,
+        description="1-2 canonical intent name candidates for fuzzy matching (action intents only). "
+                    "Ordered by likelihood: [primary, alternative]"
+    )
+    
     confidence: float = Field(
         ...,
         ge=0.0,
