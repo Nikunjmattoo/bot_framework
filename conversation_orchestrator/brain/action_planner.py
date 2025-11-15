@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 import logging
 
-from db.db import get_db
 from db.models.actions import ActionModel
 from db.models.users import UserModel
 from .intent_logger import (
@@ -65,6 +64,7 @@ def check_authorization(
 
 
 def check_execution_limits(
+    db: Session,
     action: ActionModel,
     session_id: str,
     user_id: str
@@ -82,19 +82,19 @@ def check_execution_limits(
     """
     # Check max per session
     if action.max_per_session:
-        session_count = count_action_executions(session_id, action.canonical_name)
+        session_count = count_action_executions(db, session_id, action.canonical_name)
         if session_count >= action.max_per_session:
             return False, f'max_per_session_reached ({action.max_per_session})'
     
     # Check max per day
     if action.max_per_day:
-        today_count = count_action_executions_today(user_id, action.canonical_name)
+        today_count = count_action_executions_today(db, user_id, action.canonical_name)
         if today_count >= action.max_per_day:
             return False, f'max_per_day_reached ({action.max_per_day})'
     
     # Check minimum interval
     if action.min_interval_seconds:
-        last_execution = get_last_execution(session_id, action.canonical_name)
+        last_execution = get_last_execution(db, session_id, action.canonical_name)
         if last_execution:
             elapsed = (datetime.utcnow() - last_execution).total_seconds()
             if elapsed < action.min_interval_seconds:
@@ -105,6 +105,7 @@ def check_execution_limits(
 
 
 def check_prerequisites(
+    db: Session,
     action: ActionModel,
     session_id: str,
     user_id: str,
@@ -125,13 +126,13 @@ def check_prerequisites(
     # Check prerequisite actions
     if action.prerequisite_actions:
         for prereq_action in action.prerequisite_actions:
-            if not check_action_completed(session_id, prereq_action):
+            if not check_action_completed(db, session_id, prereq_action):
                 reasons.append(f'prerequisite_not_met: {prereq_action}')
     
     # Check conflicting actions
     if action.conflicting_actions:
         for conflict_action in action.conflicting_actions:
-            if check_action_completed(session_id, conflict_action):
+            if check_action_completed(db, session_id, conflict_action):
                 reasons.append(f'conflicting_action_completed: {conflict_action}')
     
     prerequisites_met = len(reasons) == 0
@@ -167,6 +168,7 @@ def check_params(
 
 
 def should_skip_workflow_action(
+    db: Session,
     action: ActionModel,
     user_id: str,
     brand_id: str
@@ -188,7 +190,7 @@ def should_skip_workflow_action(
         
         if condition_type == 'schema_complete':
             schema_id = condition.get('schema_id')
-            result = check_schema_exists(brand_id, schema_id)
+            result = check_schema_exists(db, schema_id, user_id, brand_id)
             if result and result.get('status') == 'complete':
                 return True, f'schema_{schema_id}_already_complete'
         
